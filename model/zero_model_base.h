@@ -51,7 +51,7 @@ class ZeroModelBase
     virtual void Wait() {}
 
     enum {
-        INPUT_DIM  = 19 * 19 * 17,
+        INPUT_DIM  = 19 * 19 * 18,
         OUTPUT_DIM = 19 * 19 + 1,
     };
 };

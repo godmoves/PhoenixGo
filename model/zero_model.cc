@@ -126,6 +126,32 @@ int ZeroModel::Init(const ModelConfig &model_config)
     return 0;
 }
 
+std::vector<float> transpose(std::vector<bool> feature) {
+    std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
+    for (int i=0; i<8; ++i) {
+        for (int j=0; j<19; ++j) {
+            for (int k=0; k<19; ++k) {
+                new_feature[k + 19*j + 19*19*i] = feature[(2*i) + 17*(19*j + k)];
+                new_feature[k + 19*j + 19*19*(i+8)] = feature[(2*i+1) + 17*(19*j + k)];
+            }
+        }
+    }
+    if (float(feature[16]) > 0.5) { // this means black to  move
+        for (int j=0; j<19; ++j) {
+            for (int k=0; k<19; ++k) {
+                new_feature[k + 19*j + 19*19*16] = 1;
+            }
+        }
+    } else {
+        for (int j=0; j<19; ++j) {
+            for (int k=0; k<19; ++k) {
+                new_feature[k + 19*j + 19*19*17] = 1;
+            }
+        }
+    }
+    return new_feature;
+}
+
 int ZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
                        std::vector<std::vector<float>> &policy, std::vector<float> &value)
 {
@@ -135,20 +161,31 @@ int ZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
         return ERR_INVALID_INPUT;
     }
 
-    tf::Tensor feature_tensor(tf::DT_BOOL, tf::TensorShape({batch_size, INPUT_DIM}));
-    auto matrix = feature_tensor.matrix<bool>();
+    std::vector<std::vector<float>> inputsT;
+    for (int i=0; i<batch_size; ++i) {
+        inputsT.push_back(transpose(inputs[i]));
+    }
+
+    tf::Tensor feature_tensor(tf::DT_FLOAT, tf::TensorShape({batch_size, INPUT_DIM}));
+    auto matrix = feature_tensor.matrix<float>();
     for (int i = 0; i < batch_size; ++i) {
-        if (inputs[i].size() != INPUT_DIM) {
-            LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputs[i].size();
+        if (inputsT[i].size() != INPUT_DIM) {
+            LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputsT[i].size();
             return ERR_INVALID_INPUT;
         }
         for (int j = 0; j < INPUT_DIM; ++j) {
-            matrix(i, j) = inputs[i][j];
+            matrix(i, j) = inputsT[i][j];
         }
     }
 
+    tf::Tensor feature_tensor_reshaped(tf::DT_FLOAT, tf::TensorShape({batch_size, 18, 19, 19})); 
+    if(!feature_tensor_reshaped.CopyFrom(feature_tensor, tensorflow::TensorShape({batch_size, 18, 19, 19})))
+    {
+      LOG(ERROR) << "Unsuccessfully reshaped features tensor [" << feature_tensor_reshaped.DebugString() << "] to [?, 18, 19, 19]";
+      return ERR_INVALID_INPUT;
+    }
 
-    std::vector<std::pair<std::string, tf::Tensor>> network_inputs = {{input_tensor_name, feature_tensor}};
+    std::vector<std::pair<std::string, tf::Tensor>> network_inputs = {{input_tensor_name, feature_tensor_reshaped}};
     std::vector<std::string> fetch_outputs = {policy_tensor_name, value_tensor_name};
     std::vector<tf::Tensor> network_outputs;
     tf::Status status = m_session->Run(network_inputs, fetch_outputs, {}, &network_outputs);

@@ -32,7 +32,7 @@ class ZeroModel final : public ZeroModelBase
 
     int Init(const ModelConfig &model_config) override;
 
-    // input  [batch, 19 * 19 * 17]
+    // input  [batch, 19 * 19 * 18]
     // policy [batch, 19 * 19 + 1]
     int Forward(const std::vector<std::vector<bool>> &inputs,
                 std::vector<std::vector<float>> &policy, std::vector<float> &value) override;
