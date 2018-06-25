@@ -139,7 +139,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine, const std::string &c
     std::istringstream ss(cmd);
     ss >> op;
     if (op == "name") {
-        return {true, "PhoenixGo"};
+        return {true, "Leela Zero Phoenix"};
     }
     if (op == "version") {
         return {true, "1.0"};
