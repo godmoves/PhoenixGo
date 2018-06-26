@@ -71,8 +71,8 @@ def optimistic_restore(session, save_file, graph=tf.get_default_graph()):
 class TFProcess:
     def __init__(self):
         # Network structure
-        self.RESIDUAL_FILTERS = 64
-        self.RESIDUAL_BLOCKS = 5
+        self.RESIDUAL_FILTERS = 192
+        self.RESIDUAL_BLOCKS = 15
 
         # For exporting
         self.weights = []

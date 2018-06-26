@@ -173,8 +173,6 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
             inputs_flat[i * INPUT_DIM + j] = inputsT[i][j];
         }
     }
-    std::cerr << "Press enter to continue...";
-    std::cin.get();
 
     int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(), inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
     if (ret != 0) {
