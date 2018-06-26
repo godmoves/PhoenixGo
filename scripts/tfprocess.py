@@ -71,8 +71,8 @@ def optimistic_restore(session, save_file, graph=tf.get_default_graph()):
 class TFProcess:
     def __init__(self):
         # Network structure
-        self.RESIDUAL_FILTERS = 256
-        self.RESIDUAL_BLOCKS = 40
+        self.RESIDUAL_FILTERS = 64
+        self.RESIDUAL_BLOCKS = 5
 
         # For exporting
         self.weights = []
@@ -87,6 +87,8 @@ class TFProcess:
         self.swa_max_n = 16
         # Recalculate SWA weight batchnorm means and variances
         self.swa_recalc_bn = True
+
+        self.batch_norm_count = 0
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.75)
         config = tf.ConfigProto(gpu_options=gpu_options)
@@ -106,11 +108,9 @@ class TFProcess:
         self.init_net(self.next_batch)
 
     def init_net(self, next_batch):
-        # tf.placeholder(tf.float32, [None, 18, 19 * 19])
-        self.x = next_batch[0]
+        self.x = next_batch[0]   # tf.placeholder(tf.float32, [None, 18, 19 * 19])
         self.y_ = next_batch[1]  # tf.placeholder(tf.float32, [None, 362])
         self.z_ = next_batch[2]  # tf.placeholder(tf.float32, [None, 1])
-        self.batch_norm_count = 0
         self.y_conv, self.z_conv = self.construct_net(self.x)
 
         if self.swa_enabled is True:
@@ -180,10 +180,17 @@ class TFProcess:
         self.train_writer = tf.summary.FileWriter(
             os.path.join(os.getcwd(), "leelalogs/train"), self.session.graph)
 
-        self.init = tf.global_variables_initializer()
-        self.saver = tf.train.Saver()
+        # self.init = tf.global_variables_initializer()
+        # self.saver = tf.train.Saver()
 
-        self.session.run(self.init)
+        # self.session.run(self.init)
+
+        # graphdef = tf.get_default_graph().as_graph_def()
+        # frozen_graph = tf.graph_util.convert_variables_to_constants(self.session,
+        #                                                             graphdef,
+        #                                                             ["policy", "value"])
+
+        # return tf.graph_util.remove_training_nodes(frozen_graph)
 
     def replace_weights(self, new_weights):
         for e, weights in enumerate(self.weights):
@@ -436,7 +443,9 @@ class TFProcess:
     def construct_net(self, planes):
         # NCHW format
         # batch, 18 channels, 19 x 19
-        x_planes = tf.reshape(planes, [-1, 18, 19, 19], name="inputs")
+
+        # x_planes = tf.placeholder(tf.float32, [-1, 18, 19 * 19], name="inputs")
+        x_planes = tf.reshape(planes, [-1, 18, 19, 19])
 
         # Input convolution
         flow = self.conv_block(x_planes, filter_size=3,
@@ -475,7 +484,17 @@ class TFProcess:
         h_fc3 = tf.nn.tanh(
             tf.add(tf.matmul(h_fc2, W_fc3), b_fc3), name="value")
 
-        return h_fc1, h_fc3
+        self.init = tf.global_variables_initializer()
+        self.saver = tf.train.Saver()
+
+        self.session.run(self.init)
+
+        graphdef = tf.get_default_graph().as_graph_def()
+        frozen_graph = tf.graph_util.convert_variables_to_constants(self.session,
+                                                                    graphdef,
+                                                                    ["policy", "value"])
+
+        return tf.graph_util.remove_training_nodes(frozen_graph)
 
     def snap_save(self):
         # Save a snapshot of all the variables in the current graph.

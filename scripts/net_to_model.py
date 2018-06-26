@@ -3,6 +3,33 @@ import tensorflow as tf
 import os
 import sys
 from tfprocess import TFProcess
+import uff
+
+import subprocess
+
+UFF_TO_PLAN_EXE_PATH = 'u2p/build/uff_to_plan'
+TMP_UFF_FILENAME = 'tmp.uff'
+
+
+def graphToPlan(uff_model, plan_filename, input_name, policy_name,
+                value_name, max_batch_size, max_workspace_size, data_type):
+
+    # convert frozen graph to engine (plan)
+    args = [
+        TMP_UFF_FILENAME,
+        plan_filename,
+        input_name,
+        policy_name,
+        value_name,
+        str(max_batch_size),
+        str(max_workspace_size),
+        data_type  # float / half
+    ]
+    subprocess.call([UFF_TO_PLAN_EXE_PATH] + args)
+
+    # cleanup tmp file
+    os.remove(TMP_UFF_FILENAME)
+
 
 with open(sys.argv[1], 'r') as f:
     weights = []
@@ -24,14 +51,13 @@ with open(sys.argv[1], 'r') as f:
     blocks //= 8
     print("Blocks", blocks)
 
-    x = [
-        tf.placeholder(tf.float32, [None, 18, 19 * 19]),
-        tf.placeholder(tf.float32, [None, 362]),
-        tf.placeholder(tf.float32, [None, 1])
-    ]
+    x = tf.placeholder(tf.float32, [None, 18, 19 * 19], name="inputs")
 
     tfprocess = TFProcess()
-    tfprocess.init_net(x)
+    tf_model = tfprocess.construct_net(x)
+    uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
+                                    input_nodes=["inputs"], output_filename=TMP_UFF_FILENAME)
+    graphToPlan(uff_model, "leelaz.PLAN", "inputs", "policy", "value", 1, 1 << 20, "half")
     if tfprocess.RESIDUAL_BLOCKS != blocks:
         raise ValueError("Number of blocks in tensorflow model doesn't match "
                          "number of blocks in input network")

@@ -19,3 +19,9 @@ x64
 x86
 Release
 Debug
+scripts/*.txt
+scripts/leela*
+scripts/log
+scripts/__pycache__
+scripts/checkpoint
+scripts/u2p/build
