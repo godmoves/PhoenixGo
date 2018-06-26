@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(trt_image_classification)
+project(uff_to_PLAN)
 
 find_package(CUDA REQUIRED)
 
