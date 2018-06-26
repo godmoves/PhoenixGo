@@ -123,6 +123,32 @@ int TrtZeroModel::Init(const ModelConfig &model_config)
     return 0;
 }
 
+std::vector<float> transpose(std::vector<bool> feature) {
+    std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
+    for (int i=0; i<8; ++i) {
+        for (int j=0; j<19; ++j) {
+            for (int k=0; k<19; ++k) {
+                new_feature[k + 19*j + 19*19*i] = feature[(2*i) + 17*(19*j + k)];
+                new_feature[k + 19*j + 19*19*(i+8)] = feature[(2*i+1) + 17*(19*j + k)];
+            }
+        }
+    }
+    if (float(feature[16]) > 0.5) { // this means black to  move
+        for (int j=0; j<19; ++j) {
+            for (int k=0; k<19; ++k) {
+                new_feature[k + 19*j + 19*19*16] = 1;
+            }
+        }
+    } else {
+        for (int j=0; j<19; ++j) {
+            for (int k=0; k<19; ++k) {
+                new_feature[k + 19*j + 19*19*17] = 1;
+            }
+        }
+    }
+    return new_feature;
+}
+
 int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
                           std::vector<std::vector<float>> &policy, std::vector<float> &value)
 {
@@ -132,16 +158,23 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
         return ERR_INVALID_INPUT;
     }
 
+    std::vector<std::vector<float>> inputsT;
+    for (int i = 0; i < batch_size; ++i) {
+        inputsT.push_back(transpose(inputs[i]));
+    }
+
     std::vector<float> inputs_flat(batch_size * INPUT_DIM);
     for (int i = 0; i < batch_size; ++i) {
-        if (inputs[i].size() != INPUT_DIM) {
-            LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputs[i].size();
+        if (inputsT[i].size() != INPUT_DIM) {
+            LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputsT[i].size();
             return ERR_INVALID_INPUT;
         }
         for (int j = 0; j < INPUT_DIM; ++j) {
-            inputs_flat[i * INPUT_DIM + j] = inputs[i][j];
+            inputs_flat[i * INPUT_DIM + j] = inputsT[i][j];
         }
     }
+    std::cerr << "Press enter to continue...";
+    std::cin.get();
 
     int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(), inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
     if (ret != 0) {

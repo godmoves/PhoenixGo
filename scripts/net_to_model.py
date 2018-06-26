@@ -51,13 +51,13 @@ with open(sys.argv[1], 'r') as f:
     blocks //= 8
     print("Blocks", blocks)
 
-    x = tf.placeholder(tf.float32, [None, 18, 19 * 19], name="inputs")
+    x = tf.placeholder(tf.float32, [None, 18 * 19 * 19], name="inputs")
 
     tfprocess = TFProcess()
     tf_model = tfprocess.construct_net(x)
     uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
                                     input_nodes=["inputs"], output_filename=TMP_UFF_FILENAME)
-    graphToPlan(uff_model, "leelaz.PLAN", "inputs", "policy", "value", 1, 1 << 20, "half")
+    graphToPlan(uff_model, "leelaz.PLAN", "inputs", "policy", "value", 4, 1 << 20, "float")
     if tfprocess.RESIDUAL_BLOCKS != blocks:
         raise ValueError("Number of blocks in tensorflow model doesn't match "
                          "number of blocks in input network")
