@@ -93,16 +93,16 @@ int main() {
     std::vector<float> feature(19 * 19 * FEATURE, 0);
     // for (int i = 0; i < 19; ++i) {
     //     for (int j = 0; j < 19; ++j) {
-    //         for (int k = 0; k < 17; ++k) {
-    //             if (k % 16 == 0)
-    //                 feature[19*17*i + 17*j + k] = 1;
+    //         for (int k = 0; k < 18; ++k) {
+    //             if (k == 1)
+    //                 feature[19*18*i + 18*j + k] = 1;
     //         }
     //     }
     // }
     // for (int i = 0; i < 18; ++i) {
     //     for (int j = 0; j < 19; ++j) {
     //         for (int k = 0; k < 19; ++k) {
-    //             if (i % 2 == 0)
+    //             if (i == 16)
     //                 feature[19*19*i + 19*j + k] = 1;
     //         }
     //     }
@@ -193,13 +193,5 @@ int main() {
     std::cout << "value head:\n" << value[0] << "\n";
 
     std::cout << "Done\n";
-
-    // builder->destroy();
-    // parser->destroy();
-    // network->destroy();
-    // m_engine->destroy();
-    // m_runtime->destroy();
-    // m_context->destroy();
-
     return 0;
 }
