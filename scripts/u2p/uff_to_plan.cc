@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   IBuilder *builder = createInferBuilder(gLogger);
   INetworkDefinition *network = builder->createNetwork();
   IUffParser *parser = createUffParser();
-  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19));
+  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19), UffInputOrder::kNCHW);
   parser->registerOutput(policyName.c_str());
   parser->registerOutput(valueName.c_str());
   if (!parser->parse(uffFilename.c_str(), *network, dataType))

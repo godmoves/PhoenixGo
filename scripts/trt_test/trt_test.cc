@@ -14,10 +14,10 @@ class Logger : public nvinfer1::ILogger
     void log(Severity severity, const char *msg) override
     {
         switch (severity) {
-         case Severity::kINTERNAL_ERROR: std::cout << "kINTERNAL_ERROR: " << msg << "\n"; break;
-         case Severity::kERROR: std::cout << "kERROR: " << msg << "\n"; break;
-         case Severity::kWARNING: std::cout << "kWARNING: " << msg << "\n"; break;
-         case Severity::kINFO: std::cout << "INFO: " << msg << "\n"; break;
+          case Severity::kINTERNAL_ERROR: std::cout << "kINTERNAL_ERROR: " << msg << "\n"; break;
+          case Severity::kERROR: std::cout << "kERROR: " << msg << "\n"; break;
+          case Severity::kWARNING: std::cout << "kWARNING: " << msg << "\n"; break;
+          case Severity::kINFO: std::cout << "INFO: " << msg << "\n"; break;
         }
     }
 } g_logger;
@@ -60,19 +60,27 @@ int main() {
     const int OUTPUT_DIM = 362;
 
     std::vector<float> feature(19 * 19 * (16 + 2), 0);
-    for (int i = 0; i < 19; ++i) {
-        for (int j = 0; j < 19; ++j) {
-            for (int k = 0; k < 18; ++k) {
-                if (k % 16 == 0)
-                    feature[19*19*i + 19*j + k] = 1;
-            }
-        }
-    }
+    // for (int i = 0; i < 19; ++i) {
+    //     for (int j = 0; j < 19; ++j) {
+    //         for (int k = 0; k < 18; ++k) {
+    //             if (k % 16 == 0)
+    //                 feature[19*18*i + 18*j + k] = 1;
+    //         }
+    //     }
+    // }
+    // for (int i = 0; i < 18; ++i) {
+    //     for (int j = 0; j < 19; ++j) {
+    //         for (int k = 0; k < 19; ++k) {
+    //             if (i % 16 == 0)
+    //                 feature[19*19*i + 19*j + k] = 1;
+    //         }
+    //     }
+    // }
     std::vector<std::vector<float>> inputs;
     inputs.push_back(feature);
 
 
-    std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/ckpt/leelaz.PLAN";
+    std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.PLAN";
     std::ostringstream model_ss(std::ios::binary);
     if (!(model_ss << std::ifstream(tensorrt_model_path, std::ios::binary).rdbuf())) {
         std::cout << "ERROR: read tensorrt model '" << tensorrt_model_path << "' error\n";
@@ -162,7 +170,7 @@ int main() {
     std::cout << "policy head:\n";
     for (int i = 0; i < 19; ++i) {
         for (int j = 0; j < 19; ++j) {
-            printf("%.2f ", policy[0][19*i + j]);
+            printf("%.4f ", policy[0][19*i + j]);
         }
         printf("\n");
     }
@@ -171,4 +179,3 @@ int main() {
     std::cout << "Done\n";
     return 0;
 }
-
