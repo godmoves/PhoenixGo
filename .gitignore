@@ -25,3 +25,4 @@ scripts/log
 scripts/__pycache__
 scripts/checkpoint
 scripts/u2p/build
+scripts/trt_test/build
