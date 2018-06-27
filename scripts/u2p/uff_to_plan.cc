@@ -25,8 +25,8 @@ class Logger : public ILogger
           case Severity::kINTERNAL_ERROR: cout << "kINTERNAL_ERROR: " << msg << endl; break;
           case Severity::kERROR: cout << "kERROR: " << msg << endl; break;
           case Severity::kWARNING: cout << "kWARNING: " << msg << endl; break;
-          case Severity::kINFO: cout << "INFO: " << msg << endl; break;
-          default: cout << msg << endl;
+          case Severity::kINFO: cout << "kINFO: " << msg << endl; break;
+          default: cout << "kUNKNOWN: "<< msg << endl;
         }
     }
 } gLogger;

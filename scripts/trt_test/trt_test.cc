@@ -6,7 +6,6 @@
 
 #include <NvInfer.h>
 #include <NvUffParser.h>
-
 #include <cuda_runtime_api.h>
 
 class Logger : public nvinfer1::ILogger
@@ -17,61 +16,93 @@ class Logger : public nvinfer1::ILogger
           case Severity::kINTERNAL_ERROR: std::cout << "kINTERNAL_ERROR: " << msg << "\n"; break;
           case Severity::kERROR: std::cout << "kERROR: " << msg << "\n"; break;
           case Severity::kWARNING: std::cout << "kWARNING: " << msg << "\n"; break;
-          case Severity::kINFO: std::cout << "INFO: " << msg << "\n"; break;
+          case Severity::kINFO: std::cout << "kINFO: " << msg << "\n"; break;
         }
     }
 } g_logger;
 
 
-std::vector<float> transpose(std::vector<bool> feature) {
-    std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
-    for (int i=0; i<8; ++i) {
-        for (int j=0; j<19; ++j) {
-            for (int k=0; k<19; ++k) {
-                new_feature[k + 19*j + 19*19*i] = feature[(2*i) + 17*(19*j + k)];
-                new_feature[k + 19*j + 19*19*(i+8)] = feature[(2*i+1) + 17*(19*j + k)];
-            }
-        }
-    }
-    if (float(feature[16]) > 0.5) { // this means black to  move
-        for (int j=0; j<19; ++j) {
-            for (int k=0; k<19; ++k) {
-                new_feature[k + 19*j + 19*19*16] = 1;
-            }
-        }
-    } else {
-        for (int j=0; j<19; ++j) {
-            for (int k=0; k<19; ++k) {
-                new_feature[k + 19*j + 19*19*17] = 1;
-            }
-        }
-    }
-    return new_feature;
-}
-
-
 int main() {
+    const int FEATURE = 18;
+    const int INPUT_DIM = FEATURE * 19 * 19;
+    const int OUTPUT_DIM = 362;
+
+    std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.PLAN";
+    // std::string tensorrt_model_path = "";
+    std::string uffFilename = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.uff";
+
+    nvinfer1::IBuilder *builder;
+    nvinfer1::INetworkDefinition *network;
+    nvuffparser::IUffParser *parser;
     nvinfer1::ICudaEngine *m_engine;
     nvinfer1::IRuntime *m_runtime;
     nvinfer1::IExecutionContext *m_context;
     std::vector<void*> m_cuda_buf;
 
-    const int INPUT_DIM = 18 * 19 * 19;
-    const int OUTPUT_DIM = 362;
+    if (tensorrt_model_path == "") {
+        // using uff file when PLAN is not available
+        std::cout << "INFO: using uff model\n";
 
-    std::vector<float> feature(19 * 19 * (16 + 2), 0);
+        builder = nvinfer1::createInferBuilder(g_logger);
+        network = builder->createNetwork();
+        parser = nvuffparser::createUffParser();
+
+        parser->registerInput("inputs", nvinfer1::DimsCHW(18, 19, 19), nvuffparser::UffInputOrder::kNCHW);
+        parser->registerOutput("policy");
+        parser->registerOutput("value");
+
+        // kFLOAT or kHALF
+        nvinfer1::DataType m_datatype = nvinfer1::DataType::kHALF;
+
+        if (!parser->parse(uffFilename.c_str(), *network, m_datatype)) {
+            std::cout << "Failed to parse UFF\n";
+            builder->destroy();
+            network->destroy();
+            parser->destroy();
+            return 1;
+        }
+
+        // build engine
+        if (m_datatype == nvinfer1::DataType::kHALF)
+            builder->setHalf2Mode(true);
+
+
+        builder->setMaxBatchSize(4);
+        builder->setMaxWorkspaceSize(1 << 20);
+        m_engine = builder->buildCudaEngine(*network);
+
+        // nvinfer1::IHostMemory *serializedEngine = engine->serialize();
+    } else {
+        std::cout << "INFO: using PLAN model\n";
+
+        std::ostringstream model_ss(std::ios::binary);
+        if (!(model_ss << std::ifstream(tensorrt_model_path, std::ios::binary).rdbuf())) {
+            std::cout << "ERROR: read tensorrt model '" << tensorrt_model_path << "' error\n";
+            return 1;
+        }
+        std::string model_str = model_ss.str();
+
+        m_runtime = nvinfer1::createInferRuntime(g_logger);
+        m_engine = m_runtime->deserializeCudaEngine(model_str.c_str(), model_str.size(), nullptr);
+        if (m_engine == nullptr) {
+            std::cout << "ERROR: load cuda engine error\n";
+            return 1;
+        }
+    }
+
+    std::vector<float> feature(19 * 19 * FEATURE, 0);
     // for (int i = 0; i < 19; ++i) {
     //     for (int j = 0; j < 19; ++j) {
-    //         for (int k = 0; k < 18; ++k) {
+    //         for (int k = 0; k < 17; ++k) {
     //             if (k % 16 == 0)
-    //                 feature[19*18*i + 18*j + k] = 1;
+    //                 feature[19*17*i + 17*j + k] = 1;
     //         }
     //     }
     // }
     // for (int i = 0; i < 18; ++i) {
     //     for (int j = 0; j < 19; ++j) {
     //         for (int k = 0; k < 19; ++k) {
-    //             if (i % 16 == 0)
+    //             if (i % 2 == 0)
     //                 feature[19*19*i + 19*j + k] = 1;
     //         }
     //     }
@@ -79,21 +110,6 @@ int main() {
     std::vector<std::vector<float>> inputs;
     inputs.push_back(feature);
 
-
-    std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.PLAN";
-    std::ostringstream model_ss(std::ios::binary);
-    if (!(model_ss << std::ifstream(tensorrt_model_path, std::ios::binary).rdbuf())) {
-        std::cout << "ERROR: read tensorrt model '" << tensorrt_model_path << "' error\n";
-        return 1;
-    }
-    std::string model_str = model_ss.str();
-
-    m_runtime = nvinfer1::createInferRuntime(g_logger);
-    m_engine = m_runtime->deserializeCudaEngine(model_str.c_str(), model_str.size(), nullptr);
-    if (m_engine == nullptr) {
-        std::cout << "ERROR: load cuda engine error\n";
-        return 1;
-    }
     m_context = m_engine->createExecutionContext();
 
     int max_batch_size = m_engine->getMaxBatchSize();
@@ -177,5 +193,13 @@ int main() {
     std::cout << "value head:\n" << value[0] << "\n";
 
     std::cout << "Done\n";
+
+    // builder->destroy();
+    // parser->destroy();
+    // network->destroy();
+    // m_engine->destroy();
+    // m_runtime->destroy();
+    // m_context->destroy();
+
     return 0;
 }
