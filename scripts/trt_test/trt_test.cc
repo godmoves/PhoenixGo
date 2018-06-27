@@ -51,7 +51,7 @@ std::vector<float> transpose(std::vector<bool> feature) {
 
 
 int main() {
-	nvinfer1::ICudaEngine *m_engine;
+    nvinfer1::ICudaEngine *m_engine;
     nvinfer1::IRuntime *m_runtime;
     nvinfer1::IExecutionContext *m_context;
     std::vector<void*> m_cuda_buf;
@@ -61,19 +61,19 @@ int main() {
 
     std::vector<float> feature(19 * 19 * (16 + 2), 0);
     for (int i = 0; i < 19; ++i) {
-    	for (int j = 0; j < 19; ++j) {
-    		for (int k = 0; k < 18; ++k) {
-    			if (k % 16 == 0)
-	    			feature[19*19*i + 19*j + k] = 1;
-    		}
-    	}
+        for (int j = 0; j < 19; ++j) {
+            for (int k = 0; k < 18; ++k) {
+                if (k % 16 == 0)
+                    feature[19*19*i + 19*j + k] = 1;
+            }
+        }
     }
     std::vector<std::vector<float>> inputs;
     inputs.push_back(feature);
 
 
-	std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/ckpt/leelaz.PLAN";
-	std::ostringstream model_ss(std::ios::binary);
+    std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/ckpt/leelaz.PLAN";
+    std::ostringstream model_ss(std::ios::binary);
     if (!(model_ss << std::ifstream(tensorrt_model_path, std::ios::binary).rdbuf())) {
         std::cout << "ERROR: read tensorrt model '" << tensorrt_model_path << "' error\n";
         return 1;
@@ -161,10 +161,10 @@ int main() {
 
     std::cout << "policy head:\n";
     for (int i = 0; i < 19; ++i) {
-    	for (int j = 0; j < 19; ++j) {
-    		printf("%.2f ", policy[0][19*i + j]);
-    	}
-    	printf("\n");
+        for (int j = 0; j < 19; ++j) {
+            printf("%.2f ", policy[0][19*i + j]);
+        }
+        printf("\n");
     }
     std::cout << "value head:\n" << value[0] << "\n";
 
