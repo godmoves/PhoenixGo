@@ -178,14 +178,7 @@ int ZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
         }
     }
 
-    tf::Tensor feature_tensor_reshaped(tf::DT_FLOAT, tf::TensorShape({batch_size, 18, 19, 19})); 
-    if(!feature_tensor_reshaped.CopyFrom(feature_tensor, tensorflow::TensorShape({batch_size, 18, 19, 19})))
-    {
-      LOG(ERROR) << "Unsuccessfully reshaped features tensor [" << feature_tensor_reshaped.DebugString() << "] to [?, 18, 19, 19]";
-      return ERR_INVALID_INPUT;
-    }
-
-    std::vector<std::pair<std::string, tf::Tensor>> network_inputs = {{input_tensor_name, feature_tensor_reshaped}};
+    std::vector<std::pair<std::string, tf::Tensor>> network_inputs = {{input_tensor_name, feature_tensor}};
     std::vector<std::string> fetch_outputs = {policy_tensor_name, value_tensor_name};
     std::vector<tf::Tensor> network_outputs;
     tf::Status status = m_session->Run(network_inputs, fetch_outputs, {}, &network_outputs);
