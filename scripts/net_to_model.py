@@ -51,14 +51,11 @@ with open(sys.argv[1], 'r') as f:
     x = tf.placeholder(tf.float32, [None, 18 * 19 * 19], name="inputs")
 
     tfprocess = TFProcess()
+    tfprocess.RESIDUAL_BLOCKS = blocks
+    tfprocess.RESIDUAL_FILTERS = channels
+
     tfprocess.construct_net(x)
 
-    if tfprocess.RESIDUAL_BLOCKS != blocks:
-        raise ValueError("Number of blocks in tensorflow model doesn't match "
-                         "number of blocks in input network")
-    if tfprocess.RESIDUAL_FILTERS != channels:
-        raise ValueError("Number of filters in tensorflow model doesn't match "
-                         "number of filters in input network")
     tf_model = tfprocess.replace_weights(weights)
     uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
                                     input_nodes=["inputs"], output_filename=UFF_FILENAME)
