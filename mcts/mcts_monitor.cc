@@ -24,8 +24,7 @@
 
 MCTSMonitor *MCTSMonitor::g_global_monitors[k_max_monitor_instances];
 std::mutex MCTSMonitor::g_global_monitors_mutex;
-thread_local std::shared_ptr<LocalMonitor>
-    MCTSMonitor::g_local_monitors[k_max_monitor_instances];
+thread_local std::shared_ptr<LocalMonitor> MCTSMonitor::g_local_monitors[k_max_monitor_instances];
 
 MCTSMonitor::MCTSMonitor(MCTSEngine *engine) : m_engine(engine), m_id(0) {
   {
@@ -48,8 +47,7 @@ MCTSMonitor::~MCTSMonitor() {
   }
   g_local_monitors[m_id] = nullptr;
   if (m_local_monitors.size()) {
-    LOG(WARNING)
-        << "MCTSMonitor deconstruct before all other monitor thread exit";
+    LOG(WARNING) << "MCTSMonitor deconstruct before all other monitor thread exit";
   }
   std::lock_guard<std::mutex> lock(g_global_monitors_mutex);
   g_global_monitors[m_id] = nullptr;
@@ -77,16 +75,12 @@ void MCTSMonitor::Reset() {
 void MCTSMonitor::Log() {
   VLOG(0) << "MCTSMonitor: avg eval cost " << AvgEvalCostMs() << "ms";
   VLOG(0) << "MCTSMonitor: max eval cost " << MaxEvalCostMs() << "ms";
-  VLOG(0) << "MCTSMonitor: avg eval cost " << AvgEvalCostMsPerBatch()
-          << "ms per batch";
-  VLOG(0) << "MCTSMonitor: max eval cost " << MaxEvalCostMsPerBatch()
-          << "ms per batch";
+  VLOG(0) << "MCTSMonitor: avg eval cost " << AvgEvalCostMsPerBatch() << "ms per batch";
+  VLOG(0) << "MCTSMonitor: max eval cost " << MaxEvalCostMsPerBatch() << "ms per batch";
   VLOG(0) << "MCTSMonitor: avg eval batch size " << AvgEvalBatchSize();
   VLOG(0) << "MCTSMonitor: eval timeout " << EvalTimeout() << " times";
-  VLOG(0) << "MCTSMonitor: avg simulation cost " << AvgSimulationCostMs()
-          << "ms";
-  VLOG(0) << "MCTSMonitor: max simulation cost " << MaxSimulationCostMs()
-          << "ms";
+  VLOG(0) << "MCTSMonitor: avg simulation cost " << AvgSimulationCostMs() << "ms";
+  VLOG(0) << "MCTSMonitor: max simulation cost " << MaxSimulationCostMs() << "ms";
   VLOG(0) << "MCTSMonitor: avg select cost " << AvgSelectCostMs() << "ms";
   VLOG(0) << "MCTSMonitor: max select cost " << MaxSelectCostMs() << "ms";
   VLOG(0) << "MCTSMonitor: avg expand cost " << AvgExpandCostMs() << "ms";
@@ -114,8 +108,7 @@ void MCTSMonitor::MonitorRoutine() {
         return;
       }
     }
-    m_monitor_thread_conductor.Sleep(
-        m_engine->GetConfig().monitor_log_every_ms() * 1000LL);
+    m_monitor_thread_conductor.Sleep(m_engine->GetConfig().monitor_log_every_ms() * 1000LL);
     Log();
     google::FlushLogFiles(google::GLOG_INFO);
   }

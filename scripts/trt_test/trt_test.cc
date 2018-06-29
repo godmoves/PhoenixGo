@@ -80,17 +80,14 @@ int main() {
     std::cout << "INFO: using PLAN model\n";
 
     std::ostringstream model_ss(std::ios::binary);
-    if (!(model_ss
-          << std::ifstream(tensorrt_model_path, std::ios::binary).rdbuf())) {
-      std::cout << "ERROR: read tensorrt model '" << tensorrt_model_path
-                << "' error\n";
+    if (!(model_ss << std::ifstream(tensorrt_model_path, std::ios::binary).rdbuf())) {
+      std::cout << "ERROR: read tensorrt model '" << tensorrt_model_path << "' error\n";
       return 1;
     }
     std::string model_str = model_ss.str();
 
     m_runtime = nvinfer1::createInferRuntime(g_logger);
-    m_engine = m_runtime->deserializeCudaEngine(model_str.c_str(),
-                                                model_str.size(), nullptr);
+    m_engine = m_runtime->deserializeCudaEngine(model_str.c_str(), model_str.size(), nullptr);
     if (m_engine == nullptr) {
       std::cout << "ERROR: load cuda engine error\n";
       return 1;
@@ -150,9 +147,8 @@ int main() {
     }
   }
 
-  int ret =
-      cudaMemcpy(m_cuda_buf[0], inputs_flat.data(),
-                 inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
+  int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(),
+                       inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
   if (ret != 0) {
     std::cout << "ERROR: cuda memcpy err " << ret << "\n";
     return 1;

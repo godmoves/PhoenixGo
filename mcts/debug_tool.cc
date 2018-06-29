@@ -29,10 +29,8 @@
 DEFINE_string(config_path, "", "Path of mcts config file.");
 DEFINE_string(init_moves, "", "Initialize Go board with init_moves.");
 DEFINE_int32(gpu, 0, "gpu used by neural network.");
-DEFINE_int32(intra_op_parallelism_threads, 0,
-             "Number of tf's intra op threads");
-DEFINE_int32(inter_op_parallelism_threads, 0,
-             "Number of tf's inter op threads");
+DEFINE_int32(intra_op_parallelism_threads, 0, "Number of tf's intra op threads");
+DEFINE_int32(inter_op_parallelism_threads, 0, "Number of tf's inter op threads");
 DEFINE_int32(transform, 0, "Transform features.");
 DEFINE_int32(num_iterations, 1, "How many iterations should run.");
 DEFINE_int32(batch_size, 1, "Batch size of each iterations.");
@@ -127,8 +125,7 @@ int main(int argc, char *argv[]) {
   Timer timer;
   for (int i = 1; i <= FLAGS_num_iterations; ++i) {
     CHECK_EQ(model->Forward(inputs, policies, values), 0) << "Forward fail";
-    LOG_IF(INFO, i % 100 == 0)
-        << i << "/" << FLAGS_num_iterations << " iterations";
+    LOG_IF(INFO, i % 100 == 0) << i << "/" << FLAGS_num_iterations << " iterations";
   }
   float avg_cost_ms = timer.fms() / FLAGS_num_iterations;
   LOG(INFO) << "Cost " << avg_cost_ms << "ms per iteration";

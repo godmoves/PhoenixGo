@@ -61,8 +61,7 @@ int DistZeroModelClient::GetGlobalStep(int &global_step) {
     return 0;
   } else {
     LOG(ERROR) << "DistZeroModel::GetGlobalStep error, " << m_server_address
-               << ", ret " << status.error_code() << ": "
-               << status.error_message();
+               << ", ret " << status.error_code() << ": " << status.error_message();
     return status.error_code();
   }
 }

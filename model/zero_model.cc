@@ -68,11 +68,9 @@ int ZeroModel::Init(const ModelConfig &model_config) {
   LOG(INFO) << "Read checkpoint state succ";
 
   tf::MetaGraphDef meta_graph_def;
-  tf::Status status = ReadBinaryProto(
-      tf::Env::Default(), meta_graph_path.string(), &meta_graph_def);
+  tf::Status status = ReadBinaryProto(tf::Env::Default(), meta_graph_path.string(), &meta_graph_def);
   if (!status.ok()) {
-    LOG(ERROR) << "Error reading graph definition from " << meta_graph_path
-               << ": " << status.ToString();
+    LOG(ERROR) << "Error reading graph definition from " << meta_graph_path << ": " << status.ToString();
     return ERR_READ_CHECKPOINT;
   }
   LOG(INFO) << "Read meta graph succ";
@@ -83,13 +81,10 @@ int ZeroModel::Init(const ModelConfig &model_config) {
 
   tf::SessionOptions options;
   options.config.set_allow_soft_placement(true);
-  options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(
-      0.5);
+  options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(0.5);
   options.config.mutable_gpu_options()->set_allow_growth(true);
-  options.config.set_intra_op_parallelism_threads(
-      model_config.intra_op_parallelism_threads());
-  options.config.set_inter_op_parallelism_threads(
-      model_config.inter_op_parallelism_threads());
+  options.config.set_intra_op_parallelism_threads(model_config.intra_op_parallelism_threads());
+  options.config.set_inter_op_parallelism_threads(model_config.inter_op_parallelism_threads());
   if (model_config.enable_xla()) {
     options.config.mutable_graph_options()
         ->mutable_optimizer_options()
@@ -111,14 +106,11 @@ int ZeroModel::Init(const ModelConfig &model_config) {
 
   tf::Tensor checkpoint_path_tensor(tf::DT_STRING, tf::TensorShape());
   checkpoint_path_tensor.scalar<std::string>()() = checkpoint_path.string();
-  status =
-      m_session->Run({{meta_graph_def.saver_def().filename_tensor_name(),
-                       checkpoint_path_tensor}},
-                     {}, /* fetches_outputs is empty */
-                     {meta_graph_def.saver_def().restore_op_name()}, nullptr);
+  status = m_session->Run({{meta_graph_def.saver_def().filename_tensor_name(), checkpoint_path_tensor}},
+                          {}, /* fetches_outputs is empty */
+                          {meta_graph_def.saver_def().restore_op_name()}, nullptr);
   if (!status.ok()) {
-    LOG(ERROR) << "Error loading checkpoint from " << checkpoint_path << ": "
-               << status.ToString();
+    LOG(ERROR) << "Error loading checkpoint from " << checkpoint_path << ": " << status.ToString();
     return ERR_RESTORE_VAR;
   }
   LOG(INFO) << "Load checkpoint succ";
@@ -145,13 +137,11 @@ int ZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     inputsT.push_back(Transpose(inputs[i]));
   }
 
-  tf::Tensor feature_tensor(tf::DT_FLOAT,
-                            tf::TensorShape({batch_size, INPUT_DIM}));
+  tf::Tensor feature_tensor(tf::DT_FLOAT, tf::TensorShape({batch_size, INPUT_DIM}));
   auto matrix = feature_tensor.matrix<float>();
   for (int i = 0; i < batch_size; ++i) {
     if (inputsT[i].size() != INPUT_DIM) {
-      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got "
-                 << inputsT[i].size();
+      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputsT[i].size();
       return ERR_INVALID_INPUT;
     }
     for (int j = 0; j < INPUT_DIM; ++j) {
@@ -159,13 +149,10 @@ int ZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     }
   }
 
-  std::vector<std::pair<std::string, tf::Tensor>> network_inputs = {
-      {input_tensor_name, feature_tensor}};
-  std::vector<std::string> fetch_outputs = {policy_tensor_name,
-                                            value_tensor_name};
+  std::vector<std::pair<std::string, tf::Tensor>> network_inputs = {{input_tensor_name, feature_tensor}};
+  std::vector<std::string> fetch_outputs = {policy_tensor_name, value_tensor_name};
   std::vector<tf::Tensor> network_outputs;
-  tf::Status status =
-      m_session->Run(network_inputs, fetch_outputs, {}, &network_outputs);
+  tf::Status status = m_session->Run(network_inputs, fetch_outputs, {}, &network_outputs);
   if (!status.ok()) {
     LOG(ERROR) << "Error session run: " << status.ToString();
     return ERR_SESSION_RUN;
@@ -200,26 +187,18 @@ int ZeroModel::GetGlobalStep(int &global_step) {
 
 void ZeroModel::SetMKLEnv(const ModelConfig &model_config) {
 #if defined(_WIN32) || defined(_WIN64)
-  _putenv_s("KMP_BLOCKTIME",
-            std::to_string(model_config.kmp_blocktime()).c_str());
-  _putenv_s("KMP_SETTINGS",
-            std::to_string(model_config.kmp_settings()).c_str());
+  _putenv_s("KMP_BLOCKTIME", std::to_string(model_config.kmp_blocktime()).c_str());
+  _putenv_s("KMP_SETTINGS", std::to_string(model_config.kmp_settings()).c_str());
   _putenv_s("KMP_AFFINITY", model_config.kmp_affinity().c_str());
   if (model_config.intra_op_parallelism_threads() > 0) {
-    _putenv_s(
-        "OMP_NUM_THREADS",
-        std::to_string(model_config.intra_op_parallelism_threads()).c_str());
+    _putenv_s("OMP_NUM_THREADS", std::to_string(model_config.intra_op_parallelism_threads()).c_str());
   }
 #else
-  setenv("KMP_BLOCKTIME", std::to_string(model_config.kmp_blocktime()).c_str(),
-         0);
-  setenv("KMP_SETTINGS", std::to_string(model_config.kmp_settings()).c_str(),
-         0);
+  setenv("KMP_BLOCKTIME", std::to_string(model_config.kmp_blocktime()).c_str(), 0);
+  setenv("KMP_SETTINGS", std::to_string(model_config.kmp_settings()).c_str(), 0);
   setenv("KMP_AFFINITY", model_config.kmp_affinity().c_str(), 0);
   if (model_config.intra_op_parallelism_threads() > 0) {
-    setenv("OMP_NUM_THREADS",
-           std::to_string(model_config.intra_op_parallelism_threads()).c_str(),
-           0);
+    setenv("OMP_NUM_THREADS", std::to_string(model_config.intra_op_parallelism_threads()).c_str(), 0);
   }
 #endif
 }

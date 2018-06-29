@@ -71,8 +71,7 @@ public:
   void Reset();
   void Move(GoCoordId x, GoCoordId y);
   void GenMove(GoCoordId &x, GoCoordId &y);
-  void GenMove(GoCoordId &x, GoCoordId &y, std::vector<int> &visit_count,
-               float &v_resign);
+  void GenMove(GoCoordId &x, GoCoordId &y, std::vector<int> &visit_count, float &v_resign);
   const GoState &GetBoard();
   MCTSConfig &GetConfig();
   void SetPendingConfig(std::unique_ptr<MCTSConfig> config);
@@ -118,8 +117,7 @@ private:
 
   template <class T>
   void TransformFeatures(T &features, int mode, bool reverse = false);
-  void TransformCoord(GoCoordId &x, GoCoordId &y, int mode,
-                      bool reverse = false);
+  void TransformCoord(GoCoordId &x, GoCoordId &y, int mode, bool reverse = false);
 
   void ApplyTemperature(std::vector<float> &probs, float temperature);
 
@@ -127,8 +125,7 @@ private:
   void TTableSync(TreeNode *node);
   void TTableClear();
 
-  void EvalCacheInsert(uint64_t hash, const std::vector<float> policy,
-                       float value);
+  void EvalCacheInsert(uint64_t hash, const std::vector<float> policy, float value);
   bool EvalCacheFind(uint64_t hash, std::vector<float> &policy, float &value);
 
   bool IsPassDisable();

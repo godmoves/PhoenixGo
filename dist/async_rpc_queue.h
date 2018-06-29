@@ -72,8 +72,7 @@ public:
   void Complete(int n = -1) {
     void *got_tag;
     bool ok = false;
-    for (int i = 0;
-         (n < 0 || i < n) && !m_is_shutdown && m_cq.Next(&got_tag, &ok); ++i) {
+    for (int i = 0; (n < 0 || i < n) && !m_is_shutdown && m_cq.Next(&got_tag, &ok); ++i) {
       std::unique_ptr<AsyncClientCallBase> call(
           static_cast<AsyncClientCallBase *>(got_tag));
       --m_size;

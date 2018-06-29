@@ -33,10 +33,8 @@ fs::path GetCheckpointPath(const fs::path &train_dir) {
     PLOG(ERROR) << "Error reading " << ckpt_state_path;
     return "";
   }
-  if (!google::protobuf::TextFormat::ParseFromString(ckpt_ss.str(),
-                                                     &checkpoint_state)) {
-    LOG(ERROR) << "Error parsing " << ckpt_state_path
-               << ", buf=" << ckpt_ss.str();
+  if (!google::protobuf::TextFormat::ParseFromString(ckpt_ss.str(), &checkpoint_state)) {
+    LOG(ERROR) << "Error parsing " << ckpt_state_path << ", buf=" << ckpt_ss.str();
     return "";
   }
   fs::path checkpoint_path = checkpoint_state.model_checkpoint_path();
@@ -62,10 +60,8 @@ bool CopyCheckpoint(const fs::path &from, const fs::path &to) {
       for (std::string suffix : {".data-00000-of-00001", ".index"}) {
         fs::path from_file_path = from_ckpt_path.string() + suffix;
         fs::path to_file_path = to_ckpt_path.string() + suffix;
-        LOG(INFO) << "Copying from " << from_file_path << " to " << to_file_path
-                  << suffix;
-        fs::copy_file(from_file_path, to_file_path,
-                      fs::copy_option::overwrite_if_exists);
+        LOG(INFO) << "Copying from " << from_file_path << " to " << to_file_path << suffix;
+        fs::copy_file(from_file_path, to_file_path, fs::copy_option::overwrite_if_exists);
         fs::path symlink_path = to / ("zero.ckpt" + suffix);
         fs::remove(symlink_path);
         fs::create_symlink(to_file_path.filename(), symlink_path);
@@ -75,14 +71,12 @@ bool CopyCheckpoint(const fs::path &from, const fs::path &to) {
       checkpoint_state.set_model_checkpoint_path(to_ckpt_path.string());
       fs::path ckpt_state_path = to / "checkpoint";
       LOG(INFO) << "Writing checkpoint file " << ckpt_state_path;
-      if (!(std::ofstream(ckpt_state_path.string())
-            << checkpoint_state.DebugString())) {
+      if (!(std::ofstream(ckpt_state_path.string()) << checkpoint_state.DebugString())) {
         PLOG(ERROR) << "Error writing " << to << "/checkpoint";
         continue;
       }
 
-      fs::copy_file(from / "meta_graph", to / "meta_graph",
-                    fs::copy_option::overwrite_if_exists);
+      fs::copy_file(from / "meta_graph", to / "meta_graph", fs::copy_option::overwrite_if_exists);
       LOG(INFO) << "Copy checkpoint from " << from << " to " << to << " succ.";
       return true;
     } catch (const std::exception &e) {

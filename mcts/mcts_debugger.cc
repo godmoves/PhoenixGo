@@ -37,8 +37,7 @@ void MCTSDebugger::Debug() // call before move
 {
   if (VLOG_IS_ON(1)) {
     int ith = m_engine->m_num_moves + 1;
-    std::string ith_str =
-        std::to_string(ith) + "th move(" + "wb"[ith & 1] + ")";
+    std::string ith_str = std::to_string(ith) + "th move(" + "wb"[ith & 1] + ")";
     VLOG(1) << "========== debug info for " << ith_str << " begin ==========";
     VLOG(1) << "main move path: " << GetMainMovePath();
     int depth = m_engine->GetConfig().debugger().print_tree_depth();
@@ -63,13 +62,10 @@ std::string MCTSDebugger::GetDebugStr() {
       ", p=" + std::to_string(root->prior_prob) +
       ", v=" + std::to_string(root->value);
   if (m_engine->m_simulation_counter > 0) {
-    debug_str += ", cost " + std::to_string(m_engine->m_search_timer.fms()) +
-                 "ms" +
+    debug_str += ", cost " + std::to_string(m_engine->m_search_timer.fms()) + "ms" +
                  ", sims=" + std::to_string(m_engine->m_simulation_counter) +
-                 ", height=" +
-                 std::to_string(m_engine->m_monitor.MaxSearchTreeHeight()) +
-                 ", avg_height=" +
-                 std::to_string(m_engine->m_monitor.AvgSearchTreeHeight());
+                 ", height=" + std::to_string(m_engine->m_monitor.MaxSearchTreeHeight()) +
+                 ", avg_height=" + std::to_string(m_engine->m_monitor.AvgSearchTreeHeight());
   }
   debug_str += ", global_step=" + std::to_string(m_engine->m_model_global_step);
   return debug_str;
@@ -101,8 +97,7 @@ std::string MCTSDebugger::GetMainMovePath() {
     char buf[100];
     snprintf(buf, sizeof(buf), "(%d,%.2f,%.2f,%.2f)",
              best_ch->visit_count.load(),
-             (float)best_ch->total_action / k_action_value_base /
-                 best_ch->visit_count,
+             (float)best_ch->total_action / k_action_value_base / best_ch->visit_count,
              best_ch->prior_prob.load(), best_ch->value.load());
     moves += buf;
     node = best_ch;
@@ -139,11 +134,10 @@ void MCTSDebugger::PrintTree(int depth, int topk, const std::string &prefix) {
           moves = "," + moves;
         moves = GoFunction::IdToStr(t->move) + moves;
       }
-      VLOG(1) << prefix << moves << ": N=" << ch[i].visit_count
+      VLOG(1) << prefix << moves
+              << ": N=" << ch[i].visit_count
               << ", W=" << (float)ch[i].total_action / k_action_value_base
-              << ", Q="
-              << (float)ch[i].total_action / k_action_value_base /
-                     ch[i].visit_count
+              << ", Q=" << (float)ch[i].total_action / k_action_value_base / ch[i].visit_count
               << ", p=" << ch[i].prior_prob << ", v=" << ch[i].value;
       if (dep < depth)
         que.emplace(&ch[i], dep + 1);

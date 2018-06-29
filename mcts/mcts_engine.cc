@@ -51,11 +51,9 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
   for (int i = 0; i < m_config.num_eval_threads(); ++i) {
     std::unique_ptr<ZeroModelBase> model;
     if (m_config.enable_dist()) {
-      const auto &addr =
-          m_config.dist_svr_addrs(i % m_config.dist_svr_addrs_size());
+      const auto &addr = m_config.dist_svr_addrs(i % m_config.dist_svr_addrs_size());
       if (m_config.enable_async()) {
-        model.reset(new AsyncDistZeroModelClient(SplitStr(addr, ','),
-                                                 m_config.dist_config()));
+        model.reset(new AsyncDistZeroModelClient(SplitStr(addr, ','), m_config.dist_config()));
       } else {
         model.reset(new DistZeroModelClient(addr, m_config.dist_config()));
       }
@@ -65,8 +63,7 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
       model.reset(new ZeroModel(gpu_list[i % gpu_list.size()]));
     }
     m_eval_threads_init_wg.Add();
-    m_eval_threads.emplace_back(&MCTSEngine::EvalRoutine, this,
-                                std::move(model));
+    m_eval_threads.emplace_back(&MCTSEngine::EvalRoutine, this, std::move(model));
   }
 
   // setup search threads
@@ -138,8 +135,8 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   }
 
   int ret = m_board.Move(x, y);
-  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToId(x, y) << ", ret"
-                   << ret;
+  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToId(x, y) 
+                   << ", ret" << ret;
 
   ++m_num_moves;
   if (m_moves_str.size())
@@ -298,15 +295,14 @@ void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
   if (m_config.enable_async()) {
     m_eval_tasks_wg.Add();
     m_eval_task_queue.Push(
-        EvalTask{features, [this, callback](int ret, std::vector<float> policy,
-                                            float value) {
+        EvalTask{features, [this, callback](int ret, std::vector<float> policy, float value) {
                    callback(ret, std::move(policy), value);
                    m_eval_tasks_wg.Done();
                  }});
   } else {
     std::promise<std::tuple<int, std::vector<float>, float>> promise;
-    m_eval_task_queue.Push(EvalTask{
-        features, [&promise](int ret, std::vector<float> policy, float value) {
+    m_eval_task_queue.Push(
+        EvalTask{features, [&promise](int ret, std::vector<float> policy, float value) {
           promise.set_value(std::make_tuple(ret, std::move(policy), value));
         }});
     int ret;
@@ -329,8 +325,7 @@ void MCTSEngine::EvalRoutine(std::unique_ptr<ZeroModelBase> model) {
   LOG(INFO) << "EvalRoutine: init model done, global_step=" << global_step;
   int expect_zero = 0;
   if (!m_model_global_step.compare_exchange_strong(expect_zero, global_step)) {
-    CHECK_EQ(expect_zero, global_step)
-        << "EvalRoutine: global_step different with other routines";
+    CHECK_EQ(expect_zero, global_step) << "EvalRoutine: global_step different with other routines";
   }
 
   m_eval_threads_init_wg.Done();
@@ -341,8 +336,7 @@ void MCTSEngine::EvalRoutine(std::unique_ptr<ZeroModelBase> model) {
     std::vector<std::vector<bool>> inputs;
     std::vector<EvalCallback> callbacks;
     for (int i = 0; i < m_config.eval_batch_size(); ++i) {
-      if (m_eval_task_queue.Pop(
-              task, i ? m_config.eval_wait_batch_timeout_us() : -1)) {
+      if (m_eval_task_queue.Pop(task, i ? m_config.eval_wait_batch_timeout_us() : -1)) {
         inputs.push_back(std::move(task.features));
         callbacks.push_back(std::move(task.callback));
       } else if (m_eval_task_queue.IsClose()) {
@@ -424,8 +418,7 @@ TreeNode *MCTSEngine::SelectChild(TreeNode *node) {
   float sigma_visit_count =
       std::accumulate(visit_count, visit_count + ch_len, 0);
   if ((m_config.virtual_loss_mode() & 1) == 0) {
-    sigma_visit_count +=
-        std::accumulate(virtual_loss, virtual_loss + ch_len, 0.0f);
+    sigma_visit_count += std::accumulate(virtual_loss, virtual_loss + ch_len, 0.0f);
   }
   float sqrt_sigma_visit_count = std::sqrt(sigma_visit_count);
   sqrt_sigma_visit_count = std::max(sqrt_sigma_visit_count, 1.0f);
@@ -433,8 +426,7 @@ TreeNode *MCTSEngine::SelectChild(TreeNode *node) {
   TreeNode *best_ch = nullptr;
   float default_act = m_config.default_act();
   if (m_config.inherit_default_act() && node->visit_count) {
-    default_act =
-        -(float)node->total_action / k_action_value_base / node->visit_count;
+    default_act = -(float)node->total_action / k_action_value_base / node->visit_count;
     if (m_config.inherit_default_act_factor() > 0) {
       default_act *= m_config.inherit_default_act_factor();
     }
@@ -444,8 +436,7 @@ TreeNode *MCTSEngine::SelectChild(TreeNode *node) {
     if (visit_count[i] == 0 && virtual_loss[i] == 0) {
       act = default_act;
     } else if ((m_config.virtual_loss_mode() & 2) == 0) {
-      act = (total_action[i] - virtual_loss[i]) /
-            (visit_count[i] + virtual_loss[i]);
+      act = (total_action[i] - virtual_loss[i]) / (visit_count[i] + virtual_loss[i]);
     } else {
       act = total_action[i] / visit_count[i];
     }
@@ -622,8 +613,8 @@ bool MCTSEngine::CheckBehind() {
                                        : (float)best_ch->total_action /
                                              k_action_value_base / visit_count;
   if (mean_action < c.act_threshold()) {
-    LOG(INFO) << "CheckBehind: return true, best_move="
-              << GoFunction::IdToStr(best_move) << ", N=" << visit_count
+    LOG(INFO) << "CheckBehind: return true, best_move=" << GoFunction::IdToStr(best_move)
+              << ", N=" << visit_count
               << ", Q=" << mean_action;
     return true;
   }
@@ -636,24 +627,19 @@ int64_t MCTSEngine::GetSearchTimeoutUs() {
   if (m_byo_yomi_timer.IsEnable() && c.enable()) {
     float overtime_factor = 1.0f;
     if (m_config.unstable_overtime().enable()) {
-      overtime_factor = std::max(
-          overtime_factor, 1.0f + m_config.unstable_overtime().time_factor());
+      overtime_factor = std::max(overtime_factor, 1.0f + m_config.unstable_overtime().time_factor());
     }
     if (m_config.behind_overtime().enable()) {
-      overtime_factor = std::max(
-          overtime_factor, 1.0f + m_config.behind_overtime().time_factor());
+      overtime_factor = std::max(overtime_factor, 1.0f + m_config.behind_overtime().time_factor());
     }
     float remain_time = m_byo_yomi_timer.GetRemainTime(m_board.CurrentPlayer());
     float byo_yomi_time = m_byo_yomi_timer.GetByoYomiTime();
     float think_time;
     if (remain_time > 0) {
-      think_time =
-          remain_time / (c.c_denom() + std::max(c.c_maxply() - m_num_moves, 0));
-      think_time = std::min(
-          think_time, (remain_time - c.reserved_time()) / overtime_factor);
+      think_time = remain_time / (c.c_denom() + std::max(c.c_maxply() - m_num_moves, 0));
+      think_time = std::min(think_time, (remain_time - c.reserved_time()) / overtime_factor);
       if (m_num_moves >= c.byo_yomi_after()) {
-        think_time = std::max(
-            think_time, (byo_yomi_time - c.reserved_time()) / overtime_factor);
+        think_time = std::max(think_time, (byo_yomi_time - c.reserved_time()) / overtime_factor);
       }
     } else {
       think_time = (byo_yomi_time - c.reserved_time()) / overtime_factor;
@@ -787,10 +773,8 @@ void MCTSEngine::SearchRoutine() {
     m_monitor.MonSelectCostMs(timer.fms());
 
     int expect_unexpanded = k_unexpanded;
-    if (node->expand_state.compare_exchange_strong(expect_unexpanded,
-                                                   k_expanding)) {
-      Eval(*board, [this, node, board,
-                    timer](int ret, std::vector<float> policy, float value) {
+    if (node->expand_state.compare_exchange_strong(expect_unexpanded, k_expanding)) {
+      Eval(*board, [this, node, board, timer](int ret, std::vector<float> policy, float value) {
         if (ret) {
           node->expand_state = k_unexpanded;
           UndoVirtualLoss(node);
@@ -888,8 +872,7 @@ void MCTSEngine::DeleteRoutine() {
       Timer timer;
       int size = DeleteTree(node);
       delete node;
-      LOG(INFO) << "DeleteRoutine: deleted " << size + 1 << " nodes, cost "
-                << timer.fms() << "ms";
+      LOG(INFO) << "DeleteRoutine: deleted " << size + 1 << " nodes, cost " << timer.fms() << "ms";
     } else {
       LOG(WARNING) << "DeleteRoutine: terminate";
       return; // terminate
@@ -927,15 +910,17 @@ int MCTSEngine::GetBestMove(float &v_resign) {
     } else {
       visit_count[i] = ch[i].visit_count;
       total_action[i] = (float)ch[i].total_action / k_action_value_base;
-      mean_action[i] =
-          visit_count[i] == 0 ? 0.0f : total_action[i] / visit_count[i];
+      mean_action[i] = visit_count[i] == 0 ? 0.0f : total_action[i] / visit_count[i];
       prior_prob[i] = ch[i].prior_prob;
       value[i] = ch[i].value;
     }
 
-    VLOG(2) << "GetBestMove: " << GoFunction::IdToStr(ch[i].move) << ", N "
-            << visit_count[i] << ", W " << total_action[i] << ", Q "
-            << mean_action[i] << ", p " << prior_prob[i] << ", v " << value[i];
+    VLOG(2) << "GetBestMove: " << GoFunction::IdToStr(ch[i].move)
+            << ", N " << visit_count[i]
+            << ", W " << total_action[i]
+            << ", Q " << mean_action[i]
+            << ", p " << prior_prob[i]
+            << ", v " << value[i];
   }
   int choice = 0;
   switch (m_config.get_best_move_mode()) {
@@ -943,8 +928,7 @@ int MCTSEngine::GetBestMove(float &v_resign) {
     choice = std::max_element(visit_count, visit_count + ch_len) - visit_count;
     break;
   case 1:
-    choice =
-        std::max_element(total_action, total_action + ch_len) - total_action;
+    choice = std::max_element(total_action, total_action + ch_len) - total_action;
     break;
   case 2:
     choice = std::max_element(mean_action, mean_action + ch_len) - mean_action;
@@ -956,12 +940,10 @@ int MCTSEngine::GetBestMove(float &v_resign) {
     choice = std::max_element(value, value + ch_len) - value;
     break;
   default:
-    LOG(FATAL) << "GetBestMove: wrong get_best_move_mode "
-               << m_config.get_best_move_mode();
+    LOG(FATAL) << "GetBestMove: wrong get_best_move_mode " << m_config.get_best_move_mode();
   }
 
-  float root_action =
-      -(float)m_root->total_action / k_action_value_base / m_root->visit_count;
+  float root_action = -(float)m_root->total_action / k_action_value_base / m_root->visit_count;
   float root_value = -m_root->value;
   switch (m_config.resign_mode()) {
   case 0:
@@ -971,8 +953,7 @@ int MCTSEngine::GetBestMove(float &v_resign) {
     v_resign = std::max(root_value, value[choice]);
     break;
   case 2:
-    v_resign = std::max(root_action,
-                        *std::max_element(mean_action, mean_action + ch_len));
+    v_resign = std::max(root_action, *std::max_element(mean_action, mean_action + ch_len));
     break;
   case 3:
     v_resign = std::max(root_value, *std::max_element(value, value + ch_len));
@@ -1002,8 +983,7 @@ int MCTSEngine::GetSamplingMove(float temperature) {
       probs[i] = std::pow(ch[i].visit_count, rtemp);
     }
   }
-  int choice =
-      std::discrete_distribution<>(probs, probs + ch_len)(g_random_engine);
+  int choice = std::discrete_distribution<>(probs, probs + ch_len)(g_random_engine);
   return ch[choice].move;
 }
 
@@ -1074,6 +1054,6 @@ void MCTSEngine::ApplyTemperature(std::vector<float> &probs,
 }
 
 bool MCTSEngine::IsPassDisable() {
-  return m_config.disable_pass() || (m_config.max_gen_passes() &&
-                                     m_gen_passes >= m_config.max_gen_passes());
+  return m_config.disable_pass() || (m_config.max_gen_passes() && 
+         m_gen_passes >= m_config.max_gen_passes());
 }

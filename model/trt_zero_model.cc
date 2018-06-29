@@ -51,7 +51,10 @@ class Logger : public nvinfer1::ILogger {
 } g_logger;
 
 TrtZeroModel::TrtZeroModel(int gpu)
-    : m_engine(nullptr), m_runtime(nullptr), m_context(nullptr), m_gpu(gpu),
+    : m_engine(nullptr),
+      m_runtime(nullptr),
+      m_context(nullptr),
+      m_gpu(gpu),
       m_global_step(0) {}
 
 TrtZeroModel::~TrtZeroModel() {
@@ -83,17 +86,14 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
   }
 
   std::ostringstream model_ss(std::ios::binary);
-  if (!(model_ss << std::ifstream(tensorrt_model_path.string(),
-                                  std::ios::binary)
-                        .rdbuf())) {
+  if (!(model_ss << std::ifstream(tensorrt_model_path.string(), std::ios::binary).rdbuf())) {
     PLOG(ERROR) << "read tensorrt model '" << tensorrt_model_path << "' error";
     return ERR_READ_TRT_MODEL;
   }
   std::string model_str = model_ss.str();
 
   m_runtime = nvinfer1::createInferRuntime(g_logger);
-  m_engine = m_runtime->deserializeCudaEngine(model_str.c_str(),
-                                              model_str.size(), nullptr);
+  m_engine = m_runtime->deserializeCudaEngine(model_str.c_str(), model_str.size(), nullptr);
   if (m_engine == nullptr) {
     PLOG(ERROR) << "load cuda engine error";
     return ERR_LOAD_TRT_ENGINE;
@@ -113,8 +113,7 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
       size *= dim.d[i];
     }
     dim_str += ")";
-    LOG(INFO) << "tensorrt binding: " << m_engine->getBindingName(i) << " "
-              << dim_str;
+    LOG(INFO) << "tensorrt binding: " << m_engine->getBindingName(i) << " " << dim_str;
 
     void *buf;
     int ret = cudaMalloc(&buf, batch_size * size * sizeof(float));
@@ -125,10 +124,8 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
     m_cuda_buf.push_back(buf);
   }
 
-  if (!(std::ifstream(tensorrt_model_path.string() + ".step") >>
-        m_global_step)) {
-    LOG(WARNING) << "read global step from " << tensorrt_model_path
-                 << ".step failed";
+  if (!(std::ifstream(tensorrt_model_path.string() + ".step") >> m_global_step)) {
+    LOG(WARNING) << "read global step from " << tensorrt_model_path << ".step failed";
   }
 
   return 0;
@@ -151,8 +148,7 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
   std::vector<float> inputs_flat(batch_size * INPUT_DIM);
   for (int i = 0; i < batch_size; ++i) {
     if (inputsT[i].size() != INPUT_DIM) {
-      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got "
-                 << inputsT[i].size();
+      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputsT[i].size();
       return ERR_INVALID_INPUT;
     }
     for (int j = 0; j < INPUT_DIM; ++j) {
@@ -160,9 +156,7 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     }
   }
 
-  int ret =
-      cudaMemcpy(m_cuda_buf[0], inputs_flat.data(),
-                 inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
+  int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(), inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;
@@ -171,8 +165,7 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
   m_context->execute(batch_size, m_cuda_buf.data());
 
   std::vector<float> policy_flat(batch_size * OUTPUT_DIM);
-  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1],
-                   policy_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
+  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1], policy_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;
@@ -186,8 +179,7 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
   }
 
   value.resize(batch_size);
-  ret = cudaMemcpy(value.data(), m_cuda_buf[2], value.size() * sizeof(float),
-                   cudaMemcpyDeviceToHost);
+  ret = cudaMemcpy(value.data(), m_cuda_buf[2], value.size() * sizeof(float), cudaMemcpyDeviceToHost);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;

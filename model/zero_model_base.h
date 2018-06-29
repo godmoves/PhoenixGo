@@ -27,9 +27,7 @@
 
 class ZeroModelBase {
 public:
-  typedef std::function<void(int, std::vector<std::vector<float>>,
-                             std::vector<float>)>
-      callback_t;
+  typedef std::function<void(int, std::vector<std::vector<float>>, std::vector<float>)> callback_t;
 
   virtual ~ZeroModelBase() {}
 
@@ -65,13 +63,13 @@ public:
         }
       }
     }
-    if (float(feature[16]) > 0.5) { // this means black to move
+    if (float(feature[16]) > 0.5) {
       for (int j = 0; j < 19 * 19; ++j) {
-        new_feature[19 * 19 * 16 + j] = 1;
+        new_feature[19 * 19 * 16 + j] = 1; // this means black to move
       }
-    } else { // this means white to move
+    } else {
       for (int j = 0; j < 19 * 19; ++j) {
-        new_feature[19 * 19 * 17 + j] = 1;
+        new_feature[19 * 19 * 17 + j] = 1; // this means white to move
       }
     }
     return new_feature;

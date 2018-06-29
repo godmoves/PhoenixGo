@@ -111,20 +111,30 @@ public:
     m_avg_backup_cost_ms.Update(cost_ms);
   }
 
-  void MonEvalBatchSize(int batch_size) { m_avg_batch_size.Update(batch_size); }
+  void MonEvalBatchSize(int batch_size) {
+    m_avg_batch_size.Update(batch_size);
+  }
 
-  void IncEvalTimeout() { ++m_eval_timeout; }
+  void IncEvalTimeout() {
+    ++m_eval_timeout;
+  }
 
-  void IncSelectSameNode() { ++m_select_same_node; }
+  void IncSelectSameNode() {
+    ++m_select_same_node;
+  }
 
   void MonSearchTreeHeight(int height) {
     UpdateMax(m_max_tree_height, height);
     m_avg_tree_height.Update(height);
   }
 
-  void MonTaskQueueSize(int size) { m_avg_task_queue_size.Update(size); }
+  void MonTaskQueueSize(int size) {
+    m_avg_task_queue_size.Update(size);
+  }
 
-  void MonRpcQueueSize(int size) { m_avg_rpc_queue_size.Update(size); }
+  void MonRpcQueueSize(int size) {
+    m_avg_rpc_queue_size.Update(size);
+  }
 
 private:
   float m_max_eval_cost_ms;
@@ -221,26 +231,42 @@ private:
   }
 
 public:
-  void MonEvalCostMs(float cost_ms) { GetLocal().MonEvalCostMs(cost_ms); }
+  void MonEvalCostMs(float cost_ms) {
+    GetLocal().MonEvalCostMs(cost_ms);
+  }
   void MonEvalCostMsPerBatch(float cost_ms) {
     GetLocal().MonEvalCostMsPerBatch(cost_ms);
   }
   void MonSimulationCostMs(float cost_ms) {
     GetLocal().MonSimulationCostMs(cost_ms);
   }
-  void MonSelectCostMs(float cost_ms) { GetLocal().MonSelectCostMs(cost_ms); }
-  void MonExpandCostMs(float cost_ms) { GetLocal().MonExpandCostMs(cost_ms); }
-  void MonBackupCostMs(float cost_ms) { GetLocal().MonBackupCostMs(cost_ms); }
+  void MonSelectCostMs(float cost_ms) {
+    GetLocal().MonSelectCostMs(cost_ms);
+  }
+  void MonExpandCostMs(float cost_ms) {
+    GetLocal().MonExpandCostMs(cost_ms);
+  }
+  void MonBackupCostMs(float cost_ms) {
+    GetLocal().MonBackupCostMs(cost_ms);
+  }
   void MonEvalBatchSize(int batch_size) {
     GetLocal().MonEvalBatchSize(batch_size);
   }
-  void IncEvalTimeout() { GetLocal().IncEvalTimeout(); }
-  void IncSelectSameNode() { GetLocal().IncSelectSameNode(); }
+  void IncEvalTimeout() {
+    GetLocal().IncEvalTimeout();
+  }
+  void IncSelectSameNode() {
+    GetLocal().IncSelectSameNode();
+  }
   void MonSearchTreeHeight(int height) {
     GetLocal().MonSearchTreeHeight(height);
   }
-  void MonTaskQueueSize(int size) { GetLocal().MonTaskQueueSize(size); }
-  void MonRpcQueueSize(int size) { GetLocal().MonRpcQueueSize(size); }
+  void MonTaskQueueSize(int size) {
+    GetLocal().MonTaskQueueSize(size);
+  }
+  void MonRpcQueueSize(int size) {
+    GetLocal().MonRpcQueueSize(size);
+  }
 
   float MaxEvalCostMs() {
     return GetGlobalMax(&LocalMonitor::m_max_eval_cost_ms);

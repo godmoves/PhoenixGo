@@ -41,11 +41,9 @@ float Timer::fsec() const {
 }
 
 float Timer::fms() const {
-  return std::chrono::duration<float, std::milli>(clock::now() - m_start)
-      .count();
+  return std::chrono::duration<float, std::milli>(clock::now() - m_start).count();
 }
 
 float Timer::fus() const {
-  return std::chrono::duration<float, std::micro>(clock::now() - m_start)
-      .count();
+  return std::chrono::duration<float, std::micro>(clock::now() - m_start).count();
 }

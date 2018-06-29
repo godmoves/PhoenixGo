@@ -77,10 +77,9 @@ struct GoBlock {
   GoStone *stones;      // Stone detail
   bool in_use;          // Block is in use
 
-  uint64_t liberty_state[GoComm::LIBERTY_STATE_SIZE]; // Liberties
-  uint64_t
-      virtual_liberty_state[GoComm::LIBERTY_STATE_SIZE]; // Virtual liberties
-  uint64_t stone_state[GoComm::BOARD_STATE_SIZE];        // Stones
+  uint64_t liberty_state[GoComm::LIBERTY_STATE_SIZE];         // Liberties
+  uint64_t virtual_liberty_state[GoComm::LIBERTY_STATE_SIZE]; // Virtual liberties
+  uint64_t stone_state[GoComm::BOARD_STATE_SIZE];             // Stones
 
   // inline void SetSelfId(int id) { self_id = id; }
 
@@ -158,8 +157,7 @@ struct GoBlock {
       }
     }
     // CHECK(false) << "Wow~ A block without liberty found! stone size: " <<
-    // stone_count
-    // << "\tstone color: " << GoComm::COLOR_STR[color];
+    // stone_count << "\tstone color: " << GoComm::COLOR_STR[color];
     return GoComm::COORD_UNSET;
   }
 
@@ -181,10 +179,9 @@ struct GoBlock {
   // for merging block-a into this
   int TryMergeBlocks(const GoBlock &a) {
     // CHECK(GoComm::SIZE_NONE != a.stone_count) << "block \"a\" is empty";
-    // CHECK(GoComm::SIZE_NONE != this->stone_count) << "block \"this\" is
-    // empty";
-    // CHECK_NE(this->self_id, a.self_id) << "Trying to merge the same block, id
-    // " << this->self_id;
+    // CHECK(GoComm::SIZE_NONE != this->stone_count) << "block \"this\" is empty";
+    // CHECK_NE(this->self_id, a.self_id) << "Trying to merge the same block, id" << this->self_id;
+
     // merge liberty
     this->stone_count += a.stone_count;
     for (GoSize i = 0; i < GoComm::LIBERTY_STATE_SIZE; ++i) {
@@ -199,10 +196,9 @@ struct GoBlock {
 
   void MergeBlocks(const GoBlock &a) {
     // CHECK(GoComm::SIZE_NONE != a.stone_count) << "block \"a\" is empty";
-    // CHECK(GoComm::SIZE_NONE != this->stone_count) << "block \"this\" is
-    // empty";
-    // CHECK_NE(this->self_id, a.self_id) << "Trying to merge the same block, id
-    // " << this->self_id;
+    // CHECK(GoComm::SIZE_NONE != this->stone_count) << "block \"this\" is empty";
+    // CHECK_NE(this->self_id, a.self_id) << "Trying to merge the same block, id" << this->self_id;
+
     // merge stones
     a.GetTail()->next_id = this->GetHead()->self_id;
     this->head = a.head;
@@ -248,8 +244,7 @@ public:
   inline bool IsLegal(const GoCoordId id) const {
     return GoFunction::IsPass(id) || legal_move_map_[id];
   }
-  // inline bool IsLegal(const GoCoordId id) const { return legal_move_map_[id];
-  // }
+  // inline bool IsLegal(const GoCoordId id) const { return legal_move_map_[id]; }
 
   bool IsLegal(const GoCoordId x, const GoCoordId y) {
     return IsLegal(GoFunction::CoordToId(x, y));

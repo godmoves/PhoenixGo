@@ -34,15 +34,12 @@ namespace asio = boost::asio;
 
 DEFINE_string(config_path, "", "Path of mcts config file.");
 DEFINE_string(gpu_list, "", "List of gpus used by neural network.");
-DEFINE_int32(intra_op_parallelism_threads, 0,
-             "Number of tf's intra op threads");
-DEFINE_int32(inter_op_parallelism_threads, 0,
-             "Number of tf's inter op threads");
+DEFINE_int32(intra_op_parallelism_threads, 0, "Number of tf's intra op threads");
+DEFINE_int32(inter_op_parallelism_threads, 0, "Number of tf's inter op threads");
 DEFINE_string(init_moves, "", "Initialize Go board with init_moves.");
 DEFINE_bool(gtp, false, "Run as gtp server.");
 DEFINE_int32(listen_port, 0, "Listen which port.");
-DEFINE_string(allow_ip, "",
-              "List of client ip allowed to connect, seperated by comma.");
+DEFINE_string(allow_ip, "", "List of client ip allowed to connect, seperated by comma.");
 #if !defined(_WIN32) && !defined(_WIN64)
 DEFINE_bool(fork_per_request, true, "Fork for each request or not.");
 #endif
@@ -75,8 +72,7 @@ std::unique_ptr<MCTSConfig> InitConfig(const std::string &config_path) {
 
 std::unique_ptr<MCTSEngine> InitEngine(const std::string &config_path) {
   auto config = InitConfig(config_path);
-  CHECK(config != nullptr) << "Load mcts config file '" << config_path
-                           << "' failed";
+  CHECK(config != nullptr) << "Load mcts config file '" << config_path << "' failed";
   LOG(INFO) << "load config succ: \n" << config->DebugString();
   return std::unique_ptr<MCTSEngine>(new MCTSEngine(*config));
 }
@@ -87,8 +83,7 @@ void ReloadConfig(MCTSEngine &engine, const std::string &config_path) {
     LOG(ERROR) << "Load mcts config file '" << config_path << "' failed";
     return;
   }
-  if (google::protobuf::util::MessageDifferencer::Equals(engine.GetConfig(),
-                                                         *config)) {
+  if (google::protobuf::util::MessageDifferencer::Equals(engine.GetConfig(), *config)) {
     LOG(INFO) << "Config hasn't changed";
   } else {
     engine.SetPendingConfig(std::move(config));
@@ -110,8 +105,7 @@ std::string EncodeMove(GoCoordId x, GoCoordId y) {
   if (GoFunction::IsResign(x, y)) {
     return "resign";
   }
-  return std::string({x > 7 ? char('B' + x) : char('A' + x)}) +
-         std::to_string(y + 1);
+  return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(y + 1);
 }
 
 void DecodeMove(const std::string &s, GoCoordId &x, GoCoordId &y) {
@@ -319,9 +313,8 @@ void GenMoveOnce() {
   GoCoordId x, y;
   engine->GenMove(x, y);
   engine->Move(x, y);
-  printf(
-      "{\"Px\":%d, \"Py\":%d, \"Result\":0, \"Board\":\"\", \"Debug\":\"%s\"}",
-      (int)x, (int)y, engine->GetDebugger().GetLastMoveDebugStr().c_str());
+  printf("{\"Px\":%d, \"Py\":%d, \"Result\":0, \"Board\":\"\", \"Debug\":\"%s\"}",
+         (int)x, (int)y, engine->GetDebugger().GetLastMoveDebugStr().c_str());
 }
 
 void GTPServingOnPort(int port) {
@@ -329,8 +322,7 @@ void GTPServingOnPort(int port) {
   asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), port);
   asio::ip::tcp::acceptor acceptor(io_service, endpoint);
 
-  auto allow_ip = FLAGS_allow_ip.size() ? SplitStr(FLAGS_allow_ip, ',')
-                                        : std::vector<std::string>();
+  auto allow_ip = FLAGS_allow_ip.size() ? SplitStr(FLAGS_allow_ip, ',') : std::vector<std::string>();
   for (;;) {
     LOG(INFO) << "waiting connection";
 
@@ -340,8 +332,7 @@ void GTPServingOnPort(int port) {
 
     std::string ip = peer.address().to_string();
     LOG(INFO) << "accept " << ip;
-    if (allow_ip.size() &&
-        std::find(allow_ip.begin(), allow_ip.end(), ip) == allow_ip.end()) {
+    if (allow_ip.size() && std::find(allow_ip.begin(), allow_ip.end(), ip) == allow_ip.end()) {
       LOG(ERROR) << "client ip " << ip << " not in whitelist, reject";
       continue;
     }
