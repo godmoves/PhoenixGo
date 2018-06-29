@@ -42,7 +42,7 @@ find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-develope
 You need to install `tensorrt` by tar package to get python support, but now only python 2.7 
 ans python 3.5 are supported. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
 
-### Build uff_to_plan and convert format
+### Build uff_to_plan and convert weight
 
 First `git clone` this repo, then execute the commands below:
 ```
@@ -106,10 +106,10 @@ $ scripts/start.sh
 
 `start.sh` will detect the number of GPUs, run `mcts_main` with proper config file, and write log files in directory `log`.
 You could also use a customized config by running `scripts/start.sh {config_path}`.
-See also [#configure-guide](#configure-guide).
+See also [configure-guide](#configure-guide).
 
 Furthermore, if you want to fully control all the options of `mcts_main` (such as, changing log destination),
-you could also run `bazel-bin/mcts/mcts_main` directly. See also [#command-line-options](#command-line-options).
+you could also run `bazel-bin/mcts/mcts_main` directly. See also [command-line-options](#command-line-options).
 
 The engine supports the GTP protocol, means it could be used with a GUI with GTP capability,
 such as [Sabaki](http://sabaki.yichuanshen.de).
@@ -222,7 +222,6 @@ then you could read your log from `{log_dir}/mcts_main.INFO`.
 
 Setting GTP engine in Sabaki's menu: `Engines -> Manage Engines`, fill `Path` with path of `start.sh`.
 Click `Engines -> Attach` to use the engine in your game.
-See also [#22](https://github.com/Tencent/PhoenixGo/issues/22).
 
 **4. How make PhoenixGo think with longer/shorter time?**
 
