@@ -62,7 +62,8 @@ with open(sys.argv[1], 'r') as f:
     tf_model = tfprocess.replace_weights(weights)
     uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
                                     input_nodes=["inputs"], output_filename=UFF_FILENAME)
-    graphToPlan(UFF_FILENAME, "leelaz-model-0.PLAN", "inputs", "policy", "value", 4, 1 << 20, "float")
+    graphToPlan(UFF_FILENAME, "leelaz-model-0.PLAN", "inputs",
+                "policy", "value", 4, 1 << 20, "float")
 
     path = os.path.join(os.getcwd(), "leelaz-model")
     save_path = tfprocess.saver.save(tfprocess.session, path, global_step=0)
