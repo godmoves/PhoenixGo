@@ -1,3 +1,8 @@
+# Leela Zero X PhoenixGo
+
+
+## Info about PhoenixGo
+
 ![PhoenixGo](images/logo.jpg?raw=true)
 
 **PhoenixGo** is an Go AI program which implement the AlphaGo Zero paper
@@ -18,6 +23,45 @@ If you use PhoenixGo in your research, please consider citing the library as fol
   howpublished = {\url{https://github.com/Tencent/PhoenixGo}}
 }
 ```
+
+## Convert Leela Zero weight
+
+### Dependencies
+
+- python 3.5  
+- numpy  
+- pycuda  
+- tensorflow 1.5+  
+- [tensorrt 3.0.4](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
+- [uff](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
+- cmake 3.1+  
+- gcc  
+
+Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
+find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
+You need to install `tensorrt` by tar package to get python support, but now only python 2.7 
+ans python 3.5 are supported. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
+
+### Build uff_to_plan and convert format
+
+First `git clone` this repo, then execute the commands below:
+```
+$ cd scripts/u2p
+$ mkdir build && cd build
+$ cmake ..
+$ cd ../..
+$ python net_to_model.py <lz-weight-name>
+```
+You will get the `.uff`, `.PLAN` and the Tensorflow format of Leela Zero weight. Copy them to `ckpt` folder.
+
+### Modify the configure file
+
+You will need to modify the configure files in `etc` to use the converted LZ weight. 
+
+For example, if you want to use the TensorRT version, you need to change `tensorrt_model_path` in
+`mcts_*gpu.conf` like `tensorrt_model_path: "leelaz-model-0.PLAN"`. Or if you want to use the no TensorRT
+version, then add `meta_graph_path: "leelaz-model-0.meta"` into `model_config` and change the content of 
+`ckpt/checkpoint` into `model_checkpoint_path: "leelaz-model-0"`.
 
 ## Building and Running
 
@@ -92,30 +136,6 @@ and run the distributed master:
 ```
 $ scripts/start.sh etc/mcts_dist.conf
 ```
-
-### On macOS
-
-**Note: Tensorflow stop providing GPU support on macOS since 1.2.0, so you are only able to run on CPU.**
-
-#### Use Pre-built Binary
-
-Download and extract https://github.com/Tencent/PhoenixGo/releases/download/mac-x64-cpuonly-v1/PhoenixGo-mac-x64-cpuonly-v1.tgz
-
-Follow the document: using_phoenixgo_on_mac.pdf
-
-#### Building from Source
-
-Same as Linux.
-
-### On Windows
-
-#### Use Pre-built Binary
-
-Download and extract https://github.com/Tencent/PhoenixGo/releases/download/win-x64-gpu-v1/PhoenixGo-win-x64-gpu-v1.zip
-
-Or CPU-only version https://github.com/Tencent/PhoenixGo/releases/download/win-x64-cpuonly-v1/PhoenixGo-win-x64-cpuonly-v1.zip
-
-Follow the document: how to install phoenixgo.pdf
 
 ## Configure Guide
 
