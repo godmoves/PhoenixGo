@@ -26,9 +26,9 @@ int main() {
     const int INPUT_DIM = 18 * 19 * 19;
     const int OUTPUT_DIM = 362;
 
-    std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.PLAN";
+    std::string tensorrt_model_path = "../leelaz-model-0.PLAN";
     // std::string tensorrt_model_path = "";
-    std::string uff_model_name = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.uff";
+    std::string uff_model_name = "../leelaz-model-0.uff";
 
     nvinfer1::IBuilder *builder;
     nvinfer1::INetworkDefinition *network;
@@ -90,22 +90,14 @@ int main() {
     }
 
     std::vector<float> feature(19 * 19 * 18, 0);
-    // for (int i = 0; i < 19; ++i) {
-    //     for (int j = 0; j < 19; ++j) {
-    //         for (int k = 0; k < 18; ++k) {
-    //             if (k == 1)
-    //                 feature[19*18*i + 18*j + k] = 1;
-    //         }
-    //     }
-    // }
-    // for (int i = 0; i < 18; ++i) {
-    //     for (int j = 0; j < 19; ++j) {
-    //         for (int k = 0; k < 19; ++k) {
-    //             if (i == 16)
-    //                 feature[19*19*i + 19*j + k] = 1;
-    //         }
-    //     }
-    // }
+    for (int i = 0; i < 18; ++i) {
+        for (int j = 0; j < 19; ++j) {
+            for (int k = 0; k < 19; ++k) {
+                if (i == 16)
+                    feature[19*19*i + 19*j + k] = 1;
+            }
+        }
+    }
     std::vector<std::vector<float>> inputs;
     inputs.push_back(feature);
 
