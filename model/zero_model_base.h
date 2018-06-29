@@ -50,6 +50,28 @@ class ZeroModelBase
 
     virtual void Wait() {}
 
+    std::vector<float> Transpose(std::vector<bool> feature) {
+        std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
+        for (int i = 0; i < 8; ++i) {
+            for (int j = 0; j < 19; ++j) {
+                for (int k = 0; k < 19; ++k) {
+                    new_feature[k + 19 * j + 361 * i] = feature[(2 * i) + 17 * (19 * j + k)];
+                    new_feature[k + 19 * j + 361 * (i + 8)] = feature[(2 * i + 1) + 17 * (19 * j + k)];
+                }
+            }
+        }
+        if (float(feature[16]) > 0.5) {     // this means black to move
+            for (int j = 0; j < 19 * 19; ++j) {
+                new_feature[19 * 19 * 16 + j] = 1;
+            }
+        } else {                            // this means white to move
+            for (int j = 0; j < 19 * 19; ++j) {
+                new_feature[19 * 19 * 17 + j] = 1;
+            }
+        }
+        return new_feature;
+    }
+
     enum {
         INPUT_DIM  = 19 * 19 * 18,
         OUTPUT_DIM = 19 * 19 + 1,

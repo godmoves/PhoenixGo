@@ -123,32 +123,6 @@ int TrtZeroModel::Init(const ModelConfig &model_config)
     return 0;
 }
 
-std::vector<float> transpose(std::vector<bool> feature) {
-    std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
-    for (int i=0; i<8; ++i) {
-        for (int j=0; j<19; ++j) {
-            for (int k=0; k<19; ++k) {
-                new_feature[k + 19*j + 19*19*i] = feature[(2*i) + 17*(19*j + k)];
-                new_feature[k + 19*j + 19*19*(i+8)] = feature[(2*i+1) + 17*(19*j + k)];
-            }
-        }
-    }
-    if (float(feature[16]) > 0.5) { // this means black to  move
-        for (int j=0; j<19; ++j) {
-            for (int k=0; k<19; ++k) {
-                new_feature[k + 19*j + 19*19*16] = 1;
-            }
-        }
-    } else {
-        for (int j=0; j<19; ++j) {
-            for (int k=0; k<19; ++k) {
-                new_feature[k + 19*j + 19*19*17] = 1;
-            }
-        }
-    }
-    return new_feature;
-}
-
 int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
                           std::vector<std::vector<float>> &policy, std::vector<float> &value)
 {
@@ -160,7 +134,7 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
 
     std::vector<std::vector<float>> inputsT;
     for (int i = 0; i < batch_size; ++i) {
-        inputsT.push_back(transpose(inputs[i]));
+        inputsT.push_back(Transpose(inputs[i]));
     }
 
     std::vector<float> inputs_flat(batch_size * INPUT_DIM);
