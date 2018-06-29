@@ -16,9 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import numpy as np
-import time
 import tensorflow as tf
 
 
@@ -45,29 +43,6 @@ def conv2d(x, W):
                         strides=[1, 1, 1, 1], padding='SAME')
 
 
-# Restore session from checkpoint. It silently ignore mis-matches
-# between the checkpoint and the graph. Specifically
-# 1. values in the checkpoint for which there is no corresponding variable.
-# 2. variables in the graph for which there is no specified value in the
-#    checkpoint.
-# 3. values where the checkpoint shape differs from the variable shape.
-# (variables without a value in the checkpoint are left at their default
-# initialized value)
-def optimistic_restore(session, save_file, graph=tf.get_default_graph()):
-    reader = tf.train.NewCheckpointReader(save_file)
-    saved_shapes = reader.get_variable_to_shape_map()
-    var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
-                        if var.name.split(':')[0] in saved_shapes])
-    restore_vars = []
-    for var_name, saved_var_name in var_names:
-        curr_var = graph.get_tensor_by_name(var_name)
-        var_shape = curr_var.get_shape().as_list()
-        if var_shape == saved_shapes[saved_var_name]:
-            restore_vars.append(curr_var)
-    opt_saver = tf.train.Saver(restore_vars)
-    opt_saver.restore(session, save_file)
-
-
 class TFProcess:
     def __init__(self):
         # Network structure
@@ -77,120 +52,13 @@ class TFProcess:
         # For exporting
         self.weights = []
 
-        # Output weight file with averaged weights
-        self.swa_enabled = True
-        # Net sampling rate (e.g 2 == every 2nd network).
-        self.swa_c = 1
-        # Take an exponentially weighted moving average over this
-        # many networks. Under the SWA assumptions, this will reduce
-        # the distance to the optimal value by a factor of 1/sqrt(n)
-        self.swa_max_n = 16
-        # Recalculate SWA weight batchnorm means and variances
-        self.swa_recalc_bn = True
-
         self.batch_norm_count = 0
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.75)
         config = tf.ConfigProto(gpu_options=gpu_options)
         self.session = tf.Session(config=config)
 
-        # self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
-
-    def init(self, dataset, train_iterator, test_iterator):
-        # TF variables
-        self.handle = tf.placeholder(tf.string, shape=[])
-        iterator = tf.data.Iterator.from_string_handle(
-            self.handle, dataset.output_types, dataset.output_shapes)
-        self.next_batch = iterator.get_next()
-        self.train_handle = self.session.run(train_iterator.string_handle())
-        self.test_handle = self.session.run(test_iterator.string_handle())
-        self.init_net(self.next_batch)
-
-    def init_net(self, next_batch):
-        self.x = next_batch[0]   # tf.placeholder(tf.float32, [None, 18, 19 * 19])
-        self.y_ = next_batch[1]  # tf.placeholder(tf.float32, [None, 362])
-        self.z_ = next_batch[2]  # tf.placeholder(tf.float32, [None, 1])
-        self.y_conv, self.z_conv = self.construct_net(self.x)
-
-        if self.swa_enabled is True:
-            # Count of networks accumulated into SWA
-            self.swa_count = tf.Variable(0., name='swa_count', trainable=False)
-            # Count of networks to skip
-            self.swa_skip = tf.Variable(
-                self.swa_c, name='swa_skip', trainable=False)
-            # Build the SWA variables and accumulators
-            accum = []
-            load = []
-            n = self.swa_count
-            for w in self.weights:
-                name = w.name.split(':')[0]
-                var = tf.Variable(tf.zeros(shape=w.shape),
-                                  name='swa/' + name, trainable=False)
-                accum.append(
-                    tf.assign(var, var * (n / (n + 1.)) + w * (1. / (n + 1.))))
-                load.append(tf.assign(w, var))
-            with tf.control_dependencies(accum):
-                self.swa_accum_op = tf.assign_add(n, 1.)
-            self.swa_load_op = tf.group(*load)
-
-        # Calculate loss on policy head
-        cross_entropy = \
-            tf.nn.softmax_cross_entropy_with_logits(labels=self.y_,
-                                                    logits=self.y_conv)
-        self.policy_loss = tf.reduce_mean(cross_entropy)
-
-        # Loss on value head
-        self.mse_loss = \
-            tf.reduce_mean(tf.squared_difference(self.z_, self.z_conv))
-
-        # Regularizer
-        regularizer = tf.contrib.layers.l2_regularizer(scale=0.0001)
-        reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        self.reg_term = \
-            tf.contrib.layers.apply_regularization(regularizer, reg_variables)
-
-        # For training from a (smaller) dataset of strong players, you will
-        # want to reduce the factor in front of self.mse_loss here.
-        self.loss = 1.0 * self.policy_loss + 1.0 * self.mse_loss + self.reg_term
-
-        # You need to change the learning rate here if you are training
-        # from a self-play training set, for example start with 0.005 instead.
-        opt_op = tf.train.MomentumOptimizer(
-            learning_rate=0.05, momentum=0.9, use_nesterov=True)
-
-        self.update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(self.update_ops):
-            self.train_op = \
-                opt_op.minimize(self.loss, global_step=self.global_step)
-
-        correct_prediction = \
-            tf.equal(tf.argmax(self.y_conv, 1), tf.argmax(self.y_, 1))
-        correct_prediction = tf.cast(correct_prediction, tf.float32)
-        self.accuracy = tf.reduce_mean(correct_prediction)
-
-        self.avg_policy_loss = []
-        self.avg_mse_loss = []
-        self.avg_reg_term = []
-        self.time_start = None
-
-        # Summary part
-        self.test_writer = tf.summary.FileWriter(
-            os.path.join(os.getcwd(), "leelalogs/test"), self.session.graph)
-        self.train_writer = tf.summary.FileWriter(
-            os.path.join(os.getcwd(), "leelalogs/train"), self.session.graph)
-
-        # self.init = tf.global_variables_initializer()
-        # self.saver = tf.train.Saver()
-
-        # self.session.run(self.init)
-
-        # graphdef = tf.get_default_graph().as_graph_def()
-        # frozen_graph = tf.graph_util.convert_variables_to_constants(self.session,
-        #                                                             graphdef,
-        #                                                             ["policy", "value"])
-
-        # return tf.graph_util.remove_training_nodes(frozen_graph)
 
     def replace_weights(self, new_weights):
         for e, weights in enumerate(self.weights):
@@ -229,124 +97,6 @@ class TFProcess:
                 # Biases, batchnorm etc
                 new_weight = tf.constant(new_weights[e], shape=weights.shape)
                 self.session.run(tf.assign(weights, new_weight))
-        # This should result in identical file to the starting one
-        # self.save_leelaz_weights('restored.txt')
-
-    def restore(self, file):
-        print("Restoring from {0}".format(file))
-        optimistic_restore(self.session, file)
-
-    def process(self, batch_size):
-        if not self.time_start:
-            self.time_start = time.time()
-        # Run training for this batch
-        policy_loss, mse_loss, reg_term, _, _ = self.session.run(
-            [self.policy_loss, self.mse_loss, self.reg_term, self.train_op,
-                self.next_batch],
-            feed_dict={self.handle: self.train_handle})
-        steps = tf.train.global_step(self.session, self.global_step)
-        # Keep running averages
-        # Google's paper scales MSE by 1/4 to a [0, 1] range, so do the same to
-        # get comparable values.
-        mse_loss = mse_loss / 4.0
-        self.avg_policy_loss.append(policy_loss)
-        self.avg_mse_loss.append(mse_loss)
-        self.avg_reg_term.append(reg_term)
-        if steps % 1000 == 0:
-            time_end = time.time()
-            speed = 0
-            if self.time_start:
-                elapsed = time_end - self.time_start
-                speed = batch_size * (1000.0 / elapsed)
-            avg_policy_loss = np.mean(self.avg_policy_loss or [0])
-            avg_mse_loss = np.mean(self.avg_mse_loss or [0])
-            avg_reg_term = np.mean(self.avg_reg_term or [0])
-            print("step {}, policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
-                steps, avg_policy_loss, avg_mse_loss, avg_reg_term,
-                # Scale mse_loss back to the original to reflect the actual
-                # value being optimized.
-                # If you changed the factor in the loss formula above, you need
-                # to change it here as well for correct outputs.
-                avg_policy_loss + 1.0 * 4.0 * avg_mse_loss + avg_reg_term,
-                speed))
-            train_summaries = tf.Summary(value=[
-                tf.Summary.Value(tag="Policy Loss", simple_value=avg_policy_loss),
-                tf.Summary.Value(tag="MSE Loss", simple_value=avg_mse_loss)])
-            self.train_writer.add_summary(train_summaries, steps)
-            self.time_start = time_end
-            self.avg_policy_loss, self.avg_mse_loss, self.avg_reg_term = [], [], []
-        if steps % 8000 == 0:
-            sum_accuracy = 0
-            sum_mse = 0
-            sum_policy = 0
-            test_batches = 800
-            for _ in range(0, test_batches):
-                test_policy, test_accuracy, test_mse, _ = self.session.run(
-                    [self.policy_loss, self.accuracy, self.mse_loss,
-                     self.next_batch],
-                    feed_dict={self.handle: self.test_handle})
-                sum_accuracy += test_accuracy
-                sum_mse += test_mse
-                sum_policy += test_policy
-            sum_accuracy /= test_batches
-            sum_policy /= test_batches
-            # Additionally rescale to [0, 1] so divide by 4
-            sum_mse /= (4.0 * test_batches)
-            test_summaries = tf.Summary(value=[
-                tf.Summary.Value(tag="Accuracy", simple_value=sum_accuracy),
-                tf.Summary.Value(tag="Policy Loss", simple_value=sum_policy),
-                tf.Summary.Value(tag="MSE Loss", simple_value=sum_mse)])
-            self.test_writer.add_summary(test_summaries, steps)
-            print("step {}, policy={:g} training accuracy={:g}%, mse={:g}".
-                  format(steps, sum_policy, sum_accuracy * 100.0, sum_mse))
-
-            path = os.path.join(os.getcwd(), "leelaz-model")
-            leela_path = path + "-" + str(steps) + ".txt"
-            self.save_leelaz_weights(leela_path)
-            print("Leela weights saved to {}".format(leela_path))
-
-            if self.swa_enabled:
-                self.save_swa_network(steps, path, leela_path)
-
-            save_path = self.saver.save(self.session, path, global_step=steps)
-            print("Model saved in file: {}".format(save_path))
-
-    def save_leelaz_weights(self, filename):
-        with open(filename, "w") as file:
-            # Version tag
-            file.write("1")
-            for weights in self.weights:
-                # Newline unless last line (single bias)
-                file.write("\n")
-                work_weights = None
-                if weights.name.endswith('/batch_normalization/beta:0'):
-                    # Batch norm beta needs to be converted to biases before
-                    # the batch norm for backwards compatibility reasons
-                    var_key = weights.name.replace('beta', 'moving_variance')
-                    var = tf.get_default_graph().get_tensor_by_name(var_key)
-                    work_weights = tf.multiply(
-                        weights, tf.sqrt(var + tf.constant(1e-5)))
-                elif weights.shape.ndims == 4:
-                    # Convolution weights need a transpose
-                    #
-                    # TF (kYXInputOutput)
-                    # [filter_height, filter_width, in_channels, out_channels]
-                    #
-                    # Leela/cuDNN/Caffe (kOutputInputYX)
-                    # [output, input, filter_size, filter_size]
-                    work_weights = tf.transpose(weights, [3, 2, 0, 1])
-                elif weights.shape.ndims == 2:
-                    # Fully connected layers are [in, out] in TF
-                    #
-                    # [out, in] in Leela
-                    #
-                    work_weights = tf.transpose(weights, [1, 0])
-                else:
-                    # Biases, batchnorm etc
-                    work_weights = weights
-                nparray = work_weights.eval(session=self.session)
-                wt_str = [str(wt) for wt in np.ravel(nparray)]
-                file.write(" ".join(wt_str))
 
     def get_batchnorm_key(self):
         result = "bn" + str(self.batch_norm_count)
@@ -443,8 +193,6 @@ class TFProcess:
     def construct_net(self, planes):
         # NCHW format
         # batch, 18 channels, 19 x 19
-
-        # x_planes = tf.placeholder(tf.float32, [-1, 18, 19 * 19], name="inputs")
         x_planes = tf.reshape(planes, [-1, 18, 19, 19])
 
         # Input convolution
@@ -464,7 +212,7 @@ class TFProcess:
         b_fc1 = bias_variable([(19 * 19) + 1])
         self.weights.append(W_fc1)
         self.weights.append(b_fc1)
-        h_fc1 = tf.nn.softmax(
+        tf.nn.softmax(
             tf.add(tf.matmul(h_conv_pol_flat, W_fc1), b_fc1), name="policy")
 
         # Value head
@@ -481,7 +229,7 @@ class TFProcess:
         b_fc3 = bias_variable([1])
         self.weights.append(W_fc3)
         self.weights.append(b_fc3)
-        h_fc3 = tf.nn.tanh(
+        tf.nn.tanh(
             tf.add(tf.matmul(h_fc2, W_fc3), b_fc3), name="value")
 
         self.init = tf.global_variables_initializer()
@@ -495,57 +243,3 @@ class TFProcess:
                                                                     ["policy", "value"])
 
         return tf.graph_util.remove_training_nodes(frozen_graph)
-
-    def snap_save(self):
-        # Save a snapshot of all the variables in the current graph.
-        if not hasattr(self, 'save_op'):
-            save_ops = []
-            rest_ops = []
-            for var in self.weights:
-                if isinstance(var, str):
-                    var = tf.get_default_graph().get_tensor_by_name(var)
-                name = var.name.split(':')[0]
-                v = tf.Variable(var, name='save/' + name, trainable=False)
-                save_ops.append(tf.assign(v, var))
-                rest_ops.append(tf.assign(var, v))
-            self.save_op = tf.group(*save_ops)
-            self.restore_op = tf.group(*rest_ops)
-        self.session.run(self.save_op)
-
-    def snap_restore(self):
-        # Restore variables in the current graph from the snapshot.
-        self.session.run(self.restore_op)
-
-    def save_swa_network(self, steps, path, leela_path):
-        # Sample 1 in self.swa_c of the networks. Compute in this way so
-        # that it's safe to change the value of self.swa_c
-        rem = self.session.run(tf.assign_add(self.swa_skip, -1))
-        if rem > 0:
-            return
-        self.swa_skip.load(self.swa_c, self.session)
-
-        # Add the current weight vars to the running average.
-        num = self.session.run(self.swa_accum_op)
-
-        if self.swa_max_n is not None:
-            num = min(num, self.swa_max_n)
-            self.swa_count.load(float(num), self.session)
-
-        swa_path = path + "-swa-" + str(int(num)) + "-" + str(steps) + ".txt"
-
-        # save the current network.
-        self.snap_save()
-        # Copy the swa weights into the current network.
-        self.session.run(self.swa_load_op)
-        if self.swa_recalc_bn:
-            print("Refining SWA batch normalization")
-            for _ in range(200):
-                self.session.run(
-                    [self.loss, self.update_ops, self.next_batch],
-                    feed_dict={self.handle: self.train_handle})
-
-        self.save_leelaz_weights(swa_path)
-        # restore the saved network.
-        self.snap_restore()
-
-        print("Wrote averaged network to {}".format(swa_path))
