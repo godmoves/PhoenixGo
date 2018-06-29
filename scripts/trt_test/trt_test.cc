@@ -23,13 +23,12 @@ class Logger : public nvinfer1::ILogger
 
 
 int main() {
-    const int FEATURE = 18;
-    const int INPUT_DIM = FEATURE * 19 * 19;
+    const int INPUT_DIM = 18 * 19 * 19;
     const int OUTPUT_DIM = 362;
 
     std::string tensorrt_model_path = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.PLAN";
     // std::string tensorrt_model_path = "";
-    std::string uffFilename = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.uff";
+    std::string uff_model_name = "/home/mankit/Downloads/my_PhoenixGo/scripts/leelaz-model-0.uff";
 
     nvinfer1::IBuilder *builder;
     nvinfer1::INetworkDefinition *network;
@@ -54,7 +53,7 @@ int main() {
         // kFLOAT or kHALF
         nvinfer1::DataType m_datatype = nvinfer1::DataType::kHALF;
 
-        if (!parser->parse(uffFilename.c_str(), *network, m_datatype)) {
+        if (!parser->parse(uff_model_name.c_str(), *network, m_datatype)) {
             std::cout << "Failed to parse UFF\n";
             builder->destroy();
             network->destroy();
@@ -90,7 +89,7 @@ int main() {
         }
     }
 
-    std::vector<float> feature(19 * 19 * FEATURE, 0);
+    std::vector<float> feature(19 * 19 * 18, 0);
     // for (int i = 0; i < 19; ++i) {
     //     for (int j = 0; j < 19; ++j) {
     //         for (int k = 0; k < 18; ++k) {

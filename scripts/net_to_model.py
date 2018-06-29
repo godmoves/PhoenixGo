@@ -11,12 +11,12 @@ UFF_TO_PLAN_EXE_PATH = 'u2p/build/uff_to_plan'
 UFF_FILENAME = 'leelaz-model-0.uff'
 
 
-def graphToPlan(uff_model, plan_filename, input_name, policy_name,
+def graphToPlan(uff_model_name, plan_filename, input_name, policy_name,
                 value_name, max_batch_size, max_workspace_size, data_type):
 
     # convert frozen graph to engine (plan)
     args = [
-        UFF_FILENAME,
+        uff_model_name,
         plan_filename,
         input_name,
         policy_name,
@@ -57,7 +57,7 @@ with open(sys.argv[1], 'r') as f:
     tf_model = tfprocess.construct_net(x)
     uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
                                     input_nodes=["inputs"], output_filename=UFF_FILENAME)
-    graphToPlan(uff_model, "leelaz-model-0.PLAN", "inputs", "policy", "value", 4, 1 << 20, "float")
+    graphToPlan(UFF_FILENAME, "leelaz-model-0.PLAN", "inputs", "policy", "value", 4, 1 << 20, "float")
 
     if tfprocess.RESIDUAL_BLOCKS != blocks:
         raise ValueError("Number of blocks in tensorflow model doesn't match "
