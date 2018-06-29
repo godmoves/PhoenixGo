@@ -3,36 +3,40 @@
  * Full license terms provided in LICENSE.md file.
  */
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <NvInfer.h>
 #include <NvUffParser.h>
-
 
 using namespace std;
 using namespace nvinfer1;
 using namespace nvuffparser;
 
-
-class Logger : public ILogger
-{
-    void log(Severity severity, const char *msg) override
-    {
-        switch (severity) {
-          case Severity::kINTERNAL_ERROR: cout << "kINTERNAL_ERROR: " << msg << endl; break;
-          case Severity::kERROR: cout << "kERROR: " << msg << endl; break;
-          case Severity::kWARNING: cout << "kWARNING: " << msg << endl; break;
-          case Severity::kINFO: cout << "kINFO: " << msg << endl; break;
-          default: cout << "kUNKNOWN: "<< msg << endl;
-        }
+class Logger : public ILogger {
+  void log(Severity severity, const char *msg) override {
+    switch (severity) {
+    case Severity::kINTERNAL_ERROR:
+      cout << "kINTERNAL_ERROR: " << msg << endl;
+      break;
+    case Severity::kERROR:
+      cout << "kERROR: " << msg << endl;
+      break;
+    case Severity::kWARNING:
+      cout << "kWARNING: " << msg << endl;
+      break;
+    case Severity::kINFO:
+      cout << "kINFO: " << msg << endl;
+      break;
+    default:
+      cout << "kUNKNOWN: " << msg << endl;
     }
+  }
 } gLogger;
 
-int toInteger(string value)
-{
+int toInteger(string value) {
   int valueInteger;
   stringstream ss;
   ss << value;
@@ -40,8 +44,7 @@ int toInteger(string value)
   return valueInteger;
 }
 
-DataType toDataType(string value)
-{
+DataType toDataType(string value) {
   if (value == "float")
     return DataType::kFLOAT;
   else if (value == "half")
@@ -50,12 +53,10 @@ DataType toDataType(string value)
     throw runtime_error("Unsupported data type");
 }
 
-int main(int argc, char *argv[])
-{
-  if (argc != 9)
-  {
+int main(int argc, char *argv[]) {
+  if (argc != 9) {
     cout << "Usage: <uff_filename> <plan_filename> <input_name> <policy_name>"
-      << " <value_name> <max_batch_size> <max_workspace_size> <data_type>\n";
+         << " <value_name> <max_batch_size> <max_workspace_size> <data_type>\n";
     return 1;
   }
 
@@ -73,11 +74,11 @@ int main(int argc, char *argv[])
   IBuilder *builder = createInferBuilder(gLogger);
   INetworkDefinition *network = builder->createNetwork();
   IUffParser *parser = createUffParser();
-  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19), UffInputOrder::kNCHW);
+  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19),
+                        UffInputOrder::kNCHW);
   parser->registerOutput(policyName.c_str());
   parser->registerOutput(valueName.c_str());
-  if (!parser->parse(uffFilename.c_str(), *network, dataType))
-  {
+  if (!parser->parse(uffFilename.c_str(), *network, dataType)) {
     cout << "Failed to parse UFF\n";
     builder->destroy();
     parser->destroy();
@@ -99,8 +100,8 @@ int main(int argc, char *argv[])
   planFile.open(planFilename);
   IHostMemory *serializedEngine = engine->serialize();
   planFile.write((char *)serializedEngine->data(), serializedEngine->size());
-  planFile.close(); 
-  
+  planFile.close();
+
   /* break down */
   builder->destroy();
   parser->destroy();
