@@ -27,9 +27,6 @@ def graphToPlan(uff_model_name, plan_filename, input_name, policy_name,
     ]
     subprocess.call([UFF_TO_PLAN_EXE_PATH] + args)
 
-    # cleanup tmp file
-    # os.remove(UFF_FILENAME)
-
 
 with open(sys.argv[1], 'r') as f:
     weights = []
@@ -54,10 +51,7 @@ with open(sys.argv[1], 'r') as f:
     x = tf.placeholder(tf.float32, [None, 18 * 19 * 19], name="inputs")
 
     tfprocess = TFProcess()
-    tf_model = tfprocess.construct_net(x)
-    uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
-                                    input_nodes=["inputs"], output_filename=UFF_FILENAME)
-    graphToPlan(UFF_FILENAME, "leelaz-model-0.PLAN", "inputs", "policy", "value", 4, 1 << 20, "float")
+    tfprocess.construct_net(x)
 
     if tfprocess.RESIDUAL_BLOCKS != blocks:
         raise ValueError("Number of blocks in tensorflow model doesn't match "
@@ -65,6 +59,10 @@ with open(sys.argv[1], 'r') as f:
     if tfprocess.RESIDUAL_FILTERS != channels:
         raise ValueError("Number of filters in tensorflow model doesn't match "
                          "number of filters in input network")
-    tfprocess.replace_weights(weights)
+    tf_model = tfprocess.replace_weights(weights)
+    uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
+                                    input_nodes=["inputs"], output_filename=UFF_FILENAME)
+    graphToPlan(UFF_FILENAME, "leelaz-model-0.PLAN", "inputs", "policy", "value", 4, 1 << 20, "float")
+
     path = os.path.join(os.getcwd(), "leelaz-model")
     save_path = tfprocess.saver.save(tfprocess.session, path, global_step=0)

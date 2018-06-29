@@ -98,6 +98,13 @@ class TFProcess:
                 new_weight = tf.constant(new_weights[e], shape=weights.shape)
                 self.session.run(tf.assign(weights, new_weight))
 
+        graphdef = tf.get_default_graph().as_graph_def()
+        frozen_graph = tf.graph_util.convert_variables_to_constants(self.session,
+                                                                    graphdef,
+                                                                    ["policy", "value"])
+
+        return tf.graph_util.remove_training_nodes(frozen_graph)
+
     def get_batchnorm_key(self):
         result = "bn" + str(self.batch_norm_count)
         self.batch_norm_count += 1
@@ -236,10 +243,3 @@ class TFProcess:
         self.saver = tf.train.Saver()
 
         self.session.run(self.init)
-
-        graphdef = tf.get_default_graph().as_graph_def()
-        frozen_graph = tf.graph_util.convert_variables_to_constants(self.session,
-                                                                    graphdef,
-                                                                    ["policy", "value"])
-
-        return tf.graph_util.remove_training_nodes(frozen_graph)
