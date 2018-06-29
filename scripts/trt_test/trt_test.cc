@@ -26,9 +26,9 @@ int main() {
     const int INPUT_DIM = 18 * 19 * 19;
     const int OUTPUT_DIM = 362;
 
-    std::string tensorrt_model_path = "../leelaz-model-0.PLAN";
+    std::string tensorrt_model_path = "../../leelaz-model-0.PLAN";
     // std::string tensorrt_model_path = "";
-    std::string uff_model_name = "../leelaz-model-0.uff";
+    std::string uff_model_name = "../../leelaz-model-0.uff";
 
     nvinfer1::IBuilder *builder;
     nvinfer1::INetworkDefinition *network;
