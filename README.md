@@ -39,8 +39,8 @@ If you use PhoenixGo in your research, please consider citing the library as fol
 
 Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
-You need to install `tensorrt` by tar package to get python support, but now only python 2.7 
-ans python 3.5 are supported. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
+You need to install `tensorrt` by **tar package** to get python support, but now **only python 2.7 
+ans python 3.5 are supported**. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
 
 ### Build uff_to_plan and convert weight
 
