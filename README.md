@@ -35,16 +35,16 @@ If you use PhoenixGo in your research, please consider citing the library as fol
 - [tensorrt 3.0.4](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
 - [uff](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
 - cmake 3.1+  
-- gcc  
+- gcc 6  
 
 Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
-You need to install `tensorrt` by tar package to get python support, but now only python 2.7 
-ans python 3.5 are supported. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
+You need to install `tensorrt` by **tar package** to get python support, but now **only python 2.7 
+and python 3.5 are supported**. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
 
 ### Build uff_to_plan and convert weight
 
-First `git clone` this repo, then execute the commands below:
+First `git clone` this repository, then execute the commands below:
 ```
 $ cd scripts/u2p
 $ mkdir build && cd build
