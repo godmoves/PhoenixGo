@@ -20,19 +20,96 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <numeric>
 #include <random>
+#include <time.h>
 
 #include <glog/logging.h>
+#include <gflags/gflags.h>
 
+#include "common/go_comm.h"
 #include "common/str_utils.h"
 #include "dist/async_dist_zero_model_client.h"
 #include "dist/dist_zero_model_client.h"
 #include "model/trt_zero_model.h"
 #include "model/zero_model.h"
 
+DEFINE_bool(lizzie, false, "Run in lizzie mode.");
+
 static thread_local std::random_device g_random_device;
 static thread_local std::minstd_rand g_random_engine(g_random_device());
+
+class OutputAnalysisData {
+public:
+  OutputAnalysisData(const std::string& move, int visits, int winrate, std::string pv) :
+      m_move(move), m_visits(visits), m_winrate(winrate), m_pv(pv) {};
+
+  std::string get_info_string(int order) const {
+    auto tmp = "info move " + m_move + " visits " + std::to_string(m_visits) +
+               " winrate " + std::to_string(m_winrate);
+    if (order >= 0) {
+      tmp += " order " + std::to_string(order);
+    }
+    tmp += " pv " + m_pv;
+    return tmp;
+  }
+
+  friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
+    if (a.m_visits == b.m_visits) {
+      return a.m_winrate < b.m_winrate;
+    }
+    return a.m_visits < b.m_visits;
+  }
+
+private:
+  std::string m_move;
+  int m_visits;
+  int m_winrate;
+  std::string m_pv;
+};
+
+void MCTSEngine::OutputAnalysis(TreeNode *parent) {
+  // We need to make a copy of the data before sorting
+  auto sortable_data = std::vector<OutputAnalysisData>();
+
+  if (parent->ch_len == 0) { // nothing to print
+    return;
+  }
+
+  const GoStoneColor color = m_board.CurrentPlayer();
+
+  for (int i = 0; i < parent->ch_len; ++i) {
+    TreeNode *node = parent->ch;
+    // Only send variations with visits
+    if (node[i].visit_count == 0) continue;
+
+    std::string move = GoFunction::IdToStr(node[i].move);
+
+    // TODO: add pv later. Seems PhoenixGo doesn't support pv.
+    std::string pv = move + " "; 
+
+    // not sure the meaning of value
+    float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
+    float move_eval = (root_action + 1) * 50 * 100;
+    // Store data in array
+    sortable_data.emplace_back(move, node[i].visit_count, move_eval, pv);
+  }
+
+  // Sort array to decide order
+  std::stable_sort(std::begin(sortable_data), std::end(sortable_data));
+
+  auto i = 0;
+  // Output analysis data in gtp stream
+  for (const auto& node : sortable_data) {
+    if (i > 0) {
+      std::cerr << " ";
+    }
+    std::cerr << node.get_info_string(i);
+    i++;
+  }
+  std::cerr << "\n";
+}
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
     : m_config(config), m_root(nullptr),
@@ -756,6 +833,10 @@ void MCTSEngine::SearchRoutine() {
     LOG(WARNING) << "SearchRoutine: terminate";
     return;
   }
+
+  // set up timer
+  time_t start = clock();
+
   for (;;) {
     if (!m_search_threads_conductor.IsRunning()) {
       VLOG(2) << "SearchRoutine pause";
@@ -771,6 +852,14 @@ void MCTSEngine::SearchRoutine() {
     auto board = std::make_shared<GoState>(m_board);
     TreeNode *node = Select(*board);
     m_monitor.MonSelectCostMs(timer.fms());
+
+    time_t elapsed = clock();
+    float elapsed_centis = float(elapsed - start);
+
+    if (elapsed_centis > 100000 && FLAGS_lizzie) { // 10 outputs per second
+      start = elapsed;
+      OutputAnalysis(m_root);
+    }
 
     int expect_unexpanded = k_unexpanded;
     if (node->expand_state.compare_exchange_strong(expect_unexpanded, k_expanding)) {

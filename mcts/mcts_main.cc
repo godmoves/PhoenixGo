@@ -138,16 +138,19 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
     return {true, "Leela Zero Phoenix"};
   }
   if (op == "version") {
-    return {true, "1.0"};
+    return {true, "1.15"};
   }
   if (op == "protocol_version") {
     return {true, "2"};
   }
   if (op == "list_commands") {
-    return {true, "name\nversion\nprotocol_version\nlist_commands\nquit\nclear_"
-                  "board\nboardsize\nkomi\ntime_settings\ntime_left\nplace_"
-                  "free_handicap\nset_free_handicap\nplay\ngenmove\nfinal_"
-                  "score\nget_debug_info\nget_last_move_debug_info"};
+    return {true, "name\nversion\nprotocol_version\nlist_commands\nlz-analyze\n"
+                  "quit\nclear_board\nboardsize\nkomi\ntime_settings\ntime_left\n"
+                  "place_free_handicap\nset_free_handicap\nplay\ngenmove\n"
+                  "final_score\nget_debug_info\nget_last_move_debug_info"};
+  }
+  if (op == "lz-analyze") {
+    return {true, ""};
   }
   if (op == "quit") {
     return {true, ""};

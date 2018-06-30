@@ -129,6 +129,7 @@ private:
   bool EvalCacheFind(uint64_t hash, std::vector<float> &policy, float &value);
 
   bool IsPassDisable();
+  void OutputAnalysis(TreeNode *parent);
 
 private:
   MCTSConfig m_config;
