@@ -82,7 +82,7 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
   for (int i = 0; i < parent->ch_len; ++i) {
     TreeNode *node = parent->ch;
     // Only send variations with visits
-    if (node[i].visit_count == 0) continue;
+    if (node[i].visit_count < 50) continue; // ignore nodes have less than 50 visits
 
     std::string move = GoFunction::IdToStr(node[i].move);
 
@@ -856,7 +856,7 @@ void MCTSEngine::SearchRoutine() {
     time_t elapsed = clock();
     float elapsed_centis = float(elapsed - start);
 
-    if (elapsed_centis > 100000 && FLAGS_lizzie) { // 10 outputs per second
+    if (elapsed_centis > 200000 && FLAGS_lizzie) { // 5 outputs per second
       start = elapsed;
       OutputAnalysis(m_root);
     }
