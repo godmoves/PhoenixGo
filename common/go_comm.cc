@@ -112,9 +112,9 @@ void StrToCoord(const string &str, GoCoordId &x, GoCoordId &y) {
 
 string CoordToStr(const GoCoordId x, const GoCoordId y) {
     if (!InBoard(x, y)) {
-        return "pass";
+      return "pass";
     } else {
-        return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(y + 1);
+      return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(y + 1);
     }
 }
 

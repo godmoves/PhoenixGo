@@ -112,11 +112,17 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
 }
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
-    : m_config(config), m_root(nullptr),
+    : m_config(config),
+      m_root(nullptr),
       m_board(!config.disable_positional_superko()),
-      m_eval_task_queue(config.eval_task_queue_size()), m_model_global_step(0),
-      m_is_searching(false), m_simulation_counter(0), m_num_moves(0),
-      m_gen_passes(0), m_monitor(this), m_debugger(this) {
+      m_eval_task_queue(config.eval_task_queue_size()),
+      m_model_global_step(0),
+      m_is_searching(false),
+      m_simulation_counter(0),
+      m_num_moves(0),
+      m_gen_passes(0),
+      m_monitor(this),
+      m_debugger(this) {
   // setup eval threads
   if (m_config.model_config().enable_mkl()) {
     ZeroModel::SetMKLEnv(m_config.model_config());
@@ -148,7 +154,8 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
     m_search_threads.emplace_back(&MCTSEngine::SearchRoutine, this);
   }
 
-  // setup delete thread & tree root
+  // setup delete thread & tree root, clean up move history.
+  LOG(INFO) << "MCTSEngine: init move history";
   m_delete_thread = std::thread(&MCTSEngine::DeleteRoutine, this);
   ChangeRoot(nullptr);
 
@@ -196,6 +203,43 @@ void MCTSEngine::Reset() {
   }
 }
 
+std::string MCTSEngine::Undo() {
+  if (m_move_history.size() != m_num_moves) {
+    LOG(ERROR) << "Move history not correct!";
+    return "failed to undo last move";
+  } else {
+    if (m_num_moves == 0) {
+      return "no move to undo";
+    }
+
+    int prev_num_move = m_num_moves - 1;
+    std::vector<GoCoordId> move_history = m_move_history;
+
+    SearchPause();
+    ChangeRoot(nullptr);
+    m_board.CopyFrom(GoState(!m_config.disable_positional_superko()));
+    m_simulation_counter = 0;
+    m_num_moves = 0;
+    m_moves_str.clear();
+    m_gen_passes = 0;
+    m_byo_yomi_timer.Reset();
+    m_move_history.clear();
+
+    GoCoordId x, y;
+    for (int i = 0; i < prev_num_move; ++i) {
+      GoFunction::IdToCoord(move_history[i], x, y);
+      Move(x, y);
+    }
+    std::string info = "Undo: " + GoFunction::IdToStr(move_history[prev_num_move]);
+
+    if (m_config.enable_background_search()) {
+      SearchResume();
+    }
+
+    return info;
+  }
+}
+
 void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   if (!m_byo_yomi_timer.IsEnable()) {
     auto &c = m_config.time_control();
@@ -216,6 +260,9 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
                    << ", ret" << ret;
 
   ++m_num_moves;
+  m_move_history.push_back(GoFunction::CoordToId(x, y));
+  std::cerr << "Add move history: " << GoFunction::CoordToStr(x, y) << "\n";
+
   if (m_moves_str.size())
     m_moves_str += ",";
   m_moves_str += GoFunction::CoordToStr(x, y);

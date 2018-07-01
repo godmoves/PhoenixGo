@@ -146,11 +146,16 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   if (op == "list_commands") {
     return {true, "name\nversion\nprotocol_version\nlist_commands\nlz-analyze\n"
                   "quit\nclear_board\nboardsize\nkomi\ntime_settings\ntime_left\n"
-                  "place_free_handicap\nset_free_handicap\nplay\ngenmove\n"
+                  "place_free_handicap\nset_free_handicap\nplay\ngenmove\nundo\n"
                   "final_score\nget_debug_info\nget_last_move_debug_info"};
   }
   if (op == "lz-analyze") {
     return {true, ""};
+  }
+  if (op == "undo") {
+    std::string info;
+    info = engine.Undo();
+    return {true, info};
   }
   if (op == "quit") {
     return {true, ""};
