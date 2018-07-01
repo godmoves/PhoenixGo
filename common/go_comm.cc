@@ -111,14 +111,11 @@ void StrToCoord(const string &str, GoCoordId &x, GoCoordId &y) {
 }
 
 string CoordToStr(const GoCoordId x, const GoCoordId y) {
-    char buffer[3];
     if (!InBoard(x, y)) {
-        buffer[0] = buffer[1] = 'z';
+        return "pass";
     } else {
-        buffer[0] = x + 'a';
-        buffer[1] = y + 'a';
+        return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(y + 1);
     }
-    return string(buffer, 2);
 }
 
 std::string IdToStr(const GoCoordId id) {
