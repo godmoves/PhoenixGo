@@ -77,8 +77,6 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     return;
   }
 
-  const GoStoneColor color = m_board.CurrentPlayer();
-
   for (int i = 0; i < parent->ch_len; ++i) {
     TreeNode *node = parent->ch;
     // Only send variations with visits
