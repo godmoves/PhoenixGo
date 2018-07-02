@@ -148,7 +148,9 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
     m_search_threads.emplace_back(&MCTSEngine::SearchRoutine, this);
   }
 
-  // setup delete thread & tree root
+  // setup delete thread & tree root, init move history
+  m_move_history.clear();
+  LOG(INFO) << "MCTSEngine: init move history";
   m_delete_thread = std::thread(&MCTSEngine::DeleteRoutine, this);
   ChangeRoot(nullptr);
 
@@ -196,6 +198,44 @@ void MCTSEngine::Reset() {
   }
 }
 
+std::string MCTSEngine::Undo() {
+  if (m_move_history.size() != m_num_moves) {
+    LOG(ERROR) << "Move number and history not match";
+    return "undo: failed to undo the last move";
+  } else {
+    if (m_num_moves == 0) {
+      return "undo: no move to undo";
+    }
+
+    int prev_num_move = m_num_moves - 1;
+    std::vector<GoCoordId> prev_move_history = m_move_history;
+
+    SearchPause();
+    ChangeRoot(nullptr);
+    m_board.CopyFrom(GoState(!m_config.disable_positional_superko()));
+    m_simulation_counter = 0;
+    m_num_moves = 0;
+    m_moves_str.clear();
+    m_gen_passes = 0;
+    m_byo_yomi_timer.Reset();
+    m_move_history.clear();
+
+    GoCoordId x, y;
+    for (int i = 0; i < prev_num_move; ++i) {
+      GoFunction::IdToCoord(prev_move_history[i], x, y);
+      Move(x, y);
+    }
+    std::string info = "undo: " + GoFunction::IdToStr(prev_move_history[prev_num_move]);
+    LOG(INFO) <<info;
+
+    if (m_config.enable_background_search()) {
+      SearchResume();
+    }
+
+    return info;
+  }
+}
+
 void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   if (!m_byo_yomi_timer.IsEnable()) {
     auto &c = m_config.time_control();
@@ -216,6 +256,8 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
                    << ", ret" << ret;
 
   ++m_num_moves;
+  m_move_history.push_back(GoFunction::CoordToId(x, y));
+
   if (m_moves_str.size())
     m_moves_str += ",";
   m_moves_str += GoFunction::CoordToStr(x, y);
