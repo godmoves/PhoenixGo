@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <inttypes.h>
 #include <string>
 #include <vector>
@@ -27,6 +28,21 @@ typedef uint8_t GoStoneColor; // Stone color
 typedef int16_t GoCoordId;    // Stone IDs or coordinates
 typedef int16_t GoBlockId;    // Block IDs
 typedef int16_t GoSize;       // Counts of visit times, used blocks, ..
+
+struct TreeNode {
+  std::atomic<TreeNode *> fa;
+  std::atomic<TreeNode *> ch; // child nodes must allocate contiguously
+  std::atomic<int> ch_len;
+  std::atomic<int> size;
+  std::atomic<int> expand_state;
+
+  std::atomic<int> move;
+  std::atomic<int> visit_count;
+  std::atomic<int> virtual_loss_count;
+  std::atomic<int64_t> total_action;
+  std::atomic<float> prior_prob;
+  std::atomic<float> value;
+};
 
 namespace GoComm {
 

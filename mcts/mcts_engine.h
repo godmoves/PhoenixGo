@@ -36,21 +36,6 @@
 #include "mcts_debugger.h"
 #include "mcts_monitor.h"
 
-struct TreeNode {
-  std::atomic<TreeNode *> fa;
-  std::atomic<TreeNode *> ch; // child nodes must allocate contiguously
-  std::atomic<int> ch_len;
-  std::atomic<int> size;
-  std::atomic<int> expand_state;
-
-  std::atomic<int> move;
-  std::atomic<int> visit_count;
-  std::atomic<int> virtual_loss_count;
-  std::atomic<int64_t> total_action;
-  std::atomic<float> prior_prob;
-  std::atomic<float> value;
-};
-
 const int64_t k_action_value_base = 1 << 16;
 const int k_unexpanded = 0;
 const int k_expanding = 1;

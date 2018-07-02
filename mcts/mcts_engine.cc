@@ -28,7 +28,6 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
-#include "common/go_comm.h"
 #include "common/str_utils.h"
 #include "dist/async_dist_zero_model_client.h"
 #include "dist/dist_zero_model_client.h"
@@ -88,7 +87,7 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     std::string move = GoFunction::IdToStr(node[i].move);
 
     // TODO: add pv later. Seems PhoenixGo doesn't support pv
-    std::string pv = move + " "; 
+    std::string pv = move + " " + m_debugger.GetMainMovePath(&node[i]); 
 
     // Not sure the meaning of value
     float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;

@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "common/go_comm.h"
+
 class MCTSEngine;
 class MCTSDebugger {
 public:
@@ -32,6 +34,7 @@ public:
   void UpdateLastMoveDebugStr();
 
   std::string GetMainMovePath();
+  std::string GetMainMovePath(TreeNode *node);
   void PrintTree(int depth, int topk, const std::string &prefix = "");
 
 private:

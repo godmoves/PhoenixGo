@@ -27,8 +27,6 @@
 
 #include <glog/logging.h>
 
-#include "common/go_comm.h"
-
 #include "mcts_engine.h"
 
 MCTSDebugger::MCTSDebugger(MCTSEngine *engine) : m_engine(engine) {}
@@ -100,6 +98,25 @@ std::string MCTSDebugger::GetMainMovePath() {
              (float)best_ch->total_action / k_action_value_base / best_ch->visit_count,
              best_ch->prior_prob.load(), best_ch->value.load());
     moves += buf;
+    node = best_ch;
+  }
+  return moves;
+}
+
+std::string MCTSDebugger::GetMainMovePath(TreeNode *node) {
+  std::string moves;
+  while (node->expand_state == k_expanded) {
+    TreeNode *ch = node->ch;
+    int ch_len = node->ch_len;
+    TreeNode *best_ch = ch;
+    for (int i = 0; i < ch_len; ++i) {
+      if (ch[i].visit_count > best_ch->visit_count) {
+        best_ch = &ch[i];
+      }
+    }
+    if (moves.size())
+      moves += " ";
+    moves += GoFunction::IdToStr(best_ch->move);
     node = best_ch;
   }
   return moves;
