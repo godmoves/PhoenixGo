@@ -42,12 +42,14 @@ static thread_local std::minstd_rand g_random_engine(g_random_device());
 
 class OutputAnalysisData {
 public:
-  OutputAnalysisData(const std::string& move, int visits, int winrate, std::string pv) :
-      m_move(move), m_visits(visits), m_winrate(winrate), m_pv(pv) {};
+  OutputAnalysisData(const std::string& move, int visits, float winrate, float policy, std::string pv)
+      : m_move(move), m_visits(visits), m_winrate(winrate), m_policy(policy),  m_pv(pv) {};
 
   std::string get_info_string(int order) const {
-    auto tmp = "info move " + m_move + " visits " + std::to_string(m_visits) +
-               " winrate " + std::to_string(m_winrate);
+    auto tmp = "info move " + m_move +
+               " visits " + std::to_string(m_visits) +
+               " winrate " + std::to_string(m_winrate) +
+               " network " + std::to_string(m_policy);
     if (order >= 0) {
       tmp += " order " + std::to_string(order);
     }
@@ -65,7 +67,8 @@ public:
 private:
   std::string m_move;
   int m_visits;
-  int m_winrate;
+  float m_winrate;
+  float m_policy;
   std::string m_pv;
 };
 
@@ -84,14 +87,18 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
 
     std::string move = GoFunction::IdToStr(node[i].move);
 
-    // TODO: add pv later. Seems PhoenixGo doesn't support pv.
+    // TODO: add pv later. Seems PhoenixGo doesn't support pv
     std::string pv = move + " "; 
 
-    // not sure the meaning of value
+    // Not sure the meaning of value
     float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
     float move_eval = (root_action + 1) * 50 * 100;
+
+    // Prior probability of the net
+    float policy = node[i].prior_prob * 100;
+
     // Store data in array
-    sortable_data.emplace_back(move, node[i].visit_count, move_eval, pv);
+    sortable_data.emplace_back(move, node[i].visit_count, move_eval, policy, pv);
   }
 
   // Sort array to decide order
