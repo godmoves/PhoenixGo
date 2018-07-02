@@ -27,3 +27,5 @@ scripts/checkpoint
 scripts/u2p/build
 scripts/trt_test/build
 scripts/trt_test/test.PLAN
+
+etc/mcts_1gpu_notensorrt.conf
