@@ -20,10 +20,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <numeric>
 #include <random>
+#include <time.h>
 
 #include <glog/logging.h>
+#include <gflags/gflags.h>
 
 #include "common/str_utils.h"
 #include "dist/async_dist_zero_model_client.h"
@@ -31,8 +34,86 @@
 #include "model/trt_zero_model.h"
 #include "model/zero_model.h"
 
+DEFINE_bool(lizzie, false, "Run in lizzie mode.");
+
 static thread_local std::random_device g_random_device;
 static thread_local std::minstd_rand g_random_engine(g_random_device());
+
+class OutputAnalysisData {
+public:
+  OutputAnalysisData(const std::string& move, int visits, float winrate, float policy, std::string pv)
+      : m_move(move), m_visits(visits), m_winrate(winrate), m_policy(policy),  m_pv(pv) {};
+
+  std::string get_info_string(int order) const {
+    auto tmp = "info move " + m_move +
+               " visits " + std::to_string(m_visits) +
+               " winrate " + std::to_string(m_winrate) +
+               " network " + std::to_string(m_policy);
+    if (order >= 0) {
+      tmp += " order " + std::to_string(order);
+    }
+    tmp += " pv " + m_pv;
+    return tmp;
+  }
+
+  friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
+    if (a.m_visits == b.m_visits) {
+      return a.m_winrate < b.m_winrate;
+    }
+    return a.m_visits < b.m_visits;
+  }
+
+private:
+  std::string m_move;
+  int m_visits;
+  float m_winrate;
+  float m_policy;
+  std::string m_pv;
+};
+
+void MCTSEngine::OutputAnalysis(TreeNode *parent) {
+  // We need to make a copy of the data before sorting
+  auto sortable_data = std::vector<OutputAnalysisData>();
+
+  if (parent->ch_len == 0) { // nothing to print
+    return;
+  }
+
+  for (int i = 0; i < parent->ch_len; ++i) {
+    TreeNode *node = parent->ch;
+    // Only send variations with visits
+    if (node[i].visit_count < 50) continue; // ignore nodes have less than 50 visits
+
+    std::string move = GoFunction::IdToStr(node[i].move);
+
+    // TODO: add pv later. Seems PhoenixGo doesn't support pv
+    std::string pv = move + " " + m_debugger.GetMainMovePath(&node[i]); 
+
+    // Not sure the meaning of value
+    float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
+    float move_eval = (root_action + 1) * 50 * 100;
+
+    // Prior probability of the net
+    float policy = node[i].prior_prob * 100;
+
+    // Store data in array
+    sortable_data.emplace_back(move, node[i].visit_count, move_eval, policy, pv);
+  }
+
+  // Sort array to decide order
+  std::stable_sort(std::begin(sortable_data), std::end(sortable_data));
+
+  auto i = 0;
+  // Output analysis data in gtp stream
+  for (const auto& node : sortable_data) {
+    if (i > 0) {
+      std::cerr << " ";
+    }
+    std::cerr << node.get_info_string(i);
+    i++;
+  }
+  std::cerr << "\n";
+}
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
     : m_config(config), m_root(nullptr),
@@ -71,7 +152,9 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
     m_search_threads.emplace_back(&MCTSEngine::SearchRoutine, this);
   }
 
-  // setup delete thread & tree root
+  // setup delete thread & tree root, init move history
+  m_move_history.clear();
+  LOG(INFO) << "MCTSEngine: init move history";
   m_delete_thread = std::thread(&MCTSEngine::DeleteRoutine, this);
   ChangeRoot(nullptr);
 
@@ -119,6 +202,44 @@ void MCTSEngine::Reset() {
   }
 }
 
+std::string MCTSEngine::Undo() {
+  if (m_move_history.size() != m_num_moves) {
+    LOG(ERROR) << "Move number and history not match";
+    return "undo: failed to undo the last move";
+  } else {
+    if (m_num_moves == 0) {
+      return "undo: no move to undo";
+    }
+
+    int prev_num_move = m_num_moves - 1;
+    std::vector<GoCoordId> prev_move_history = m_move_history;
+
+    SearchPause();
+    ChangeRoot(nullptr);
+    m_board.CopyFrom(GoState(!m_config.disable_positional_superko()));
+    m_simulation_counter = 0;
+    m_num_moves = 0;
+    m_moves_str.clear();
+    m_gen_passes = 0;
+    m_byo_yomi_timer.Reset();
+    m_move_history.clear();
+
+    GoCoordId x, y;
+    for (int i = 0; i < prev_num_move; ++i) {
+      GoFunction::IdToCoord(prev_move_history[i], x, y);
+      Move(x, y);
+    }
+    std::string info = "undo: " + GoFunction::IdToStr(prev_move_history[prev_num_move]);
+    LOG(INFO) <<info;
+
+    if (m_config.enable_background_search()) {
+      SearchResume();
+    }
+
+    return info;
+  }
+}
+
 void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   if (!m_byo_yomi_timer.IsEnable()) {
     auto &c = m_config.time_control();
@@ -139,6 +260,8 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
                    << ", ret" << ret;
 
   ++m_num_moves;
+  m_move_history.push_back(GoFunction::CoordToId(x, y));
+
   if (m_moves_str.size())
     m_moves_str += ",";
   m_moves_str += GoFunction::CoordToStr(x, y);
@@ -756,6 +879,10 @@ void MCTSEngine::SearchRoutine() {
     LOG(WARNING) << "SearchRoutine: terminate";
     return;
   }
+
+  // set up timer
+  time_t start = clock();
+
   for (;;) {
     if (!m_search_threads_conductor.IsRunning()) {
       VLOG(2) << "SearchRoutine pause";
@@ -771,6 +898,14 @@ void MCTSEngine::SearchRoutine() {
     auto board = std::make_shared<GoState>(m_board);
     TreeNode *node = Select(*board);
     m_monitor.MonSelectCostMs(timer.fms());
+
+    time_t elapsed = clock();
+    float elapsed_centis = float(elapsed - start);
+
+    if (elapsed_centis > 200000 && FLAGS_lizzie) { // 5 outputs per second
+      start = elapsed;
+      OutputAnalysis(m_root);
+    }
 
     int expect_unexpanded = k_unexpanded;
     if (node->expand_state.compare_exchange_strong(expect_unexpanded, k_expanding)) {

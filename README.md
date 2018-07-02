@@ -63,6 +63,14 @@ For example, if you want to use the TensorRT version, you need to change `tensor
 version, then add `meta_graph_path: "leelaz-model-0.meta"` into `model_config` and change the content of 
 `ckpt/checkpoint` into `model_checkpoint_path: "leelaz-model-0"`.
 
+### MyLizzie support
+
+You can run the program in MyLizzie mode by add flag `--lizzie` in command line.  
+For example:
+```
+bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu_notensorrt.conf --gtp --logtostderr --v=1 --lizzie
+```
+
 ## Building and Running
 
 ### On Linux
