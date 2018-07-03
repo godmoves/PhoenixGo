@@ -67,9 +67,9 @@ version, then add `meta_graph_path: "leelaz-model-0.meta"` into `model_config` a
 
 You can run the program in [myLizzie](https://github.com/aerisnju/mylizzie) mode by add flag `--lizzie` in command line.  
 For example:
-```
-$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr --v=1 --lizzie
-```
+<pre>
+$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr --v=1 <b>--lizzie</b>
+</pre>
 
 ## Building and Running
 
