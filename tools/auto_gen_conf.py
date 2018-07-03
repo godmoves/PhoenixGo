@@ -108,7 +108,8 @@ time_control {
     c_denom: 20
     c_maxply: 40
     reserved_time: 1.0
-}"""
+}
+"""
 
     eval_thread = str(eval_thread_list[gpu_num])
     search_thread = str(search_thread_list[gpu_num])
