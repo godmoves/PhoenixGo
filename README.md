@@ -84,13 +84,15 @@ By adding flag `--elf`:
 $ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu_elf.conf --gtp --logtostderr --v=1 <b>--elf</b>
 </pre>
 
-### MyLizzie support
+### MyLizzie support (experimental)
 
 You can run the program in [myLizzie](https://github.com/aerisnju/mylizzie) mode by add flag `--lizzie` in command line.  
 For example:
 <pre>
 $ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr --v=1 <b>--lizzie</b>
 </pre>
+
+**Known issue:** speed loss when there are too many points, turn off the pv may help with this. 
 
 ## Building and Running
 
