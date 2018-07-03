@@ -22,9 +22,10 @@
 
 #include <glog/logging.h>
 
-AsyncDistZeroModelClient::AsyncDistZeroModelClient(
-    const std::vector<std::string> &svr_addrs, const DistConfig &dist_config)
-    : m_config(dist_config), m_svr_addrs(svr_addrs),
+AsyncDistZeroModelClient::AsyncDistZeroModelClient(const std::vector<std::string> &svr_addrs,
+                                                   const DistConfig &dist_config)
+    : m_config(dist_config),
+      m_svr_addrs(svr_addrs),
       m_bucket_mutexes(new std::mutex[svr_addrs.size()]) {
   CHECK(!m_svr_addrs.empty());
   for (size_t i = 0; i < m_svr_addrs.size(); ++i) {
@@ -40,8 +41,7 @@ AsyncDistZeroModelClient::AsyncDistZeroModelClient(
 
 AsyncDistZeroModelClient::~AsyncDistZeroModelClient() {
   m_forward_rpc_queue.Shutdown();
-  LOG(INFO)
-      << "~AsyncDistZeroModelClient waiting async rpc complete thread stop";
+  LOG(INFO) << "~AsyncDistZeroModelClient waiting async rpc complete thread stop";
   m_forward_rpc_complete_thread.join();
   LOG(INFO) << "~AsyncDistZeroModelClient waiting all stubs released";
   std::unique_lock<std::mutex> lock(m_mutex);
@@ -113,8 +113,8 @@ void AsyncDistZeroModelClient::Forward(
   ForwardReq req;
   for (const auto &features : inputs) {
     if (features.size() != INPUT_DIM) {
-      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got "
-                 << features.size();
+      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM
+                 << ", got " << features.size();
       callback(ERR_INVALID_INPUT, {}, {});
       return;
     }
@@ -157,29 +157,23 @@ void AsyncDistZeroModelClient::Forward(
           }
           callback(0, std::move(policy), std::move(value));
         } else if (status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED) {
-          LOG(ERROR) << "DistZeroModel::Forward timeout, "
-                     << m_svr_addrs[stub_id];
+          LOG(ERROR) << "DistZeroModel::Forward timeout, " << m_svr_addrs[stub_id];
           callback(ERR_FORWARD_TIMEOUT, {}, {});
         } else {
           LOG(ERROR) << "DistZeroModel::Forward error, " << m_svr_addrs[stub_id]
-                     << " " << status.error_code() << ": "
-                     << status.error_message();
+                     << " " << status.error_code() << ": " << status.error_message();
           callback(status.error_code(), {}, {});
         }
       },
       m_config.timeout_ms());
 }
 
-int AsyncDistZeroModelClient::Forward(
-    const std::vector<std::vector<bool>> &inputs,
-    std::vector<std::vector<float>> &policy, std::vector<float> &value) {
-  std::promise<
-      std::tuple<int, std::vector<std::vector<float>>, std::vector<float>>>
-      promise;
-  Forward(inputs, [&promise](int ret, std::vector<std::vector<float>> policy,
-                             std::vector<float> value) {
-    promise.set_value(
-        std::make_tuple(ret, std::move(policy), std::move(value)));
+int AsyncDistZeroModelClient::Forward(const std::vector<std::vector<bool>> &inputs,
+                                      std::vector<std::vector<float>> &policy,
+                                      std::vector<float> &value) {
+  std::promise<std::tuple<int, std::vector<std::vector<float>>, std::vector<float>>> promise;
+  Forward(inputs, [&promise](int ret, std::vector<std::vector<float>> policy, std::vector<float> value) {
+    promise.set_value(std::make_tuple(ret, std::move(policy), std::move(value)));
   });
   int ret;
   std::tie(ret, policy, value) = promise.get_future().get();

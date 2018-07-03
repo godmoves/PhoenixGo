@@ -156,7 +156,9 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     }
   }
 
-  int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(), inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
+  int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(),
+                       inputs_flat.size() * sizeof(float),
+                       cudaMemcpyHostToDevice);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;
@@ -165,7 +167,9 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
   m_context->execute(batch_size, m_cuda_buf.data());
 
   std::vector<float> policy_flat(batch_size * OUTPUT_DIM);
-  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1], policy_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
+  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1],
+                   policy_flat.size() * sizeof(float),
+                   cudaMemcpyDeviceToHost);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;
@@ -179,7 +183,9 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
   }
 
   value.resize(batch_size);
-  ret = cudaMemcpy(value.data(), m_cuda_buf[2], value.size() * sizeof(float), cudaMemcpyDeviceToHost);
+  ret = cudaMemcpy(value.data(), m_cuda_buf[2],
+                   value.size() * sizeof(float),
+                   cudaMemcpyDeviceToHost);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;
@@ -188,7 +194,8 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     value[i] = -value[i];
   }
 
-  // elf always outputs value for black, we need to reverse it when white to move.
+  // elf always outputs value for black,
+  // we need to reverse it when white to move.
   if (FLAGS_elf) {
     for (int i = 0; i < batch_size; ++i) {
       if (inputs[i][16] < 0.5) {
@@ -209,9 +216,13 @@ int TrtZeroModel::GetGlobalStep(int &global_step) {
 
 #include <glog/logging.h>
 
-TrtZeroModel::TrtZeroModel(int gpu) { LOG(FATAL) << "TensorRT is not enable!"; }
+TrtZeroModel::TrtZeroModel(int gpu) {
+  LOG(FATAL) << "TensorRT is not enable!";
+}
 
-TrtZeroModel::~TrtZeroModel() { LOG(FATAL) << "TensorRT is not enable!"; }
+TrtZeroModel::~TrtZeroModel() {
+  LOG(FATAL) << "TensorRT is not enable!";
+}
 
 int TrtZeroModel::Init(const ModelConfig &model_config) {
   LOG(FATAL) << "TensorRT is not enable!";

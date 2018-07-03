@@ -30,10 +30,8 @@ std::unique_ptr<MCTSConfig> LoadConfig(const char *config_path) {
     PLOG(ERROR) << "read config file " << config_path << " error";
     return nullptr;
   }
-  if (!google::protobuf::TextFormat::ParseFromString(conf_ss.str(),
-                                                     config.get())) {
-    LOG(ERROR) << "parse config file " << config_path
-               << " error! buf=" << conf_ss.str();
+  if (!google::protobuf::TextFormat::ParseFromString(conf_ss.str(), config.get())) {
+    LOG(ERROR) << "parse config file " << config_path << " error! buf=" << conf_ss.str();
     return nullptr;
   }
   return config;

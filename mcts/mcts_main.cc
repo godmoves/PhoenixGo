@@ -202,8 +202,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   if (op == "get_remain_time") {
     std::string color;
     ss >> color;
-    return {true, std::to_string(engine.GetByoYomiTimer().GetRemainTime(
-                      DecodeColor(color)))};
+    return {true, std::to_string(engine.GetByoYomiTimer().GetRemainTime(DecodeColor(color)))};
   }
   if (op == "place_free_handicap") {
     int num_handicap = 0;

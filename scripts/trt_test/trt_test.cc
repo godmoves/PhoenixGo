@@ -148,7 +148,8 @@ int main() {
   }
 
   int ret = cudaMemcpy(m_cuda_buf[0], inputs_flat.data(),
-                       inputs_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
+                       inputs_flat.size() * sizeof(float),
+                       cudaMemcpyHostToDevice);
   if (ret != 0) {
     std::cout << "ERROR: cuda memcpy err " << ret << "\n";
     return 1;
@@ -161,7 +162,8 @@ int main() {
 
   std::vector<float> policy_flat(batch_size * OUTPUT_DIM);
   ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1],
-                   policy_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
+                   policy_flat.size() * sizeof(float),
+                   cudaMemcpyDeviceToHost);
   if (ret != 0) {
     std::cout << "ERROR: cuda memcpy err " << ret << "\n";
     return 1;
@@ -175,7 +177,8 @@ int main() {
   }
 
   value.resize(batch_size);
-  ret = cudaMemcpy(value.data(), m_cuda_buf[2], value.size() * sizeof(float),
+  ret = cudaMemcpy(value.data(), m_cuda_buf[2],
+                   value.size() * sizeof(float),
                    cudaMemcpyDeviceToHost);
   if (ret != 0) {
     std::cout << "ERROR: cuda memcpy err " << ret << "\n";

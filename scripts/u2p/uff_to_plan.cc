@@ -74,8 +74,7 @@ int main(int argc, char *argv[]) {
   IBuilder *builder = createInferBuilder(gLogger);
   INetworkDefinition *network = builder->createNetwork();
   IUffParser *parser = createUffParser();
-  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19),
-                        UffInputOrder::kNCHW);
+  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19), UffInputOrder::kNCHW);
   parser->registerOutput(policyName.c_str());
   parser->registerOutput(valueName.c_str());
   if (!parser->parse(uffFilename.c_str(), *network, dataType)) {
@@ -95,7 +94,7 @@ int main(int argc, char *argv[]) {
   ICudaEngine *engine = builder->buildCudaEngine(*network);
 
   /* serialize engine and write to file */
-  cout << "Write plan file: " << planFilename << endl;
+  cout << "Write PLAN file: " << planFilename << endl;
   ofstream planFile;
   planFile.open(planFilename);
   IHostMemory *serializedEngine = engine->serialize();

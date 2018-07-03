@@ -85,8 +85,7 @@ int main(int argc, char *argv[]) {
   google::InstallFailureSignalHandler();
 
   auto config = LoadConfig(FLAGS_config_path);
-  CHECK(config != nullptr) << "Load mcts config file '" << FLAGS_config_path
-                           << "' failed";
+  CHECK(config != nullptr) << "Load mcts config file '" << FLAGS_config_path << "' failed";
 
   if (FLAGS_intra_op_parallelism_threads > 0) {
     config->mutable_model_config()->set_intra_op_parallelism_threads(
@@ -109,8 +108,8 @@ int main(int argc, char *argv[]) {
   }
 #endif
   CHECK_EQ(model->Init(config->model_config()), 0)
-      << "Model Init Fail, config path " << FLAGS_config_path << ", gpu "
-      << FLAGS_gpu;
+      << "Model Init Fail, config path " << FLAGS_config_path
+      << ", gpu " << FLAGS_gpu;
 
   GoState board;
   InitMove(board, FLAGS_init_moves);

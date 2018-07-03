@@ -40,25 +40,33 @@ uint64_t g_zobrist_player_hash_weight[4];
 
 namespace GoFunction {
 
-bool InBoard(const GoCoordId id) { return 0 <= id && id < GOBOARD_SIZE; }
+bool InBoard(const GoCoordId id) {
+  return 0 <= id && id < GOBOARD_SIZE;
+}
 
 bool InBoard(const GoCoordId x, const GoCoordId y) {
   return 0 <= x && x < BORDER_SIZE && 0 <= y && y < BORDER_SIZE;
 }
 
-bool IsPass(const GoCoordId id) { return COORD_PASS == id; }
+bool IsPass(const GoCoordId id) {
+  return COORD_PASS == id;
+}
 
 bool IsPass(const GoCoordId x, const GoCoordId y) {
   return COORD_PASS == CoordToId(x, y);
 }
 
-bool IsUnset(const GoCoordId id) { return COORD_UNSET == id; }
+bool IsUnset(const GoCoordId id) {
+  return COORD_UNSET == id;
+}
 
 bool IsUnset(const GoCoordId x, const GoCoordId y) {
   return COORD_UNSET == CoordToId(x, y);
 }
 
-bool IsResign(const GoCoordId id) { return COORD_RESIGN == id; }
+bool IsResign(const GoCoordId id) {
+  return COORD_RESIGN == id;
+}
 
 bool IsResign(const GoCoordId x, const GoCoordId y) {
   return COORD_RESIGN == CoordToId(x, y);
@@ -105,8 +113,7 @@ string CoordToStr(const GoCoordId x, const GoCoordId y) {
   if (!InBoard(x, y)) {
     return std::string("PASS");
   } else {
-    return std::string({x > 7 ? char('B' + x) : char('A' + x)}) +
-           std::to_string(y + 1);
+    return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(y + 1);
   }
 }
 
@@ -136,10 +143,8 @@ void CreateHashWeights() {
   g_hash_weight[0][0] = GoHashValuePair(1, 1);
   for (GoCoordId i = 1; i < GOBOARD_SIZE; ++i) {
     g_hash_weight[i / BORDER_SIZE][i % BORDER_SIZE] = GoHashValuePair(
-        g_hash_weight[(i - 1) / BORDER_SIZE][(i - 1) % BORDER_SIZE].x *
-            g_hash_unit.x,
-        g_hash_weight[(i - 1) / BORDER_SIZE][(i - 1) % BORDER_SIZE].y *
-            g_hash_unit.y);
+        g_hash_weight[(i - 1) / BORDER_SIZE][(i - 1) % BORDER_SIZE].x * g_hash_unit.x,
+        g_hash_weight[(i - 1) / BORDER_SIZE][(i - 1) % BORDER_SIZE].y * g_hash_unit.y);
   }
 }
 
@@ -162,9 +167,9 @@ void CreateNeighbourCache() {
       }
       g_neighbour_size[id] = g_neighbour_cache_by_coord[x][y].size();
       for (GoSize i = 0; i < g_neighbour_cache_by_coord[x][y].size(); ++i) {
-        g_neighbour_cache_by_id[id][i] =
-            CoordToId(g_neighbour_cache_by_coord[x][y][i].x,
-                      g_neighbour_cache_by_coord[x][y][i].y);
+        g_neighbour_cache_by_id[id][i] = CoordToId(
+            g_neighbour_cache_by_coord[x][y][i].x,
+            g_neighbour_cache_by_coord[x][y][i].y);
       }
     }
   }
@@ -211,11 +216,9 @@ void CreateZobristHash() {
   uint32_t seed = 0xdeadbeaf;
 
   for (int i = 0; i < 4; ++i) {
-    g_zobrist_player_hash_weight[i] =
-        (uint64_t)rand_r(&seed) << 32 | rand_r(&seed);
+    g_zobrist_player_hash_weight[i] = (uint64_t)rand_r(&seed) << 32 | rand_r(&seed);
     for (int j = 0; j < GOBOARD_SIZE; ++j) {
-      g_zobrist_board_hash_weight[i][j] =
-          (uint64_t)rand_r(&seed) << 32 | rand_r(&seed);
+      g_zobrist_board_hash_weight[i][j] = (uint64_t)rand_r(&seed) << 32 | rand_r(&seed);
     }
   }
 

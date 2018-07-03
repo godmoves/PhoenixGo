@@ -41,8 +41,13 @@ static thread_local std::minstd_rand g_random_engine(g_random_device());
 
 class OutputAnalysisData {
 public:
-  OutputAnalysisData(const std::string& move, int visits, float winrate, float policy, std::string pv)
-      : m_move(move), m_visits(visits), m_winrate(winrate), m_policy(policy),  m_pv(pv) {};
+  OutputAnalysisData(const std::string& move, int visits, float winrate,
+                     float policy, std::string pv)
+      : m_move(move),
+        m_visits(visits),
+        m_winrate(winrate),
+        m_policy(policy), 
+        m_pv(pv) {};
 
   std::string get_info_string(int order) const {
     auto tmp = "info move " + m_move +
@@ -116,11 +121,17 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
 }
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
-    : m_config(config), m_root(nullptr),
+    : m_config(config),
+      m_root(nullptr),
       m_board(!config.disable_positional_superko()),
-      m_eval_task_queue(config.eval_task_queue_size()), m_model_global_step(0),
-      m_is_searching(false), m_simulation_counter(0), m_num_moves(0),
-      m_gen_passes(0), m_monitor(this), m_debugger(this) {
+      m_eval_task_queue(config.eval_task_queue_size()),
+      m_model_global_step(0),
+      m_is_searching(false),
+      m_simulation_counter(0),
+      m_num_moves(0),
+      m_gen_passes(0),
+      m_monitor(this),
+      m_debugger(this) {
   // setup eval threads
   if (m_config.model_config().enable_mkl()) {
     ZeroModel::SetMKLEnv(m_config.model_config());
@@ -256,8 +267,7 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   }
 
   int ret = m_board.Move(x, y);
-  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToId(x, y) 
-                   << ", ret" << ret;
+  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToId(x, y) << ", ret" << ret;
 
   ++m_num_moves;
   m_move_history.push_back(GoFunction::CoordToId(x, y));
@@ -300,7 +310,8 @@ void MCTSEngine::GenMove(GoCoordId &x, GoCoordId &y) {
 }
 
 void MCTSEngine::GenMove(GoCoordId &x, GoCoordId &y,
-                         std::vector<int> &visit_count, float &v_resign) {
+                         std::vector<int> &visit_count,
+                         float &v_resign) {
   if (!m_byo_yomi_timer.IsEnable()) {
     auto &c = m_config.time_control();
     if (c.main_time() > 0 || c.byo_yomi_time() > 0) {
@@ -309,7 +320,8 @@ void MCTSEngine::GenMove(GoCoordId &x, GoCoordId &y,
   }
 
   if (m_config.enable_pass_pass() &&
-      m_board.GetLastMove() == GoComm::COORD_PASS && !IsPassDisable()) {
+      m_board.GetLastMove() == GoComm::COORD_PASS &&
+      !IsPassDisable()) {
     x = y = GoComm::COORD_PASS;
     ++m_gen_passes;
     visit_count = GetVisitCount(m_root);
@@ -334,22 +346,31 @@ void MCTSEngine::GenMove(GoCoordId &x, GoCoordId &y,
   }
 }
 
-const GoState &MCTSEngine::GetBoard() { return m_board; }
+const GoState &MCTSEngine::GetBoard() {
+  return m_board; 
+}
 
-MCTSConfig &MCTSEngine::GetConfig() { return m_config; }
+MCTSConfig &MCTSEngine::GetConfig() {
+  return m_config; 
+}
 
 void MCTSEngine::SetPendingConfig(std::unique_ptr<MCTSConfig> config) {
   m_pending_config = std::move(config);
 }
 
-MCTSDebugger &MCTSEngine::GetDebugger() { return m_debugger; }
+MCTSDebugger &MCTSEngine::GetDebugger() {
+  return m_debugger; 
+}  
 
-int MCTSEngine::GetModelGlobalStep() { return m_model_global_step; }
+int MCTSEngine::GetModelGlobalStep() {
+  return m_model_global_step; 
+}
 
-ByoYomiTimer &MCTSEngine::GetByoYomiTimer() { return m_byo_yomi_timer; }
+ByoYomiTimer &MCTSEngine::GetByoYomiTimer() {
+  return m_byo_yomi_timer; 
+}
 
-TreeNode *MCTSEngine::InitNode(TreeNode *node, TreeNode *fa, int move,
-                               float prior_prob) {
+TreeNode *MCTSEngine::InitNode(TreeNode *node, TreeNode *fa, int move, float prior_prob) {
   node->fa = fa;
   node->ch = nullptr;
   node->ch_len = 0;
@@ -483,8 +504,7 @@ void MCTSEngine::EvalRoutine(std::unique_ptr<ZeroModelBase> model) {
       if (ret == ERR_FORWARD_TIMEOUT) {
         m_monitor.IncEvalTimeout();
         for (size_t i = 0; i < batch_size; ++i) {
-          m_eval_task_queue.PushFront(
-              EvalTask{std::move(inputs[i]), std::move(callbacks[i])});
+          m_eval_task_queue.PushFront(EvalTask{std::move(inputs[i]), std::move(callbacks[i])});
         }
       } else if (ret) {
         LOG(ERROR) << "EvalRoutine: feed model failed, ret " << ret;
@@ -671,8 +691,7 @@ bool MCTSEngine::CheckEarlyStop(int64_t timeout_us) {
     }
   }
   int64_t elapsed_us = m_search_timer.us();
-  float remain_sims =
-      (float)m_simulation_counter * (timeout_us - elapsed_us) / elapsed_us;
+  float remain_sims = (float)m_simulation_counter * (timeout_us - elapsed_us) / elapsed_us;
   if (c.sims_factor() > 0) {
     remain_sims *= c.sims_factor();
   }
@@ -704,10 +723,8 @@ bool MCTSEngine::CheckUnstable() {
             ? 0.0f
             : (float)ch[i].total_action / k_action_value_base / visit_count[i];
   }
-  int n_best =
-      std::max_element(visit_count, visit_count + ch_len) - visit_count;
-  int q_best =
-      std::max_element(mean_action, mean_action + ch_len) - mean_action;
+  int n_best = std::max_element(visit_count, visit_count + ch_len) - visit_count;
+  int q_best = std::max_element(mean_action, mean_action + ch_len) - mean_action;
   if (n_best != q_best) {
     LOG(INFO) << "CheckUnstable: return true"
               << ", N best ch=" << GoFunction::IdToStr(ch[n_best].move)
@@ -732,9 +749,10 @@ bool MCTSEngine::CheckBehind() {
   }
   TreeNode *best_ch = FindChild(m_root, best_move);
   int visit_count = best_ch->visit_count;
-  float mean_action = visit_count == 0 ? 0.0f
-                                       : (float)best_ch->total_action /
-                                             k_action_value_base / visit_count;
+  float mean_action = 
+      visit_count == 0 
+          ? 0.0f
+          : (float)best_ch->total_action / k_action_value_base / visit_count;
   if (mean_action < c.act_threshold()) {
     LOG(INFO) << "CheckBehind: return true, best_move=" << GoFunction::IdToStr(best_move)
               << ", N=" << visit_count

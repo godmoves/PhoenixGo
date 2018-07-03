@@ -21,7 +21,9 @@
 #include <algorithm>
 
 ByoYomiTimer::ByoYomiTimer()
-    : m_enable(false), m_remain_time{0.0f, 0.0f}, m_byo_yomi_time(0.0f),
+    : m_enable(false),
+      m_remain_time{0.0f, 0.0f},
+      m_byo_yomi_time(0.0f),
       m_curr_player(GoComm::BLACK) {}
 
 void ByoYomiTimer::Set(float main_time, float byo_yomi_time) {
@@ -42,8 +44,7 @@ bool ByoYomiTimer::IsEnable() { return m_enable; }
 
 void ByoYomiTimer::HandOff() {
   m_remain_time[m_curr_player == GoComm::BLACK ? 0 : 1] -= m_timer.fsec();
-  m_curr_player =
-      m_curr_player == GoComm::BLACK ? GoComm::WHITE : GoComm::BLACK;
+  m_curr_player = m_curr_player == GoComm::BLACK ? GoComm::WHITE : GoComm::BLACK;
   m_timer.Reset();
 }
 
@@ -62,4 +63,6 @@ float ByoYomiTimer::GetRemainTime(GoStoneColor color) {
   return std::max(remain_time, 0.0f);
 }
 
-float ByoYomiTimer::GetByoYomiTime() { return m_byo_yomi_time; }
+float ByoYomiTimer::GetByoYomiTime() {
+  return m_byo_yomi_time;
+}

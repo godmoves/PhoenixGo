@@ -108,7 +108,8 @@ int ZeroModel::Init(const ModelConfig &model_config) {
   checkpoint_path_tensor.scalar<std::string>()() = checkpoint_path.string();
   status = m_session->Run({{meta_graph_def.saver_def().filename_tensor_name(), checkpoint_path_tensor}},
                           {}, /* fetches_outputs is empty */
-                          {meta_graph_def.saver_def().restore_op_name()}, nullptr);
+                          {meta_graph_def.saver_def().restore_op_name()},
+                          nullptr);
   if (!status.ok()) {
     LOG(ERROR) << "Error loading checkpoint from " << checkpoint_path << ": " << status.ToString();
     return ERR_RESTORE_VAR;
@@ -170,7 +171,8 @@ int ZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     value[i] = -value_tensor(i);
   }
 
-  // elf always outputs value for black, we need to reverse it when white to move.
+  // elf always outputs value for black,
+  // we need to reverse it when white to move.
   if (FLAGS_elf) {
     for (int i = 0; i < batch_size; ++i) {
       if (inputs[i][16] < 0.5) {

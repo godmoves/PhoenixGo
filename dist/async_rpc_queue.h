@@ -46,7 +46,9 @@ template <class Resp> struct AsyncClientCall : public AsyncClientCallBase {
   std::unique_ptr<grpc::ClientAsyncResponseReader<Resp>> response_reader;
   AsyncRpcCallback<Resp> callback;
 
-  void Complete() override { callback(status, resp); }
+  void Complete() override {
+    callback(status, resp);
+  }
 };
 
 class AsyncRpcQueue {
@@ -73,8 +75,7 @@ public:
     void *got_tag;
     bool ok = false;
     for (int i = 0; (n < 0 || i < n) && !m_is_shutdown && m_cq.Next(&got_tag, &ok); ++i) {
-      std::unique_ptr<AsyncClientCallBase> call(
-          static_cast<AsyncClientCallBase *>(got_tag));
+      std::unique_ptr<AsyncClientCallBase> call(static_cast<AsyncClientCallBase *>(got_tag));
       --m_size;
       call->Complete();
     }
@@ -85,7 +86,9 @@ public:
     m_cq.Shutdown();
   }
 
-  int Size() { return m_size; }
+  int Size() {
+    return m_size;
+  }
 
 private:
   grpc::CompletionQueue m_cq;

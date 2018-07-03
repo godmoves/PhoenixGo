@@ -223,9 +223,13 @@ public:
 
   void CopyFrom(const GoState &src);
 
-  inline GoStoneColor CurrentPlayer() const { return current_player_; }
+  inline GoStoneColor CurrentPlayer() const {
+    return current_player_;
+  }
 
-  inline GoCoordId GetLastMove() const { return last_position_; }
+  inline GoCoordId GetLastMove() const {
+    return last_position_;
+  }
 
   void GetLastMove(GoCoordId &x, GoCoordId &y);
 
@@ -237,9 +241,13 @@ public:
     return liberty_count_[id];
   }
 
-  inline void HandOff() { current_player_ = Opponent(); }
+  inline void HandOff() {
+    current_player_ = Opponent();
+  }
 
-  bool IsDoublePass() const { return is_double_pass_; }
+  bool IsDoublePass() const {
+    return is_double_pass_;
+  }
 
   inline bool IsLegal(const GoCoordId id) const {
     return GoFunction::IsPass(id) || legal_move_map_[id];
@@ -262,23 +270,34 @@ public:
            (GoComm::COLOR_UNKNOWN != color ? color : current_player_);
   }
 
-  inline GoStoneColor Self() const { return current_player_; }
+  inline GoStoneColor Self() const {
+    return current_player_;
+  }
 
   GoSize
   TryMove(GoBlock &blk, const GoCoordId id, GoBlockId *nbId, GoBlockId *dieId,
-          GoSize libCnt =
-              GoComm::GOBOARD_SIZE); // nbId, dieId: size should be at least 5
+          GoSize libCnt = GoComm::GOBOARD_SIZE); // nbId, dieId: size should be at least 5
 
   // features for rollout
-  const GoStoneColor *GetBoard() const { return board_state_; }
+  const GoStoneColor *GetBoard() const {
+    return board_state_;
+  }
 
-  const bool *GetLegal() const { return legal_move_map_; }
+  const bool *GetLegal() const {
+    return legal_move_map_;
+  }
 
-  const GoSize *GetLib() const { return liberty_count_; }
+  const GoSize *GetLib() const {
+    return liberty_count_;
+  }
 
-  const GoSize *GetMoveCount() const { return move_count_; }
+  const GoSize *GetMoveCount() const {
+    return move_count_;
+  }
 
-  const GoSize &GetTs() const { return timestamp_; };
+  const GoSize &GetTs() const {
+    return timestamp_;
+  };
 
   std::vector<bool> GetFeature() const;
 
@@ -301,13 +320,14 @@ public:
 
   void ShowLegalMap() const;
 
-  uint64_t GetHashValue() const { return zobrist_hash_value_; }
+  uint64_t GetHashValue() const {
+    return zobrist_hash_value_;
+  }
 
   uint64_t GetNewHashValue(GoCoordId to);
 
 protected:
-  GoSize CalcRegionScore(const GoCoordId &xy, const GoStoneColor color,
-                         bool *vis) const;
+  GoSize CalcRegionScore(const GoCoordId &xy, const GoStoneColor color, bool *vis) const;
 
   void CalcScoreWithColor(GoSize &cnt, const GoStoneColor color) const;
 

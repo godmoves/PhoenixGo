@@ -124,14 +124,19 @@ time_control {
     return conf
 
 
-trt = True
-elf = False
-for i in range(4):
-    get_conf(i + 1, trt, elf)
-    trt = not trt
-    get_conf(i + 1, trt, elf)
-    elf = not elf
-    get_conf(i + 1, trt, elf)
-    trt = not trt
-    get_conf(i + 1, trt, elf)
-    elf = not elf
+def main():
+    trt = True
+    elf = False
+    for i in range(4):
+        get_conf(i + 1, trt, elf)
+        trt = not trt
+        get_conf(i + 1, trt, elf)
+        elf = not elf
+        get_conf(i + 1, trt, elf)
+        trt = not trt
+        get_conf(i + 1, trt, elf)
+        elf = not elf
+
+
+if __name__ == '__main__':
+    main()

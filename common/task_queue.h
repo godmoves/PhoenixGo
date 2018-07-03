@@ -26,7 +26,9 @@
 template <class T> class TaskQueue {
 public:
   TaskQueue(int capacity = 0)
-      : m_capacity(capacity), m_size(0), m_is_close(false) {}
+      : m_capacity(capacity),
+        m_size(0),
+        m_is_close(false) {}
 
   template <class U> void Push(U &&elem) {
     std::unique_lock<std::mutex> lock(m_mutex);
@@ -80,9 +82,13 @@ public:
     m_pop_cond.notify_all();
   }
 
-  bool IsClose() const { return m_is_close; }
+  bool IsClose() const {
+    return m_is_close;
+  }
 
-  int Size() const { return m_size; }
+  int Size() const {
+    return m_size;
+  }
 
 private:
   std::deque<T> m_queue;

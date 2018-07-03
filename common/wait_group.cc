@@ -33,7 +33,9 @@ void WaitGroup::Add(int v) {
   }
 }
 
-void WaitGroup::Done() { Add(-1); }
+void WaitGroup::Done() {
+  Add(-1);
+}
 
 bool WaitGroup::Wait(int64_t timeout_us) {
   std::unique_lock<std::mutex> lock(m_mutex);

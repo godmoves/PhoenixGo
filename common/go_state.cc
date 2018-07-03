@@ -72,7 +72,8 @@ GoState::GoState(const GoState &gms) : GoState() { CopyFrom(gms); }
 
 GoState::~GoState() {}
 
-GoSize GoState::CalcRegionScore(const GoCoordId &xy, const GoStoneColor color,
+GoSize GoState::CalcRegionScore(const GoCoordId &xy,
+                                const GoStoneColor color,
                                 bool *vis) const {
   // using stack instead of queue for speed up
   stack<GoCoordId> q;
@@ -151,7 +152,9 @@ GoCoordId GoState::FindCoord(const GoCoordId id) {
 }
 
 void GoState::FixBlockInfo() {
-  FOR_EACHBLOCK(i) { block_pool_[i].stones = stones_; }
+  FOR_EACHBLOCK(i) {
+    block_pool_[i].stones = stones_;
+  }
 }
 
 bool GoState::IsMovable() const {
@@ -209,10 +212,8 @@ vector<bool> GoState::GetFeature() const {
   // we should get planes swap of each two planes
   int reverse_plane = int(Self() == BLACK);
 
-  for (GoSize i = 0;
-       i < SIZE_HISTORYEACHSIDE && i < feature_history_list_.size(); ++i) {
-    const string &feature_str =
-        *(feature_history_list_.rbegin() + (i ^ reverse_plane));
+  for (GoSize i = 0; i < SIZE_HISTORYEACHSIDE && i < feature_history_list_.size(); ++i) {
+    const string &feature_str = *(feature_history_list_.rbegin() + (i ^ reverse_plane));
     for (int j = 0, k = i; j < GOBOARD_SIZE; ++j, k += 17) {
       feature[k] = feature_str[j] - '0';
     }
@@ -235,8 +236,7 @@ const string GoState::GetFeatureString() const {
 
   reverse_plane = int(Self() == BLACK);
   // CHECK(feature_history_list_.size() % 2 == 0)
-  //     << "feature_history_list_ size " << feature_history_list_.size() << "
-  //     not legal";
+  //     << "feature_history_list_ size " << feature_history_list_.size() << "not legal";
 
   for (GoSize i = 0; i < SIZE_HISTORYEACHSIDE; ++i) {
     if (i < feature_history_list_.size()) {
@@ -251,8 +251,7 @@ const string GoState::GetFeatureString() const {
 }
 
 const string GoState::GetLastFeaturePlane() const {
-  return *(feature_history_list_.rbegin() + 1) +
-         *feature_history_list_.rbegin();
+  return *(feature_history_list_.rbegin() + 1) + *feature_history_list_.rbegin();
 }
 
 void GoState::GetSensibleMove() {
@@ -316,6 +315,7 @@ void GoState::GetSensibleMove() {
       legal_move_map_[i] = false;
       continue;
     }
+
     // check board state duplicate
     if (positional_superko_) {
       uint64_t new_zobrist_hash_value = zobrist_hash_value_;
@@ -333,8 +333,7 @@ void GoState::GetSensibleMove() {
         });
       }
 
-      if (board_hash_states_.find(new_zobrist_hash_value) !=
-          board_hash_states_.end()) {
+      if (board_hash_states_.find(new_zobrist_hash_value) != board_hash_states_.end()) {
         legal_move_map_[i] = false;
       }
     }
@@ -395,7 +394,8 @@ int GoState::Move(const GoCoordId to) {
   visited_positions_[blkId] = timestamp_;
 
   for (GoBlockId i = 1; i <= dieId[0]; ++i) {
-    if (1 == block_pool_[dieId[i]].stone_count && 1 == newBlk.stone_count &&
+    if (1 == block_pool_[dieId[i]].stone_count &&
+        1 == newBlk.stone_count &&
         1 == newBlk.CountLiberty()) {
       ko_position_ = block_pool_[dieId[i]].head;
     }

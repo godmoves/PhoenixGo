@@ -25,11 +25,13 @@
 
 DistZeroModelClient::DistZeroModelClient(const std::string &server_address,
                                          const DistConfig &dist_config)
-    : m_config(dist_config), m_server_address(server_address),
+    : m_config(dist_config),
+      m_server_address(server_address),
       m_stub(DistZeroModel::NewStub(grpc::CreateChannel(
           server_address, grpc::InsecureChannelCredentials()))),
-      m_leaky_bucket(dist_config.leaky_bucket_size(),
-                     dist_config.leaky_bucket_refill_period_ms()) {}
+      m_leaky_bucket(
+          dist_config.leaky_bucket_size(),
+          dist_config.leaky_bucket_refill_period_ms()) {}
 
 int DistZeroModelClient::Init(const ModelConfig &model_config) {
   InitReq req;
@@ -74,8 +76,8 @@ int DistZeroModelClient::Forward(const std::vector<std::vector<bool>> &inputs,
 
   for (const auto &features : inputs) {
     if (features.size() != INPUT_DIM) {
-      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got "
-                 << features.size();
+      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM
+                 << ", got " << features.size();
       return ERR_INVALID_INPUT;
     }
     std::string encode_features((INPUT_DIM + 7) / 8, 0);

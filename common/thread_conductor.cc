@@ -54,7 +54,9 @@ void ThreadConductor::Wait() {
   m_resume_wg.Done();
 }
 
-void ThreadConductor::AckPause() { m_pause_wg.Done(); }
+void ThreadConductor::AckPause() {
+  m_pause_wg.Done();
+}
 
 bool ThreadConductor::Join(int64_t timeout_us) {
   return m_pause_wg.Wait(timeout_us);
@@ -66,7 +68,9 @@ void ThreadConductor::Sleep(int64_t duration_us) {
                   [this] { return m_state == k_pause; });
 }
 
-bool ThreadConductor::IsRunning() { return m_state == k_running; }
+bool ThreadConductor::IsRunning() {
+  return m_state == k_running;
+}
 
 void ThreadConductor::Terminate() {
   Pause();
@@ -78,4 +82,6 @@ void ThreadConductor::Terminate() {
   m_cond.notify_all();
 }
 
-bool ThreadConductor::IsTerminate() { return m_state == k_terminate; }
+bool ThreadConductor::IsTerminate() {
+  return m_state == k_terminate;
+}

@@ -31,7 +31,8 @@ DEFINE_int32(gpu, 0, "Use which gpu.");
 
 class DistZeroModelServiceImpl final : public DistZeroModel::Service {
 public:
-  grpc::Status Init(grpc::ServerContext *context, const InitReq *req,
+  grpc::Status Init(grpc::ServerContext *context,
+                    const InitReq *req,
                     InitResp *resp) override {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -78,7 +79,8 @@ public:
     }
   }
 
-  grpc::Status Forward(grpc::ServerContext *context, const ForwardReq *req,
+  grpc::Status Forward(grpc::ServerContext *context,
+                       const ForwardReq *req,
                        ForwardResp *resp) override {
     Timer timer;
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -92,8 +94,7 @@ public:
       if ((int)encode_features.size() * 8 < m_model->INPUT_DIM) {
         LOG(ERROR) << "Error input features need " << m_model->INPUT_DIM
                    << " bits, recv only " << encode_features.size() * 8;
-        return grpc::Status(grpc::StatusCode(ERR_INVALID_INPUT),
-                            "Forward error");
+        return grpc::Status(grpc::StatusCode(ERR_INVALID_INPUT), "Forward error");
       }
       std::vector<bool> features(m_model->INPUT_DIM);
       for (int i = 0; i < m_model->INPUT_DIM; ++i) {
@@ -137,8 +138,7 @@ int main(int argc, char *argv[]) {
   DistZeroModelServiceImpl service;
 
   grpc::ServerBuilder builder;
-  builder.AddListeningPort(FLAGS_server_address,
-                           grpc::InsecureServerCredentials());
+  builder.AddListeningPort(FLAGS_server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   LOG(INFO) << "Server listening on " << FLAGS_server_address;

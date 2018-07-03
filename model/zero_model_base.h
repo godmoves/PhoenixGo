@@ -60,10 +60,8 @@ public:
     for (int i = 0; i < 8; ++i) {
       for (int j = 0; j < 19; ++j) {
         for (int k = 0; k < 19; ++k) {
-          new_feature[k + 19 * j + 361 * i] =
-              feature[(2 * i) + 17 * (19 * j + k)];
-          new_feature[k + 19 * j + 361 * (i + 8)] =
-              feature[(2 * i + 1) + 17 * (19 * j + k)];
+          new_feature[k + 19 * j + 361 * i] = feature[(2 * i) + 17 * (19 * j + k)];
+          new_feature[k + 19 * j + 361 * (i + 8)] = feature[(2 * i + 1) + 17 * (19 * j + k)];
         }
       }
     }

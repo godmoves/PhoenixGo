@@ -46,7 +46,9 @@ class LocalMonitor {
   }
 
 public:
-  LocalMonitor() { Reset(); }
+  LocalMonitor() {
+    Reset();
+  }
 
   void Reset() {
     m_max_eval_cost_ms = 0;
@@ -189,8 +191,7 @@ private:
 
   void DelLocal(LocalMonitor *p) {
     std::lock_guard<std::mutex> lock(m_local_monitors_mutex);
-    m_local_monitors.erase(
-        std::find(m_local_monitors.begin(), m_local_monitors.end(), p));
+    m_local_monitors.erase(std::find(m_local_monitors.begin(), m_local_monitors.end(), p));
   }
 
   LocalMonitor &GetLocal() {
@@ -336,6 +337,5 @@ private:
   static const int k_max_monitor_instances = 1000;
   static MCTSMonitor *g_global_monitors[k_max_monitor_instances];
   static std::mutex g_global_monitors_mutex;
-  static thread_local std::shared_ptr<LocalMonitor>
-      g_local_monitors[k_max_monitor_instances];
+  static thread_local std::shared_ptr<LocalMonitor> g_local_monitors[k_max_monitor_instances];
 };

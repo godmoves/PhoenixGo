@@ -50,8 +50,7 @@ std::string MCTSDebugger::GetDebugStr() {
   TreeNode *root = m_engine->m_root;
   int ith = m_engine->m_num_moves;
   std::string ith_str = std::to_string(ith) + "th move(" + "wb"[ith & 1] + ")";
-  float root_action =
-      (float)root->total_action / k_action_value_base / root->visit_count;
+  float root_action = (float)root->total_action / k_action_value_base / root->visit_count;
   std::string debug_str =
       ith_str + ": " + GoFunction::IdToStr(root->move) +
       ", winrate=" + std::to_string((root_action + 1) * 50) + "%" +
