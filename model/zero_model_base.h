@@ -21,9 +21,13 @@
 #include <functional>
 #include <vector>
 
+#include <gflags/gflags.h>
+
 #include "common/errordef.h"
 
 #include "model/model_config.pb.h"
+
+DECLARE_bool(elf); // using ELF OpenGo weight.
 
 class ZeroModelBase {
 public:

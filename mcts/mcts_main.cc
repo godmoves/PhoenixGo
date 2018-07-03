@@ -40,6 +40,8 @@ DEFINE_string(init_moves, "", "Initialize Go board with init_moves.");
 DEFINE_bool(gtp, false, "Run as gtp server.");
 DEFINE_int32(listen_port, 0, "Listen which port.");
 DEFINE_string(allow_ip, "", "List of client ip allowed to connect, seperated by comma.");
+DEFINE_bool(lizzie, false, "Run in lizzie mode.");
+DEFINE_bool(elf, false, "Using ELF OpenGo weight.");
 #if !defined(_WIN32) && !defined(_WIN64)
 DEFINE_bool(fork_per_request, true, "Fork for each request or not.");
 #endif

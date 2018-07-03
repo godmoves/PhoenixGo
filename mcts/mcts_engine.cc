@@ -34,7 +34,7 @@
 #include "model/trt_zero_model.h"
 #include "model/zero_model.h"
 
-DEFINE_bool(lizzie, false, "Run in lizzie mode.");
+DECLARE_bool(lizzie); // run in lizzie mode.
 
 static thread_local std::random_device g_random_device;
 static thread_local std::minstd_rand g_random_engine(g_random_device());
