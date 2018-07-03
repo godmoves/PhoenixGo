@@ -21,9 +21,14 @@
 #include <functional>
 #include <vector>
 
+#include <gflags/gflags.h>
+
 #include "common/errordef.h"
 
 #include "model/model_config.pb.h"
+
+DECLARE_bool(lz); // using Leela Zero weight.
+DECLARE_bool(elf); // using ELF OpenGo weight.
 
 class ZeroModelBase {
 public:
@@ -52,31 +57,46 @@ public:
   virtual void Wait() {}
 
   std::vector<float> Transpose(std::vector<bool> feature) {
-    std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
-    for (int i = 0; i < 8; ++i) {
-      for (int j = 0; j < 19; ++j) {
-        for (int k = 0; k < 19; ++k) {
-          new_feature[k + 19 * j + 361 * i] =
-              feature[(2 * i) + 17 * (19 * j + k)];
-          new_feature[k + 19 * j + 361 * (i + 8)] =
-              feature[(2 * i + 1) + 17 * (19 * j + k)];
+    if (FLAGS_lz || FLAGS_elf) { // leela zero and elf format
+      std::vector<float> new_feature(19 * 19 * (16 + 2), 0);
+      for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 19; ++j) {
+          for (int k = 0; k < 19; ++k) {
+            new_feature[k + 19 * j + 361 * i] =
+                feature[(2 * i) + 17 * (19 * j + k)];
+            new_feature[k + 19 * j + 361 * (i + 8)] =
+                feature[(2 * i + 1) + 17 * (19 * j + k)];
+          }
         }
       }
-    }
-    if (float(feature[16]) > 0.5) {
-      for (int j = 0; j < 19 * 19; ++j) {
-        new_feature[19 * 19 * 16 + j] = 1; // this means black to move
+      if (float(feature[16]) > 0.5) {
+        for (int j = 0; j < 19 * 19; ++j) {
+          new_feature[19 * 19 * 16 + j] = 1; // this means black to move
+        }
+      } else {
+        for (int j = 0; j < 19 * 19; ++j) {
+          new_feature[19 * 19 * 17 + j] = 1; // this means white to move
+        }
       }
-    } else {
-      for (int j = 0; j < 19 * 19; ++j) {
-        new_feature[19 * 19 * 17 + j] = 1; // this means white to move
+      return new_feature;
+    } else { // phoenix go format
+      std::vector<float> new_feature(19 * 19 * (16 + 1), 0);
+      for (int i = 0; i < 19 * 19 * (16 + 1); ++i) {
+        new_feature[i] = feature[i];
       }
+      return new_feature;
     }
-    return new_feature;
   }
 
-  enum {
+  // #if (FLAGS_elf || FLAGS_lz)
+  enum { // 18 feature plans for lz and elf
     INPUT_DIM = 19 * 19 * 18,
     OUTPUT_DIM = 19 * 19 + 1,
   };
+  // #else
+  // enum { // 17 feature planes for phoenix go
+  //   INPUT_DIM = 19 * 19 * 17,
+  //   OUTPUT_DIM = 19 * 19 + 1,
+  // };
+  // #endif
 };

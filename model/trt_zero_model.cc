@@ -188,6 +188,15 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     value[i] = -value[i];
   }
 
+  // elf always outputs value for black, we need to reverse it when white to move.
+  if (FLAGS_elf) {
+    for (int i = 0; i < batch_size; ++i) {
+      if (inputs[i][16] < 0.5) {
+        value[i] = - value[i];
+      }
+    }
+  }
+
   return 0;
 }
 
