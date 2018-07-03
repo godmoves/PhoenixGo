@@ -24,6 +24,20 @@ If you use PhoenixGo in your research, please consider citing the library as fol
 }
 ```
 
+## Info about Leela Zero
+
+**Leela Zero** is a free and open-source computer Go software released on 25 October 2017.
+It is developed by Belgian programmer [Gian-Carlo Pascutto](https://github.com/gcp), the author of chess engine Sjeng and Go engine Leela.
+
+Leela Zero's algorithm is based on DeepMind's 2017 paper about AlphaGo Zero.
+Unlike the original Leela, which has a lot of human knowledge and heuristics programmed into it, Leela Zero only knows the basic rules and nothing more.
+
+Leela Zero is trained by a distributed effort, which is coordinated at the [Leela Zero website](http://zero.sjeng.org/). Members of the community provide computing resources by running the client, which generates self-play games and submits them to the server. The self-play games are used to train newer networks. Generally, over 500 clients have connected to the server to contribute resources. The community has provided high quality code contributions as well.
+
+Leela Zero finished third at the BerryGenomics Cup World AI Go Tournament in Fuzhou, Fujian, China on 28 April 2018.
+
+Additionally, in early 2018 the same team branched Leela Chess Zero from the same code base, also to verify the methods in the AlphaZero paper as applied to the game of chess. AlphaZero's use of Google TPUs was replaced by a crowd-sourcing infrastructure and the ability to use graphics card GPUs via the OpenCL library. Even so, it is expected to take a year of crowd-sourced training to make up for the dozen hours that AlphaZero was allowed to train for its chess match in the paper.
+
 ## Convert Leela Zero weight
 
 ### Dependencies
