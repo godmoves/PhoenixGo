@@ -4,6 +4,7 @@ ckpt*
 bazel-*
 compile_commands.json
 tools/actions
+tools/etc
 third_party/bazel
 *.pyc
 .bazelrc
