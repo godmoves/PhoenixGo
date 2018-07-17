@@ -7,7 +7,7 @@ import uff
 
 import subprocess
 
-UFF_TO_PLAN_EXE_PATH = 'u2p/build/uff_to_plan'
+UFF_TO_PLAN_EXE_PATH = 'uff2plan/build/uff_to_plan'
 UFF_FILENAME = 'leelaz-model-0.uff'
 
 
