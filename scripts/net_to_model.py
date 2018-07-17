@@ -34,8 +34,6 @@ with open(sys.argv[1], 'r') as f:
         if e == 0:
             # Version
             print("Version", line.strip())
-            if line != '1\n':
-                raise ValueError("Unknown version {}".format(line.strip()))
         else:
             weights.append(list(map(float, line.split(' '))))
         if e == 2:
