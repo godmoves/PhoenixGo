@@ -20,11 +20,9 @@ x64
 x86
 Release
 Debug
+*.PLAN
+build
+__pycache__
 scripts/*.txt
 scripts/leela*
-scripts/log
-scripts/__pycache__
 scripts/checkpoint
-scripts/u2p/build
-scripts/trt_test/build
-scripts/trt_test/test.PLAN
