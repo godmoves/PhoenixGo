@@ -1,17 +1,29 @@
+# logs and configures are not uploaded
 log
 conf
+
+# checkpoint folders are uploaded as release
 ckpt*
+
+# results of bazel build are ignored
 bazel-*
-compile_commands.json
-tools/actions
-tools/etc
-third_party/bazel
-*.pyc
 .bazelrc
 .tf_configure.bazelrc
 tools/python_bin_path.sh
+
+# ignore tensorrt files
+*.uff
+*.PLAN
+
+# ignore tensorflow files
+*.index
+*.meta
+*.data-00000-of-00001
+*.pb
 *.pb.h
 *.pb.cc
+
+# ignore flies for VS building
 *.user
 *.VC.db
 *.VC.VC.opendb
@@ -20,10 +32,21 @@ x64
 x86
 Release
 Debug
-*.PLAN
+
+# ignore folders for building
 build
+
+# ignore python cache files
+*.pyc
 __pycache__
+
+# ignore lz weight file (txt, tf, ckpt)
 scripts/*.txt
-scripts/leela*
 scripts/checkpoint
-scripts/float2half
+
+# following files are for testing only
+scripts/float2half/meta_graph
+scripts/float2half/graph_editor.py
+scripts/float2half/node.txt
+scripts/float2half/test.pb
+scripts/float2half/test_meta_graph
