@@ -26,3 +26,4 @@ __pycache__
 scripts/*.txt
 scripts/leela*
 scripts/checkpoint
+scripts/float2half

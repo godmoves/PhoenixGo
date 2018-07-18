@@ -19,6 +19,7 @@
 import argparse
 import numpy as np
 
+
 def swa(inputs, output, weights=None):
     """ Average weights of the weight files.
 
@@ -29,20 +30,22 @@ def swa(inputs, output, weights=None):
 
     out_weights = []
 
-    if weights == None:
-        weights = [1.0]*len(inputs)
+    if weights is None:
+        weights = [1.0] * len(inputs)
 
     if len(weights) != len(inputs):
-        raise ValueError("Number of weights doesn't match number of input files")
+        raise ValueError(
+            "Number of weights doesn't match number of input files")
 
     # Normalize weights
-    weights = [float(w)/sum(weights) for w in weights]
+    weights = [float(w) / sum(weights) for w in weights]
 
     for count, filename in enumerate(inputs):
         with open(filename, 'r') as f:
             weights_in = []
             for line in f:
-                weights_in.append(weights[count] * np.array(list(map(float, line.split(' ')))))
+                weights_in.append(
+                    weights[count] * np.array(list(map(float, line.split(' ')))))
             if count == 0:
                 out_weights = weights_in
             else:
@@ -56,10 +59,11 @@ def swa(inputs, output, weights=None):
     with open(output, 'w') as f:
         for e, w in enumerate(out_weights):
             if e == 0:
-                #Version
+                # Version
                 f.write('1\n')
             else:
                 f.write(' '.join(map(str, w)) + '\n')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Average weight files.')

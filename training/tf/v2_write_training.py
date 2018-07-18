@@ -24,6 +24,7 @@ import numpy as np
 import pymongo
 import sys
 
+
 def mongo_fetch_games(q_out, num_games):
     """
         Read V1 format games from MongoDB and put them
@@ -61,6 +62,7 @@ def mongo_fetch_games(q_out, num_games):
             if game_count % 1000 == 0:
                 print("{} games".format(game_count))
 
+
 def disk_fetch_games(q_out, prefix):
     """
         Fetch chunk files off disk.
@@ -75,6 +77,7 @@ def disk_fetch_games(q_out, prefix):
             print("In {}".format(f))
     q_out.put('STOP')
 
+
 def fake_fetch_games(q_out, num_games):
     """
         Generate V1 format fake games. Used for testing and benchmarking
@@ -83,14 +86,15 @@ def fake_fetch_games(q_out, num_games):
         # Generate a 200 move 'game'
         # Generate a random game move.
         # 1. 18 binary planes of length 361
-        planes = [np.random.randint(2, size=361).tolist() for plane in range(16)]
+        planes = [np.random.randint(2, size=361).tolist()
+                  for plane in range(16)]
         stm = float(np.random.randint(2))
         planes.append([stm] * 361)
         planes.append([1. - stm] * 361)
         # 2. 362 probs
         probs = np.random.randint(3, size=362).tolist()
         # 3. And a winner: 1 or -1
-        winner = [ 2 * float(np.random.randint(2)) - 1 ]
+        winner = [2 * float(np.random.randint(2)) - 1]
 
         # Convert that to a v1 text record.
         items = []
@@ -112,6 +116,7 @@ def fake_fetch_games(q_out, num_games):
 
         q_out.put(game)
     q_out.put('STOP')
+
 
 def queue_gen(q, out_qs):
     """
@@ -137,6 +142,7 @@ def queue_gen(q, out_qs):
     for x in out_qs:
         x.put('STOP')
 
+
 def split_train_test(q_in, q_train, q_test):
     """
         Stream a stream of chunks into separate train and test
@@ -149,20 +155,22 @@ def split_train_test(q_in, q_train, q_test):
         # Use the hash of the game to determine the split. This means
         # that test games will never be used for training.
         h = hash(item) & 0xfff
-        if h < 0.1*0xfff:
+        if h < 0.1 * 0xfff:
             # a test game.
             q_test.put(item)
         else:
             q_train.put(item)
 
+
 class QueueChunkSrc:
     def __init__(self, q):
         self.q = q
         self.gen = None
+
     def next(self):
         print("Queue next")
         if self.gen is None:
-            self.gen = queue_gen(self.q,[])
+            self.gen = queue_gen(self.q, [])
         try:
             return next(self.gen)
         except:
@@ -191,48 +199,56 @@ def chunk_parser(q_in, q_out, shuffle_size, chunk_size):
         q_out.put(s)
     q_out.put('STOP')
 
+
 def chunk_writer(q_in, namesrc):
     """
         Write a batch of moves out to disk as a compressed file.
 
         Filenames are taken from the generator 'namegen'.
     """
-    for chunk in queue_gen(q_in,[]):
+    for chunk in queue_gen(q_in, []):
         filename = namesrc.next()
         chunk_file = gzip.open(filename, 'w', 1)
         chunk_file.write(chunk)
         chunk_file.close()
     print("chunk_writer completed")
 
+
 class NameSrc:
     """
         Generator a sequence of names, starting with 'prefix'.
     """
+
     def __init__(self, prefix):
         self.prefix = prefix
         self.n = 0
+
     def next(self):
         print("Name next")
         self.n += 1
         return self.prefix + "{:0>8d}.gz".format(self.n)
 
+
 def main(args):
     # Build the pipeline.
-    procs=[]
+    procs = []
     # Read from input.
     q_games = mp.SimpleQueue()
     if args:
         prefix = args.pop(0)
         print("Reading from chunkfiles {}".format(prefix))
-        procs.append(mp.Process(target=disk_fetch_games, args=(q_games, prefix)))
+        procs.append(mp.Process(
+            target=disk_fetch_games, args=(q_games, prefix)))
     else:
         print("Reading from MongoDB")
-        #procs.append(mp.Process(target=fake_fetch_games, args=(q_games, 20)))
-        procs.append(mp.Process(target=mongo_fetch_games, args=(q_games, 275000)))
+        # procs.append(mp.Process(target=fake_fetch_games, args=(q_games, 20)))
+        procs.append(mp.Process(
+            target=mongo_fetch_games, args=(q_games, 275000)))
     # Split into train/test
     q_test = mp.SimpleQueue()
     q_train = mp.SimpleQueue()
-    procs.append(mp.Process(target=split_train_test, args=(q_games, q_train, q_test)))
+    procs.append(mp.Process(target=split_train_test,
+                            args=(q_games, q_train, q_test)))
     # Convert v1 to v2 format and shuffle, writing 8192 moves per chunk.
     q_write_train = mp.SimpleQueue()
     q_write_test = mp.SimpleQueue()
@@ -243,11 +259,15 @@ def main(args):
     # The output files are in parse.py via another 1e6 sized shuffle buffer. At 8192 moves
     # per chunk, there's ~ 128 chunks in the shuffle buffer. With a batch size of 4096,
     # the expected max number of moves from the same game in the batch is < 1.14
-    procs.append(mp.Process(target=chunk_parser, args=(q_train, q_write_train, 1<<20, 8192)))
-    procs.append(mp.Process(target=chunk_parser, args=(q_test, q_write_test, 1<<16, 8192)))
+    procs.append(mp.Process(target=chunk_parser, args=(
+        q_train, q_write_train, 1 << 20, 8192)))
+    procs.append(mp.Process(target=chunk_parser, args=(
+        q_test, q_write_test, 1 << 16, 8192)))
     # Write to output files
-    procs.append(mp.Process(target=chunk_writer, args=(q_write_train, NameSrc('train_'))))
-    procs.append(mp.Process(target=chunk_writer, args=(q_write_test, NameSrc('test_'))))
+    procs.append(mp.Process(target=chunk_writer,
+                            args=(q_write_train, NameSrc('train_'))))
+    procs.append(mp.Process(target=chunk_writer,
+                            args=(q_write_test, NameSrc('test_'))))
 
     # Start all the child processes running.
     for p in procs:
@@ -256,6 +276,7 @@ def main(args):
     for p in procs:
         p.join()
     # All done!
+
 
 if __name__ == "__main__":
     mp.set_start_method('spawn')

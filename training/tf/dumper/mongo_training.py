@@ -17,8 +17,10 @@ game_count = 0
 total_game_count = 0
 chunk_file = None
 
+
 def get_chunk_name(hash):
     return "train_" + hash[0:8] + "_" + str(chunk_count) + ".gz"
+
 
 for net in networks:
     print("Searching for {}".format(net['hash']))
@@ -42,7 +44,8 @@ for net in networks:
             chunk_count += 1
             chunk_file = gzip.open(get_chunk_name(net['hash']), 'w', 1)
             game_count = 0
-            print("Net {} Chunk {} written".format(net['hash'][0:8], chunk_count))
+            print("Net {} Chunk {} written".format(
+                net['hash'][0:8], chunk_count))
         if total_game_count >= 275000:
             chunk_file.close()
             quit()
