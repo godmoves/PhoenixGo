@@ -6,7 +6,7 @@ set config=etc\mcts_cpu.conf
 
 echo use config file '%config%' >&2
 
-pushd %~dp0..
+pushd %~dp0..\..
 
 echo log to %CD%\log >&2
 md log 2>NUL
