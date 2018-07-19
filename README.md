@@ -134,6 +134,10 @@ $ wget https://github.com/Tencent/PhoenixGo/releases/download/trained-network-20
 $ tar xvzf trained-network-20b-v1.tar.gz
 $ scripts/start.sh
 ```
+or
+```
+$ bazel-bin/mcts/mcts_main --config_path=etc/{config} --gtp --logtostderr --v=1
+```
 
 `start.sh` will detect the number of GPUs, run `mcts_main` with proper config file, and write log files in directory `log`.
 You could also use a customized config by running `scripts/start.sh {config_path}`.
@@ -144,6 +148,11 @@ you could also run `bazel-bin/mcts/mcts_main` directly. See also [command-line-o
 
 The engine supports the GTP protocol, means it could be used with a GUI with GTP capability,
 such as [Sabaki](http://sabaki.yichuanshen.de).
+
+`--logtostderr` let `mcts_main` log messages to stderr, if you want to log to files,
+change `--logtostderr` to `--log_dir={log_dir}`	
+
+You could modify your config file following [configure-guide](#configure-guide).
 
 #### Distribute mode
 
@@ -166,6 +175,10 @@ and run the distributed master:
 
 ```
 $ scripts/start.sh etc/mcts_dist.conf
+```
+or
+```
+$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_dist.conf --gtp --logtostderr --v=1
 ```
 
 ## Configure Guide
