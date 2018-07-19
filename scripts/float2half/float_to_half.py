@@ -5,10 +5,10 @@ import uff
 
 import subprocess
 
-UFF_TO_PLAN_EXE_PATH = 'uff2plan/build/uff_to_plan'
+UFF_TO_PLAN_EXE_PATH = '../uff2plan/build/uff_to_plan'
 
 
-def graphToPlan(uff_model_name, plan_filename, input_name, policy_name,
+def graphToPlan(uff_model_name, plan_filename, input_name, input_feature, policy_name,
                 value_name, max_batch_size, max_workspace_size, data_type):
 
     # convert frozen graph to engine (plan)
@@ -16,6 +16,7 @@ def graphToPlan(uff_model_name, plan_filename, input_name, policy_name,
         uff_model_name,
         plan_filename,
         input_name,
+        str(input_feature),
         policy_name,
         value_name,
         str(max_batch_size),
@@ -66,5 +67,11 @@ with tf.Session() as sess:
     # Cast layer is not supported by tensorrt now.
     # Inputs should be float rather than bool, so we need to skip or rewrite
     # the original graph's inputs part to fix this.
-    graphToPlan("zero.ckpt-20b-v1.uff", "zero.ckpt-20b-v1.FP16.PLAN", "inputs",
+    #
+    # Some tools may solve this problem:
+    # tf.contrib.graph_editor:
+    # https://tensorflow.google.cn/api_guides/python/contrib.graph_editor
+    # Graph Transform Tool:
+    # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/graph_transforms
+    graphToPlan("zero.ckpt-20b-v1.uff", "zero.ckpt-20b-v1.FP16.PLAN", "inputs", 17,
                 "policy", "zero/value_head/Tanh", 4, 1 << 20, "half")
