@@ -1,16 +1,15 @@
 ## Speed test of different backends
 
-All results are based on the speed of 1x1080ti on Ubuntu.  
-Only the time of neural network computation is included. The unit of results
-is positions/second.  
+All results are based on the speed of 1x1080ti on Ubuntu. Only the time of neural
+network computation is included and the unit of results is positions/second.  
 
 ### Meaning of abbreviations
 
-- lc0: Leela Chess Zero  
-- lz master: master branch of Leela Zero
-- Ttl batch: OpenCL batching branch of Ttl fork  
-- Ttl cudnn: cuDNN branch of Ttl fork  
-- ph go: PhoenixGo
+- lc0: [Leela Chess Zero](https://github.com/LeelaChessZero/lc0)  
+- lz master: [master branch of Leela Zero](https://github.com/gcp/leela-zero)
+- Ttl batch: [OpenCL batching branch of Ttl fork](https://github.com/Ttl/leela-zero/tree/batching_test)  
+- Ttl cudnn: [cuDNN branch of Ttl fork](https://github.com/Ttl/leela-zero/tree/cudnn)  
+- ph go: [PhoenixGo](https://github.com/Tencent/PhoenixGo)
 
 ### Results
 
