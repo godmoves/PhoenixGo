@@ -29,7 +29,7 @@ network computation is included and the unit of results is positions/second.
 |                  |8         |826           |530           |
 |                  |16        |1169          |729           |
 |TensorFlow (ph go)|          |              |              | 
-|TensorRT (ph go)  |1         |615           |410           |
+|TensorRT (ph go)  |1         |630           |410           |
 |                  |2         |832           |519           |
 |                  |4         |910           |580           |
 |                  |8         |1004          |587           |
