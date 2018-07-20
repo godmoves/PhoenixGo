@@ -79,9 +79,14 @@ version, then add `meta_graph_path: "leelaz-model-0.meta"` into `model_config` a
 
 ### Run in ELF mode
 
-By adding flag `--elf`:
+By enable `value_form_black` option in configure file:
 <pre>
-$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu_elf.conf --gtp --logtostderr --v=1 <b>--elf</b>
+model_config {
+    train_dir: "ckpt.elf"
+    enable_tensorrt: 1
+    tensorrt_model_path: "leelaz-elf-0.PLAN"
+    <b>value_from_black: 1</b>
+}
 </pre>
 
 ### MyLizzie support (experimental)

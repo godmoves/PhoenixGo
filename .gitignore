@@ -44,9 +44,14 @@ __pycache__
 scripts/*.txt
 scripts/checkpoint
 
+# Auto generated configure files
+tools/etc/
+
 # following files are for testing only
 scripts/float2half/meta_graph
 scripts/float2half/graph_editor.py
 scripts/float2half/node.txt
 scripts/float2half/test.pb
 scripts/float2half/test_meta_graph
+etc/mcts_dist_test.conf
+

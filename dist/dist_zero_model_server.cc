@@ -28,7 +28,6 @@
 
 DEFINE_string(server_address, "", "Server address.");
 DEFINE_int32(gpu, 0, "Use which gpu.");
-DEFINE_bool(elf, false, "Using ELF OpenGo weight.");
 
 class DistZeroModelServiceImpl final : public DistZeroModel::Service {
 public:

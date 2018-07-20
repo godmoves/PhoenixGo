@@ -47,4 +47,5 @@ public:
 private:
   std::unique_ptr<tensorflow::Session> m_session;
   int m_gpu;
+  bool m_value_from_black;
 };

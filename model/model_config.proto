@@ -13,4 +13,5 @@ message ModelConfig {
     bool enable_xla = 12;
     bool enable_tensorrt = 15;
     string tensorrt_model_path = 16;
+    bool value_from_black = 17;
 }

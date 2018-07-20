@@ -15,19 +15,21 @@ search_thread_list = [0, 8, 12, 16, 20, 24, 28, 32, 36]
 
 
 def get_model(trt, elf):
-    if elf:
+    if elf:  # elf weight
         if trt:
             info = """model_config {
     train_dir: "ckpt.elf"
     enable_tensorrt: 1
     tensorrt_model_path: "leelaz-elf-0.PLAN"
+    value_from_black: 1
 }"""
         else:
             info = """model_config {
     train_dir: "ckpt.elf"
     meta_graph_path: "leelaz-elf-0.meta"
+    value_from_black: 1
 }"""
-    else:
+    else:  # lz weight
         if trt:
             info = """model_config {
     train_dir: "ckpt.lz"
@@ -127,7 +129,9 @@ time_control {
 def main():
     trt = True
     elf = False
-    for i in range(4):
+    max_gpu_num = 4
+
+    for i in range(max_gpu_num):
         get_conf(i + 1, trt, elf)
         trt = not trt
         get_conf(i + 1, trt, elf)

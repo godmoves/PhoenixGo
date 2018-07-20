@@ -75,7 +75,8 @@ int DistZeroModelClient::Forward(const std::vector<std::vector<bool>> &inputs,
   ForwardResp resp;
 
   for (const auto &features : inputs) {
-    // Ignore inputs dim check here.
+    // Ignore inputs dim check here, bacause we will do this in real
+    // forward pass again.
     // if (features.size() != INPUT_DIM) {
     //   LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM
     //              << ", got " << features.size();

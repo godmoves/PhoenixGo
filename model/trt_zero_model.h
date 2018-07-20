@@ -51,4 +51,5 @@ private:
   std::vector<void *> m_cuda_buf;
   int m_gpu;
   int m_global_step;
+  bool m_value_from_black;
 };
