@@ -84,6 +84,7 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     return;
   }
 
+  time_t start = clock();
   for (int i = 0; i < parent->ch_len; ++i) {
     TreeNode *node = parent->ch;
     // Only send variations with visits
@@ -91,8 +92,11 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
 
     std::string move = GoFunction::IdToStr(node[i].move);
 
-    // TODO: add pv later. Seems PhoenixGo doesn't support pv
+    // This may slow down the speed a little.
+    // time_t start = clock();
     std::string pv = move + " " + m_debugger.GetMainMovePath(&node[i]); 
+    // time_t end = clock();
+    // std::cout << "get pv time: " << (end - start) << "\n";
 
     // Not sure the meaning of value
     float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
@@ -104,11 +108,14 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     // Store data in array
     sortable_data.emplace_back(move, node[i].visit_count, move_eval, policy, pv);
   }
+  time_t end = clock();
+  // std::cout << "prepare string time: " << (end - start) << "\n";
 
   // Sort array to decide order
   std::stable_sort(std::begin(sortable_data), std::end(sortable_data));
 
   auto i = 0;
+  start = clock();
   // Output analysis data in gtp stream
   for (const auto& node : sortable_data) {
     if (i > 0) {
@@ -118,6 +125,8 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     i++;
   }
   std::cerr << "\n";
+  end = clock();
+  // std::cout << "std::err output time: " << (end - start) << "\n";
 }
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
@@ -901,6 +910,7 @@ void MCTSEngine::SearchRoutine() {
   // set up timer for mylizzie output
   time_t elapsed, start = clock();
   float elapsed_time;
+  time_t outputs_start, outputs_end;
 
   for (;;) {
     if (!m_search_threads_conductor.IsRunning()) {
@@ -923,7 +933,11 @@ void MCTSEngine::SearchRoutine() {
 
     if (elapsed_time > 200000 && FLAGS_lizzie) { // 5 outputs per second
       start = elapsed;
+
+      outputs_start = clock();
       OutputAnalysis(m_root);
+      outputs_end = clock();
+      std::cout << "total output time: " << (outputs_end - outputs_start) << "\n";
     }
 
     int expect_unexpanded = k_unexpanded;
