@@ -152,9 +152,9 @@ class TFProcess:
         self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
-        self.max_loss_len = 20000
+        self.max_loss_range = 20000
         self.drop_rate_threshold = 0.02
-        self.total_loss_record = deque(maxlen=self.max_loss_len)
+        self.total_loss_record = deque(maxlen=self.max_loss_range)
 
         self.min_lr = 1e-8
         self.lr = tf.Variable(0.1, dtype=tf.float32)
@@ -416,7 +416,7 @@ class TFProcess:
 
     def auto_adjust_lr(self, total_loss):
         self.total_loss_record.append(total_loss)
-        if len(self.total_loss_record) >= self.max_loss_len:
+        if len(self.total_loss_record) >= self.max_loss_range:
             first_loss = self.total_loss_record[0]
             last_loss = self.total_loss_record[-1]
 
