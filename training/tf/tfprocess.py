@@ -22,6 +22,7 @@ import os
 import tensorflow as tf
 import time
 import unittest
+from collection import deque
 
 
 def weight_variable(name, shape):
@@ -122,7 +123,7 @@ class TFProcess:
     def __init__(self):
         # Network structure
         self.RESIDUAL_FILTERS = 128
-        self.RESIDUAL_BLOCKS = 6
+        self.RESIDUAL_BLOCKS = 10
 
         # Set number of GPUs for training
         self.gpus_num = 1
@@ -150,6 +151,13 @@ class TFProcess:
 
         self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
+
+        self.max_loss_len = 20000
+        self.drop_rate_threshold = 0.02
+        self.total_loss_record = deque(maxlen=self.max_loss_len)
+
+        self.min_lr = 1e-8
+        self.lr = tf.Variable(0.1, dtype=tf.float32)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='leelalogs'):
         self.batch_size = batch_size
@@ -187,7 +195,7 @@ class TFProcess:
         # You need to change the learning rate here if you are training
         # from a self-play training set, for example start with 0.005 instead.
         opt = tf.train.MomentumOptimizer(
-            learning_rate=0.05, momentum=0.9, use_nesterov=True)
+            learning_rate=self.lr, momentum=0.9, use_nesterov=True)
 
         # Construct net here.
         tower_grads = []
@@ -406,15 +414,39 @@ class TFProcess:
         return {'policy': r[0], 'mse': r[1] / 4., 'reg': r[2],
                 'accuracy': r[3], 'total': r[0] + r[1] + r[2]}
 
+    def auto_adjust_lr(self, total_loss):
+        self.total_loss_record.append(total_loss)
+        if len(self.total_loss_record) >= self.max_loss_len:
+            first_loss = self.total_loss_record[0]
+            last_loss = self.total_loss_record[-1]
+
+            drop_rate = (first_loss - last_loss) / first_loss
+
+            if drop_rate < self.drop_rate_threshold:
+                print("Total loss drop rate {} < {}, auto drop learning rate.".format(
+                    drop_rate, self.drop_rate_threshold))
+                # if no enough progress, drop the learning rate
+                self.sess.run(tf.assign(self.lr, self.lr * 0.1))
+
     def process(self, train_data, test_data):
         info_steps = 1000
         stats = Stats()
         timer = Timer()
         while True:
             batch = next(train_data)
+
             # Measure losses and compute gradients for this batch.
             losses = self.measure_loss(batch, training=True)
             stats.add(losses)
+
+            # adjust learning rate automatically
+            learning_rate = sess.run(lr)
+            self.auto_adjust_lr(loss['total'])
+            # exit when lr is smaller than target.
+            if learning_rate < self.min_lr:
+                print('learning rate smaller than target, stop training')
+                exit()
+
             # fetch the current global step.
             steps = tf.train.global_step(self.session, self.global_step)
             if steps % self.macrobatch == (self.macrobatch - 1):
@@ -425,11 +457,17 @@ class TFProcess:
 
             if steps % info_steps == 0:
                 speed = info_steps * self.batch_size / timer.elapsed()
-                print("step {}, policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
-                    steps, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
+
+                print("step {} lr={} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
+                    steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
+
                 summaries = stats.summaries({'Policy Loss': 'policy',
-                                             'MSE Loss': 'mse'})
+                                             'MSE Loss': 'mse',
+                                             'Accuracy': 'accuracy',
+                                             'Total Loss': 'total'})
+                summaries += [tf.Summary.Value(tag='lr', simple_value=learning_rate)]
+
                 self.train_writer.add_summary(
                     tf.Summary(value=summaries), steps)
                 stats.clear()
@@ -443,7 +481,8 @@ class TFProcess:
                     test_stats.add(losses)
                 summaries = test_stats.summaries({'Policy Loss': 'policy',
                                                   'MSE Loss': 'mse',
-                                                  'Accuracy': 'accuracy'})
+                                                  'Accuracy': 'accuracy',
+                                                  'Total Loss': 'total'})
                 self.test_writer.add_summary(tf.Summary(value=summaries), steps)
                 print("step {}, policy={:g} training accuracy={:g}%, mse={:g}".format(
                     steps, test_stats.mean('policy'),
