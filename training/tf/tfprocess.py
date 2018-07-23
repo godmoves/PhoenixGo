@@ -159,7 +159,7 @@ class TFProcess:
         self.min_lr = 1e-8
         self.lr = tf.Variable(0.1, dtype=tf.float32)
 
-    def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='leelalogs'):
+    def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='leelazlogs'):
         self.batch_size = batch_size
         self.macrobatch = macrobatch
         self.logbase = logbase
@@ -490,7 +490,7 @@ class TFProcess:
                     test_stats.mean('mse')))
 
                 # Write out current model and checkpoint
-                path = os.path.join(os.getcwd(), "leelaz-model")
+                path = os.path.join(os.getcwd(), "weigthts/leelaz-model")
                 save_path = self.saver.save(self.session, path,
                                             global_step=steps)
                 print("Model saved in file: {}".format(save_path))
