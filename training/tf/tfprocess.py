@@ -155,7 +155,7 @@ class TFProcess:
         self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
-        self.max_loss_range = 80000
+        self.max_loss_range = 80
         self.drop_rate_threshold = 0.05
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
@@ -443,14 +443,6 @@ class TFProcess:
             losses = self.measure_loss(batch, training=True)
             stats.add(losses)
 
-            # adjust learning rate automatically
-            learning_rate = self.session.run(self.lr)
-            self.auto_adjust_lr(losses['total'])
-            # exit when lr is smaller than target.
-            if learning_rate < self.min_lr:
-                self.logger.info('learning rate smaller than target, stop training')
-                exit()
-
             # fetch the current global step.
             steps = tf.train.global_step(self.session, self.global_step)
             if steps % self.macrobatch == (self.macrobatch - 1):
@@ -460,6 +452,14 @@ class TFProcess:
                 self.session.run([self.clear_op])
 
             if steps % info_steps == 0:
+                # adjust learning rate automatically
+                learning_rate = self.session.run(self.lr)
+                self.auto_adjust_lr(losses['total'])
+                # exit when lr is smaller than target.
+                if learning_rate < self.min_lr:
+                    self.logger.info('learning rate smaller than target, stop training')
+                    exit()
+
                 speed = info_steps * self.batch_size / timer.elapsed()
 
                 self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
