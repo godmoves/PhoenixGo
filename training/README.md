@@ -1,5 +1,6 @@
 ## Test different ways to learn
 
+- [ ] quick/slow learning rate drop
 - [ ] different weight of value part  
 - [ ] cross entropy value part  
 - [ ] ResNext as Policy-Value net  
