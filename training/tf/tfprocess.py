@@ -22,7 +22,7 @@ import os
 import tensorflow as tf
 import time
 import unittest
-from collection import deque
+from collections import deque
 
 
 def weight_variable(name, shape):
@@ -160,7 +160,7 @@ class TFProcess:
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
         self.min_lr = 1e-8
-        self.lr = tf.Variable(0.1, dtype=tf.float32)
+        self.lr = tf.Variable(0.1, dtype=tf.float32, name='lr', trainable=False)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -429,7 +429,7 @@ class TFProcess:
                 self.logger.info("Total loss drop rate {} < {}, auto drop learning rate.".format(
                     drop_rate, self.drop_rate_threshold))
                 # if no enough progress, drop the learning rate
-                self.sess.run(tf.assign(self.lr, self.lr * 0.1))
+                self.session.run(tf.assign(self.lr, self.lr * 0.1))
 
     def process(self, train_data, test_data):
         info_steps = 1000
@@ -443,8 +443,8 @@ class TFProcess:
             stats.add(losses)
 
             # adjust learning rate automatically
-            learning_rate = sess.run(lr)
-            self.auto_adjust_lr(loss['total'])
+            learning_rate = self.session.run(self.lr)
+            self.auto_adjust_lr(losses['total'])
             # exit when lr is smaller than target.
             if learning_rate < self.min_lr:
                 self.logger.info('learning rate smaller than target, stop training')

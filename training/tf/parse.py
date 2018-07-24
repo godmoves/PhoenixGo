@@ -53,10 +53,9 @@ class FileDataSrc:
         data source yielding chunkdata from chunk files.
     """
 
-    def __init__(self, chunks, logger):
+    def __init__(self, chunks):
         self.chunks = []
         self.done = chunks
-        self.logger = logger
 
     def next(self):
         if not self.chunks:
@@ -71,7 +70,7 @@ class FileDataSrc:
                     self.done.append(filename)
                     return chunk_file.read()
             except:
-                self.logger.error("failed to parse {}".format(filename))
+                print("failed to parse {}".format(filename))
 
 
 def benchmark(parser):
@@ -109,6 +108,7 @@ def split_chunks(chunks, test_ratio):
     splitpoint = 1 + int(len(chunks) * (1.0 - test_ratio))
     return (chunks[:splitpoint], chunks[splitpoint:])
 
+
 def get_logger():
     # set logger and level
     logger = logging.getLogger()
@@ -118,7 +118,12 @@ def get_logger():
 
     # log to file
     rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
-    log_path = os.path.dirname(os.getcwd()) + '/traininglogs/'
+    log_path = os.path.dirname(os.getcwd()) + '/tf/traininglogs/'
+    print(log_path)
+
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
     log_name = log_path + 'train-' + rq + '.log'
     fh = logging.FileHandler(log_name, mode='w')
     fh.setLevel(logging.DEBUG)
@@ -137,8 +142,8 @@ def get_logger():
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Train network from game data.')
+    parser = argparse.ArgumentParser(description='Train network from game data.')
+
     parser.add_argument("trainpref",
                         help='Training file prefix', nargs='?', type=str)
     parser.add_argument("restorepref",
@@ -155,7 +160,7 @@ def main():
     args = parser.parse_args()
 
     # set logger to log to terminal and file
-    logger = get_logger()    
+    logger = get_logger()
 
     train_data_prefix = args.train or args.trainpref
     restore_prefix = args.restore or args.restorepref
@@ -175,12 +180,12 @@ def main():
     logger.info("Training with {} chunks, validating on {} chunks".format(
         len(training), len(test)))
 
-    train_parser = ChunkParser(FileDataSrc(training, logger),
+    train_parser = ChunkParser(FileDataSrc(training),
                                shuffle_size=1 << 20,  # 2.2GB of RAM.
                                sample=args.sample,
                                batch_size=RAM_BATCH_SIZE).parse()
 
-    test_parser = ChunkParser(FileDataSrc(test, logger),
+    test_parser = ChunkParser(FileDataSrc(test),
                               shuffle_size=1 << 19,
                               sample=args.sample,
                               batch_size=RAM_BATCH_SIZE).parse()
