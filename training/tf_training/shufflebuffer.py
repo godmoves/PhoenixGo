@@ -98,7 +98,7 @@ class ShuffleBufferTest(unittest.TestCase):
         try:
             sb.insert_or_replace(b'1')  # wrong length, so should throw.
             assert False  # Should not be reached.
-        except:
+        except Exception:
             pass
 
     def test_insert_or_replace(self):

@@ -69,7 +69,7 @@ class FileDataSrc:
                 with gzip.open(filename, 'rb') as chunk_file:
                     self.done.append(filename)
                     return chunk_file.read()
-            except:
+            except Exception:
                 print("failed to parse {}".format(filename))
 
 

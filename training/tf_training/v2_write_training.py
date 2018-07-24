@@ -129,7 +129,7 @@ def queue_gen(q, out_qs):
     while True:
         try:
             item = q.get()
-        except:
+        except Exception:
             break
         if item == 'STOP':
             break
@@ -173,7 +173,7 @@ class QueueChunkSrc:
             self.gen = queue_gen(self.q, [])
         try:
             return next(self.gen)
-        except:
+        except Exception:
             return None
 
 

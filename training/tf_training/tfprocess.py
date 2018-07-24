@@ -353,7 +353,7 @@ class TFProcess:
     def assign(self, var, values):
         try:
             self.session.run(tf.assign(var, values))
-        except Exception as e:
+        except Exception:
             self.logger.error("Failed to assign {}: var shape {}, values shape {}".format(
                 var.name, var.shape, values.shape))
             raise
