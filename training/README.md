@@ -38,7 +38,7 @@ Default training data set includes ELF data and Leela Zero data listed below.
 ### Learning rate schedule
 
 When total loss drops less than 1% in 200k steps, the learning rate will be
-lowered (x0.1). If learning rate less than 1e-9, then the training process will
+lowered (x0.1). If learning rate less than 1e-5, then the training process will
 stop.  
 
 We can use the [pre-defined functions](https://blog.csdn.net/u013555719/article/details/79334359)
