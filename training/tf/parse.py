@@ -53,9 +53,10 @@ class FileDataSrc:
         data source yielding chunkdata from chunk files.
     """
 
-    def __init__(self, chunks):
+    def __init__(self, chunks, logger):
         self.chunks = []
         self.done = chunks
+        self.logger = logger
 
     def next(self):
         if not self.chunks:
@@ -70,7 +71,7 @@ class FileDataSrc:
                     self.done.append(filename)
                     return chunk_file.read()
             except:
-                logger.error("failed to parse {}".format(filename))
+                self.logger.error("failed to parse {}".format(filename))
 
 
 def benchmark(parser):
@@ -84,7 +85,7 @@ def benchmark(parser):
         for _ in range(batch):
             next(gen)
         end = time.time()
-        logger.info("{} pos/sec {} secs".format(
+        print("{} pos/sec {} secs".format(
             RAM_BATCH_SIZE * batch / (end - start), (end - start)))
 
 
@@ -100,7 +101,7 @@ def benchmark1(t):
                           feed_dict={t.training: True, t.handle: t.train_handle})
 
         end = time.time()
-        logger.info("{} pos/sec {} secs".format(
+        print("{} pos/sec {} secs".format(
             RAM_BATCH_SIZE * batch / (end - start), (end - start)))
 
 
@@ -174,12 +175,12 @@ def main():
     logger.info("Training with {} chunks, validating on {} chunks".format(
         len(training), len(test)))
 
-    train_parser = ChunkParser(FileDataSrc(training),
+    train_parser = ChunkParser(FileDataSrc(training, logger),
                                shuffle_size=1 << 20,  # 2.2GB of RAM.
                                sample=args.sample,
                                batch_size=RAM_BATCH_SIZE).parse()
 
-    test_parser = ChunkParser(FileDataSrc(test),
+    test_parser = ChunkParser(FileDataSrc(test, logger),
                               shuffle_size=1 << 19,
                               sample=args.sample,
                               batch_size=RAM_BATCH_SIZE).parse()
