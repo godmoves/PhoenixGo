@@ -159,7 +159,7 @@ class TFProcess:
         self.drop_rate_threshold = 0.01
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
-        self.min_lr = 1e-8
+        self.min_lr = 1e-5
         self.lr = tf.Variable(0.1, dtype=tf.float32, name='lr', trainable=False)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
