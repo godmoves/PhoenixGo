@@ -141,7 +141,7 @@ def main():
         print("No data to train on!")
         return
 
-    print("Training with {0} chunks, validating on {1} chunks".format(
+    print("Training with {} chunks, validating on {} chunks".format(
         len(training), len(test)))
 
     train_parser = ChunkParser(FileDataSrc(training),
@@ -155,6 +155,12 @@ def main():
                               batch_size=RAM_BATCH_SIZE).parse()
 
     tfprocess = TFProcess()
+
+    print("Training target： {} blocks {} filters on {} GPU(s)".format(
+        tfprocess.RESIDUAL_BLOCKS, tfprocess.RESIDUAL_FILTERS, tfprocess.gpus_num))
+    print("Training settings: batchsize {} RAM batchsize {}".format(
+        BATCH_SIZE, RAM_BATCH_SIZE))
+
     tfprocess.init(RAM_BATCH_SIZE,
                    logbase=args.logbase,
                    macrobatch=BATCH_SIZE // RAM_BATCH_SIZE)
