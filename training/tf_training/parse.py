@@ -192,7 +192,7 @@ def main():
 
     tfprocess = TFProcess(logger)
 
-    logger.info("Training target： {} blocks {} filters on {} GPU(s)".format(
+    logger.info("Training target: {} blocks {} filters on {} GPU(s)".format(
         tfprocess.RESIDUAL_BLOCKS, tfprocess.RESIDUAL_FILTERS, tfprocess.gpus_num))
     logger.info("Training settings: batchsize {} RAM batchsize {}".format(
         BATCH_SIZE, RAM_BATCH_SIZE))
