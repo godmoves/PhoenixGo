@@ -39,8 +39,9 @@ Default training data set includes ELF data and Leela Zero data listed below.
 When total loss drops less than 5% in 80000 steps, the learning rate will be
 lowered (x0.1). If learning rate less than 1e-9, then the training process will
 stop.  
-[Ref1](https://blog.csdn.net/u013555719/article/details/79334359)  
-[Ref2](https://blog.csdn.net/yyqq188/article/details/79138919)
+
+We can use the [pre-defined functions](https://blog.csdn.net/u013555719/article/details/79334359)
+in TensorFlow or just [do it manually](https://blog.csdn.net/yyqq188/article/details/79138919).
 
 ### Result
 
