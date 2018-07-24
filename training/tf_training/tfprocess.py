@@ -156,7 +156,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         self.max_loss_range = 80
-        self.drop_rate_threshold = 0.02
+        self.drop_rate_threshold = 0.01
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
         self.min_lr = 1e-8
@@ -422,10 +422,13 @@ class TFProcess:
         if len(self.total_loss_record) >= self.max_loss_range:
             first_loss = self.total_loss_record[0]
             last_loss = self.total_loss_record[-1]
+            mean_loss = (first_loss + last_loss) / 2
 
-            drop_rate = (first_loss - last_loss) / first_loss
+            drop_rate = (first_loss - last_loss) / mean_loss
 
             if drop_rate < self.drop_rate_threshold:
+                self.logger.info("First loss {:g}, last loss {:g}".format(
+                    first_loss, last_loss))
                 self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
                     drop_rate, self.drop_rate_threshold))
                 # if no enough progress, drop the learning rate
