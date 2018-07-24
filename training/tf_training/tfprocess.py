@@ -353,7 +353,7 @@ class TFProcess:
     def assign(self, var, values):
         try:
             self.session.run(tf.assign(var, values))
-        except:
+        except Exception as e:
             self.logger.error("Failed to assign {}: var shape {}, values shape {}".format(
                 var.name, var.shape, values.shape))
             raise
@@ -457,12 +457,13 @@ class TFProcess:
             if steps % info_steps == 0:
                 speed = info_steps * self.batch_size / timer.elapsed()
 
+                # adjust learning rate automatically
+                learning_rate = self.session.run(self.lr)
+
                 self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
                     steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
-                
-                # adjust learning rate automatically
-                learning_rate = self.session.run(self.lr)
+
                 self.auto_adjust_lr(losses['total'])
                 # exit when lr is smaller than target.
                 if learning_rate < self.min_lr:
@@ -471,8 +472,10 @@ class TFProcess:
 
                 summaries = stats.summaries({'Policy Loss': 'policy',
                                              'MSE Loss': 'mse',
+                                             'Regularization Term': 'reg',
                                              'Accuracy': 'accuracy',
                                              'Total Loss': 'total'})
+                summaries += [tf.Summary.Value(tag='Speed', simple_value=speed)]
                 summaries += [tf.Summary.Value(tag='Learning Rate', simple_value=learning_rate)]
 
                 self.train_writer.add_summary(
@@ -488,6 +491,7 @@ class TFProcess:
                     test_stats.add(losses)
                 summaries = test_stats.summaries({'Policy Loss': 'policy',
                                                   'MSE Loss': 'mse',
+                                                  'Regularization Term': 'reg',
                                                   'Accuracy': 'accuracy',
                                                   'Total Loss': 'total'})
                 self.test_writer.add_summary(tf.Summary(value=summaries), steps)
