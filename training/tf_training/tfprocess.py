@@ -426,7 +426,7 @@ class TFProcess:
             drop_rate = (first_loss - last_loss) / first_loss
 
             if drop_rate < self.drop_rate_threshold:
-                self.logger.info("Total loss drop rate {} < {}, auto drop learning rate.".format(
+                self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
                     drop_rate, self.drop_rate_threshold))
                 # if no enough progress, drop the learning rate
                 self.session.run(tf.assign(self.lr, self.lr * 0.1))
