@@ -156,7 +156,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         self.max_loss_range = 80
-        self.drop_rate_threshold = 0.03
+        self.drop_rate_threshold = 0.02
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
         self.min_lr = 1e-8
