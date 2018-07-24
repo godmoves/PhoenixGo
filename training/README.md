@@ -33,3 +33,15 @@ Default training data set includes ELF data and Leela Zero data listed below.
 #### ELF data
 
 [62b5417b](https://leela.online-go.com/training/train_62b5417b.zip)
+
+### Learning rate schedule
+
+When total loss drops less than 5% in 80000 steps, the learning rate will be
+lowered (x0.1). If learning rate less than 1e-9, then the training process will
+stop.
+
+### Result
+
+Tensorflow logs will be saved in `tf/leelalogs`, weight files and Tensorflow
+checkpoint will be saved in `tf/weights` and training logs are in `tf/traininglogs`.  
+Check the real time learning process at [this site](http://101.231.109.4:6006/#scalars&run=test&_smoothingWeight=0&_ignoreYOutliers=false).
