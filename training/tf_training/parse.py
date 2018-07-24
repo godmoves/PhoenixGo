@@ -118,7 +118,7 @@ def get_logger():
 
     # log to file
     rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
-    log_path = os.path.dirname(os.getcwd()) + '/tf/traininglogs/'
+    log_path = os.path.dirname(os.getcwd()) + '/tf_training/traininglogs/'
     print(log_path)
 
     if not os.path.exists(log_path):
