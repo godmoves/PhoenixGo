@@ -22,6 +22,7 @@ from chunkparser import ChunkParser
 import argparse
 import glob
 import gzip
+import logging
 import multiprocessing as mp
 import os
 import random
@@ -69,7 +70,7 @@ class FileDataSrc:
                     self.done.append(filename)
                     return chunk_file.read()
             except:
-                print("failed to parse {}".format(filename))
+                logger.error("failed to parse {}".format(filename))
 
 
 def benchmark(parser):
@@ -83,7 +84,7 @@ def benchmark(parser):
         for _ in range(batch):
             next(gen)
         end = time.time()
-        print("{} pos/sec {} secs".format(
+        logger.info("{} pos/sec {} secs".format(
             RAM_BATCH_SIZE * batch / (end - start), (end - start)))
 
 
@@ -99,13 +100,39 @@ def benchmark1(t):
                           feed_dict={t.training: True, t.handle: t.train_handle})
 
         end = time.time()
-        print("{} pos/sec {} secs".format(
+        logger.info("{} pos/sec {} secs".format(
             RAM_BATCH_SIZE * batch / (end - start), (end - start)))
 
 
 def split_chunks(chunks, test_ratio):
     splitpoint = 1 + int(len(chunks) * (1.0 - test_ratio))
     return (chunks[:splitpoint], chunks[splitpoint:])
+
+def get_logger():
+    # set logger and level
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+
+    # log to file
+    rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
+    log_path = os.path.dirname(os.getcwd()) + '/traininglogs/'
+    log_name = log_path + 'train-' + rq + '.log'
+    fh = logging.FileHandler(log_name, mode='w')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+
+    # log to terminal
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+
+    # add log handler
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    return logger
 
 
 def main():
@@ -126,6 +153,9 @@ def main():
                         help="Rate of data down-sampling to use")
     args = parser.parse_args()
 
+    # set logger to log to terminal and file
+    logger = get_logger()    
+
     train_data_prefix = args.train or args.trainpref
     restore_prefix = args.restore or args.restorepref
 
@@ -138,10 +168,10 @@ def main():
         test = get_chunks(args.test)
 
     if not training:
-        print("No data to train on!")
+        logger.error("No data to train on!")
         return
 
-    print("Training with {} chunks, validating on {} chunks".format(
+    logger.info("Training with {} chunks, validating on {} chunks".format(
         len(training), len(test)))
 
     train_parser = ChunkParser(FileDataSrc(training),
@@ -154,11 +184,11 @@ def main():
                               sample=args.sample,
                               batch_size=RAM_BATCH_SIZE).parse()
 
-    tfprocess = TFProcess()
+    tfprocess = TFProcess(logger)
 
-    print("Training target： {} blocks {} filters on {} GPU(s)".format(
+    logger.info("Training target： {} blocks {} filters on {} GPU(s)".format(
         tfprocess.RESIDUAL_BLOCKS, tfprocess.RESIDUAL_FILTERS, tfprocess.gpus_num))
-    print("Training settings: batchsize {} RAM batchsize {}".format(
+    logger.info("Training settings: batchsize {} RAM batchsize {}".format(
         BATCH_SIZE, RAM_BATCH_SIZE))
 
     tfprocess.init(RAM_BATCH_SIZE,

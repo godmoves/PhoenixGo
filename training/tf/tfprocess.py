@@ -120,7 +120,7 @@ class Timer:
 
 
 class TFProcess:
-    def __init__(self):
+    def __init__(self, logger):
         # Network structure
         self.RESIDUAL_FILTERS = 128
         self.RESIDUAL_BLOCKS = 10
@@ -145,6 +145,9 @@ class TFProcess:
         # Recalculate SWA weight batchnorm means and variances
         self.swa_recalc_bn = True
 
+        # logger
+        self.logger = logger
+
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
         config = tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
         self.session = tf.Session(config=config)
@@ -159,7 +162,7 @@ class TFProcess:
         self.min_lr = 1e-8
         self.lr = tf.Variable(0.1, dtype=tf.float32)
 
-    def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='leelazlogs'):
+    def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
         self.macrobatch = macrobatch
         self.logbase = logbase
@@ -351,7 +354,7 @@ class TFProcess:
         try:
             self.session.run(tf.assign(var, values))
         except:
-            print("Failed to assign {}: var shape {}, values shape {}".format(
+            self.logger.error("Failed to assign {}: var shape {}, values shape {}".format(
                 var.name, var.shape, values.shape))
             raise
 
@@ -397,7 +400,7 @@ class TFProcess:
         # self.save_leelaz_weights('restored.txt')
 
     def restore(self, file):
-        print("Restoring from {0}".format(file))
+        self.logger.info("Restoring from {0}".format(file))
         optimistic_restore(self.session, file)
 
     def measure_loss(self, batch, training=False):
@@ -423,7 +426,7 @@ class TFProcess:
             drop_rate = (first_loss - last_loss) / first_loss
 
             if drop_rate < self.drop_rate_threshold:
-                print("Total loss drop rate {} < {}, auto drop learning rate.".format(
+                self.logger.info("Total loss drop rate {} < {}, auto drop learning rate.".format(
                     drop_rate, self.drop_rate_threshold))
                 # if no enough progress, drop the learning rate
                 self.sess.run(tf.assign(self.lr, self.lr * 0.1))
@@ -444,7 +447,7 @@ class TFProcess:
             self.auto_adjust_lr(loss['total'])
             # exit when lr is smaller than target.
             if learning_rate < self.min_lr:
-                print('learning rate smaller than target, stop training')
+                self.logger.info('learning rate smaller than target, stop training')
                 exit()
 
             # fetch the current global step.
@@ -458,7 +461,7 @@ class TFProcess:
             if steps % info_steps == 0:
                 speed = info_steps * self.batch_size / timer.elapsed()
 
-                print("step {} lr={} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
+                self.logger.info("step {} lr={} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
                     steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
 
@@ -484,7 +487,7 @@ class TFProcess:
                                                   'Accuracy': 'accuracy',
                                                   'Total Loss': 'total'})
                 self.test_writer.add_summary(tf.Summary(value=summaries), steps)
-                print("step {}, policy={:g} training accuracy={:g}%, mse={:g}".format(
+                self.logger.info("step {}, policy={:g} training accuracy={:g}%, mse={:g}".format(
                     steps, test_stats.mean('policy'),
                     test_stats.mean('accuracy') * 100.0,
                     test_stats.mean('mse')))
@@ -493,19 +496,19 @@ class TFProcess:
                 path = os.path.join(os.getcwd(), "weigthts/leelaz-model")
                 save_path = self.saver.save(self.session, path,
                                             global_step=steps)
-                print("Model saved in file: {}".format(save_path))
+                self.logger.info("Model saved in file: {}".format(save_path))
                 leela_path = path + "-" + str(steps) + ".txt"
                 self.save_leelaz_weights(leela_path)
-                print("Leela weights saved to {}".format(leela_path))
+                self.logger.info("Leela weights saved to {}".format(leela_path))
+
                 # Things have likely changed enough
                 # that stats are no longer valid.
-
                 if self.swa_enabled:
                     self.save_swa_network(steps, path, leela_path, train_data)
 
                 save_path = self.saver.save(self.session, path,
                                             global_step=steps)
-                print("Model saved in file: {}".format(save_path))
+                self.logger.info("SWA Model saved in file: {}".format(save_path))
 
     def save_leelaz_weights(self, filename):
         with open(filename, "w") as file:
@@ -702,7 +705,7 @@ class TFProcess:
         # Copy the swa weights into the current network.
         self.session.run(self.swa_load_op)
         if self.swa_recalc_bn:
-            print("Refining SWA batch normalization")
+            self.logger.info("Refining SWA batch normalization")
             for _ in range(200):
                 batch = next(data)
                 self.session.run(
@@ -715,7 +718,7 @@ class TFProcess:
         # restore the saved network.
         self.snap_restore()
 
-        print("Wrote averaged network to {}".format(swa_path))
+        self.logger.info("Wrote averaged network to {}".format(swa_path))
 
 
 # Unit tests for TFProcess.
