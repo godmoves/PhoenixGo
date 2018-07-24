@@ -42,7 +42,8 @@ stop.
 
 ### Result
 
-Tensorflow logs will be saved in `tf/leelalogs`, weight files and Tensorflow
-checkpoint will be saved in `tf/weights` and training logs are in `tf/traininglogs`. 
+Tensorflow logs will be saved in `tf_training/leelalogs`, weight files and
+Tensorflow checkpoint will be saved in `tf_training/weights` and training logs
+are in `tf_training/traininglogs`. 
 
 Check the real time learning process at [this site](http://101.231.109.4:6006/#scalars&run=test&_smoothingWeight=0&_ignoreYOutliers=false).
