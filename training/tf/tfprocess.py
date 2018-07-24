@@ -155,8 +155,8 @@ class TFProcess:
         self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
-        self.max_loss_range = 20000
-        self.drop_rate_threshold = 0.02
+        self.max_loss_range = 80000
+        self.drop_rate_threshold = 0.05
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
         self.min_lr = 1e-8
@@ -430,6 +430,7 @@ class TFProcess:
                     drop_rate, self.drop_rate_threshold))
                 # if no enough progress, drop the learning rate
                 self.session.run(tf.assign(self.lr, self.lr * 0.1))
+                self.total_loss_record.clear()
 
     def process(self, train_data, test_data):
         info_steps = 1000
@@ -461,7 +462,7 @@ class TFProcess:
             if steps % info_steps == 0:
                 speed = info_steps * self.batch_size / timer.elapsed()
 
-                self.logger.info("step {} lr={} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
+                self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
                     steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
 
@@ -469,7 +470,7 @@ class TFProcess:
                                              'MSE Loss': 'mse',
                                              'Accuracy': 'accuracy',
                                              'Total Loss': 'total'})
-                summaries += [tf.Summary.Value(tag='lr', simple_value=learning_rate)]
+                summaries += [tf.Summary.Value(tag='Learning Rate', simple_value=learning_rate)]
 
                 self.train_writer.add_summary(
                     tf.Summary(value=summaries), steps)
