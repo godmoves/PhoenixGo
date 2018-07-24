@@ -452,6 +452,12 @@ class TFProcess:
                 self.session.run([self.clear_op])
 
             if steps % info_steps == 0:
+                speed = info_steps * self.batch_size / timer.elapsed()
+
+                self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
+                    steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
+                    stats.mean('total'), speed))
+                
                 # adjust learning rate automatically
                 learning_rate = self.session.run(self.lr)
                 self.auto_adjust_lr(losses['total'])
@@ -459,12 +465,6 @@ class TFProcess:
                 if learning_rate < self.min_lr:
                     self.logger.info('learning rate smaller than target, stop training')
                     exit()
-
-                speed = info_steps * self.batch_size / timer.elapsed()
-
-                self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
-                    steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
-                    stats.mean('total'), speed))
 
                 summaries = stats.summaries({'Policy Loss': 'policy',
                                              'MSE Loss': 'mse',
