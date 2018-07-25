@@ -435,7 +435,8 @@ class TFProcess:
             if drop_rate < self.drop_rate_threshold:
                 self.ready_lr_drop_count += 1
 
-                # drop lr only when the loss really has no progress
+                # drop lr only when the loss really has no progress.
+                # this will avoid some false alarms.
                 if self.ready_lr_drop_count > 5:
                     self.logger.info("First loss {:g}, last loss {:g}".format(
                         first_loss, last_loss))
@@ -478,7 +479,7 @@ class TFProcess:
                     steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
 
-                self.auto_adjust_lr(losses['total'])
+                self.auto_adjust_lr(stats.mean('total'))
                 # exit when lr is smaller than target.
                 if learning_rate < self.min_lr:
                     self.logger.info('learning rate smaller than target, stop training')
