@@ -424,7 +424,8 @@ class TFProcess:
 
     def auto_adjust_lr(self, total_loss):
         self.total_loss_record.append(total_loss)
-        self.logger.debug(self.total_loss_record)  # keep this for more debug info
+        # keep this for more debug info
+        self.logger.debug(self.total_loss_record)
         if len(self.total_loss_record) >= self.max_loss_range:
             first_loss = self.total_loss_record[0]
             last_loss = self.total_loss_record[-1]
@@ -434,6 +435,8 @@ class TFProcess:
 
             if drop_rate < self.drop_rate_threshold:
                 self.ready_lr_drop_count += 1
+                self.logger.info("Learning rate ready dropping count = {}".format(
+                    self.ready_lr_drop_count)
 
                 # drop lr only when the loss really has no progress.
                 # this will avoid some false alarms.
