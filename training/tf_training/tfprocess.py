@@ -118,6 +118,10 @@ class Timer:
         self.last = t
         return e
 
+    def start(self):
+        t = time.time()
+        self.last = t
+
 
 class TFProcess:
     def __init__(self, logger):
@@ -156,6 +160,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         self.max_loss_range = 200
+        self.ready_lr_drop_count = 0
         self.drop_rate_threshold = 0.01
         self.total_loss_record = deque(maxlen=self.max_loss_range)
 
@@ -419,6 +424,7 @@ class TFProcess:
 
     def auto_adjust_lr(self, total_loss):
         self.total_loss_record.append(total_loss)
+        self.logger.debug(self.total_loss_record)  # keep this for more debug info
         if len(self.total_loss_record) >= self.max_loss_range:
             first_loss = self.total_loss_record[0]
             last_loss = self.total_loss_record[-1]
@@ -427,19 +433,27 @@ class TFProcess:
             drop_rate = (first_loss - last_loss) / mean_loss
 
             if drop_rate < self.drop_rate_threshold:
-                self.logger.info("First loss {:g}, last loss {:g}".format(
-                    first_loss, last_loss))
-                self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
-                    drop_rate, self.drop_rate_threshold))
-                # if no enough progress, drop the learning rate
-                self.session.run(tf.assign(self.lr, self.lr * 0.1))
-                self.total_loss_record.clear()
+                self.ready_lr_drop_count += 1
+
+                # drop lr only when the loss really has no progress
+                if self.ready_lr_drop_count > 5:
+                    self.logger.info("First loss {:g}, last loss {:g}".format(
+                        first_loss, last_loss))
+                    self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
+                        drop_rate, self.drop_rate_threshold))
+                    # if no enough progress, drop the learning rate
+                    self.session.run(tf.assign(self.lr, self.lr * 0.1))
+                    # reset loss record and count
+                    self.total_loss_record.clear()
+                    self.ready_lr_drop_count = 0
 
     def process(self, train_data, test_data):
         info_steps = 1000
         stats = Stats()
         timer = Timer()
         while True:
+            # restart the timer to skip test time.
+            timer.start()
             batch = next(train_data)
 
             # Measure losses and compute gradients for this batch.
@@ -491,7 +505,6 @@ class TFProcess:
                     test_stats.add(losses)
                 summaries = test_stats.summaries({'Policy Loss': 'policy',
                                                   'MSE Loss': 'mse',
-                                                  'Regularization Term': 'reg',
                                                   'Accuracy': 'accuracy',
                                                   'Total Loss': 'total'})
                 self.test_writer.add_summary(tf.Summary(value=summaries), steps)
