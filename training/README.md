@@ -7,6 +7,7 @@
 - [ ] with/without ELF data
 - [ ] imitate elf/phoenixgo
 - [ ] global pooling
+- [ ] [think fast and slow](https://arxiv.org/pdf/1705.08439.pdf)
 
 ### Baseline
 
