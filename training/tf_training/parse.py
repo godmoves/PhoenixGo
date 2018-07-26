@@ -190,7 +190,8 @@ def main():
                               sample=args.sample,
                               batch_size=RAM_BATCH_SIZE).parse()
 
-    tfprocess = TFProcess(logger)
+    tfprocess = TFProcess()
+    tfprocess.logger = logger
 
     logger.info("Training target: {} blocks {} filters on {} GPU(s)".format(
         tfprocess.RESIDUAL_BLOCKS, tfprocess.RESIDUAL_FILTERS, tfprocess.gpus_num))

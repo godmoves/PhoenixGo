@@ -16,6 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import math
 import numpy as np
 import os
@@ -124,7 +125,7 @@ class Timer:
 
 
 class TFProcess:
-    def __init__(self, logger):
+    def __init__(self):
         # Network structure
         self.RESIDUAL_FILTERS = 128
         self.RESIDUAL_BLOCKS = 10
@@ -150,7 +151,7 @@ class TFProcess:
         self.swa_recalc_bn = True
 
         # logger
-        self.logger = logger
+        self.logger = logging.getLogger()
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
         config = tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
