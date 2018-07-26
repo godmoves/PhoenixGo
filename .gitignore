@@ -1,6 +1,8 @@
 # logs and configures are not uploaded
 log
 conf
+leelalogs
+traininglogs
 
 # checkpoint folders are uploaded as release
 ckpt*

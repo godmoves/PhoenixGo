@@ -118,7 +118,7 @@ class Timer:
         self.last = t
         return e
 
-    def start(self):
+    def restart(self):
         t = time.time()
         self.last = t
 
@@ -436,7 +436,7 @@ class TFProcess:
             if drop_rate < self.drop_rate_threshold:
                 self.ready_lr_drop_count += 1
                 self.logger.info("Learning rate ready dropping count = {}".format(
-                    self.ready_lr_drop_count)
+                    self.ready_lr_drop_count))
 
                 # drop lr only when the loss really has no progress.
                 # this will avoid some false alarms.
@@ -456,8 +456,6 @@ class TFProcess:
         stats = Stats()
         timer = Timer()
         while True:
-            # restart the timer to skip test time.
-            timer.start()
             batch = next(train_data)
 
             # Measure losses and compute gradients for this batch.
@@ -534,6 +532,9 @@ class TFProcess:
                 save_path = self.saver.save(self.session, path,
                                             global_step=steps)
                 self.logger.info("SWA Model saved in file: {}".format(save_path))
+
+                # restart the timer to skip test time.
+                timer.restart()
 
     def save_leelaz_weights(self, filename):
         with open(filename, "w") as file:
