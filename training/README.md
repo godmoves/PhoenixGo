@@ -1,5 +1,6 @@
 ## Test different ways to learn
 
+- [ ] continue from last 10b
 - [ ] quick/slow learning rate drop
 - [ ] different weight of value part  
 - [ ] cross entropy value part  
@@ -8,6 +9,7 @@
 - [ ] imitate elf/phoenixgo
 - [ ] global pooling
 - [ ] [think fast and slow](https://arxiv.org/pdf/1705.08439.pdf)
+- [ ] new elf (?)
 
 ### Baseline
 
