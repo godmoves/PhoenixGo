@@ -6,6 +6,7 @@
 - [ ] cross entropy value part  
 - [ ] ResNext as Policy-Value net  
 - [ ] with/without ELF data
+- [ ] dropout
 - [ ] imitate elf/phoenixgo
 - [ ] global pooling
 - [ ] [think fast and slow](https://arxiv.org/pdf/1705.08439.pdf)
