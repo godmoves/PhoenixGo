@@ -652,7 +652,7 @@ class TFProcess:
         flow = self.conv_block(x_planes, filter_size=3,
                                input_channels=18,
                                output_channels=self.RESIDUAL_FILTERS,
-                               name="first_conv")
+                               name="input_conv")
         # Residual tower
         for i in range(0, self.RESIDUAL_BLOCKS):
             block_name = "res_" + str(i)
