@@ -16,6 +16,7 @@ network computation is included and the unit of results is positions/second.
 |Backend           |Batch size|Speed (15x192)|Speed (20x224)|
 |------------------|----------|--------------|--------------|
 |OpenCL (lz master)|1         |695           |457           |
+|OpenCL (lz fp16)  |1         |718           |497           |
 |OpenCL (Ttl batch)|1         |741           |452           |
 |                  |2         |830           |480           |
 |                  |4         |857           |530           |
