@@ -2,7 +2,7 @@
 
 - [ ] continue from last 10b
 - [ ] quick/slow learning rate drop
-- [ ] different weight of value part  
+- [ ] different weight of value part (10, 1, 0.1, 0.01)  
 - [ ] cross entropy value part  
 - [ ] ResNext as Policy-Value net  
 - [ ] with/without ELF data
@@ -10,7 +10,9 @@
 - [ ] imitate elf/phoenixgo
 - [ ] global pooling
 - [ ] [think fast and slow](https://arxiv.org/pdf/1705.08439.pdf)
-- [ ] new elf (?)
+- [ ] new elf (?)  
+- [ ] counting net  
+- [ ] transfer learning of komi 6.5  
 
 ### Baseline
 
