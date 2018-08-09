@@ -1,0 +1,28 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_86
+Date 2018-08-06 14:14
+Result gigo beat leelaz W+R
+leelaz cpu time: 788.08s
+gigo cpu time: 451.26s
+Black leelaz Leela Zero:0.15
+White gigo gigo:1.15]
+CA[UTF-8]DT[2018-08-06]EV[test]GM[1]GN[test 0_86]KM[7.5]PB[Leela Zero:0.15]
+PW[gigo:1.15]RE[W+R]SZ[19];B[pd];W[pp];B[dd];W[cp];B[eq];W[dq];B[ep];W[cn];
+B[mq];W[iq];B[kq];W[io];B[fm];W[oq];B[ln];W[en];B[fn];W[im];B[do];W[dn];B[gq];
+W[dr];B[qn];W[lp];B[kp];W[hp];B[gp];W[mp];B[hn];W[in];B[lo];W[pn];B[pm];W[on];
+B[qo];W[om];B[pl];W[ol];B[np];W[pk];B[qk];W[mo];B[nq];W[qp];B[qj];W[po];B[mm];
+W[no];B[km];W[ik];B[jr];W[ir];B[fk];W[kj];B[kk];W[lk];B[jk];W[jj];B[ij];W[hk];
+B[lj];W[fj];B[ek];W[ii];B[mk];W[qm];B[ql];W[rm];B[li];W[qc];B[qd];W[pc];B[oc];
+W[ob];B[nb];W[nc];B[od];W[mb];B[pb];W[na];B[qb];W[rc];B[rb];W[ej];B[dj];W[di];
+B[cj];W[ci];B[bj];W[cf];B[fc];W[cd];B[cc];W[bc];B[ce];W[bd];B[de];W[be];B[rl];
+W[ro];B[sm];W[rn];B[me];W[bm];B[bi];W[cg];B[cb];W[gl];B[dl];W[fl];B[em];W[bh];
+B[bl];W[fo];B[go];W[eo];B[hr];W[is];B[dp];W[bq];B[er];W[al];B[ck];W[hc];B[lc];
+W[lb];B[ok];W[jc];B[kf];W[lf];B[le];W[kg];B[jf];W[jg];B[lg];W[lh];B[mf];W[mg];
+B[ki];W[hj];B[ig];W[jh];B[ng];W[if];B[gb];W[hb];B[ge];W[lf];B[nh];W[cl];B[cm];
+W[dm];B[el];W[cl];B[hm];W[jl];B[kl];W[gk];B[cm];W[gm];B[gn];W[cl];B[jp];W[hq];
+B[cm];W[rd];B[re];W[cl];B[ho];W[ip];B[cm];W[qe];B[sc];W[cl];B[cr];W[cq];B[cm];
+W[ko];B[jo];W[cl];B[dh];W[eh];B[cm];W[jn];B[kn];W[cl];B[il];W[hl];B[cm];W[lq];
+B[lr];W[cl];B[jm];W[il];B[cm];W[ks];B[bn];W[cl];B[dg];W[df];B[cm];W[rf];B[sd];
+W[cl];B[ei];W[fi];B[cm];W[eb];B[bo];W[ie];B[fb];W[ec];B[ed];W[ga];B[ea];W[bb];
+B[br];C[gigo beat leelaz W+R]W[kr])
