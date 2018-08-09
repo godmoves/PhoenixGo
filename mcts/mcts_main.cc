@@ -136,7 +136,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   std::istringstream ss(cmd);
   ss >> op;
   if (op == "name") {
-    return {true, "Leela Zero Phoenix"};
+    return {true, "gigo"};
   }
   if (op == "version") {
     return {true, "1.15"};
@@ -150,6 +150,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
                   "place_free_handicap\nset_free_handicap\nplay\ngenmove\nundo\n"
                   "final_score\nget_debug_info\nget_last_move_debug_info"};
   }
+  // TODO: fix command name
   if (op == "lz-analyze") {
     return {true, ""};
   }

@@ -6,8 +6,8 @@ network computation is included and the unit of results is positions/second.
 ### Meaning of abbreviations
 
 - lc0: [Leela Chess Zero](https://github.com/LeelaChessZero/lc0)  
-- lz master: [master branch of Leela Zero](9e903eda6e93fb65375ea03127e4f62268913175)
-- lz fp16: [next branch of lz](488de437e9c669da9870aefa39749322661bb8bf)
+- lz master: [master branch of Leela Zero](https://github.com/gcp/leela-zero/commit/9e903eda6e93fb65375ea03127e4f62268913175)
+- lz fp16: [next branch of lz](https://github.com/gcp/leela-zero/commit/488de437e9c669da9870aefa39749322661bb8bf)
 - Ttl batch: [OpenCL batching branch of Ttl fork](https://github.com/Ttl/leela-zero/tree/batching_test)  
 - Ttl cudnn: [cuDNN branch of Ttl fork](https://github.com/Ttl/leela-zero/tree/cudnn)  
 - ph go: [PhoenixGo](https://github.com/Tencent/PhoenixGo)

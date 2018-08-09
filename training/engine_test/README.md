@@ -5,9 +5,9 @@ Time settings: 5s per move, no ponder.
 
 ## Engine
 
-- [Leela Zero](488de437e9c669da9870aefa39749322661bb8bf)
-- [ELF](751eb1cf85aac15e3c3c792a47afa1ac64ea810c)
-- [Gigo](fce91605a0e55e61a34399d722df353d7b8df1a7)
+- [Leela Zero](https://github.com/gcp/leela-zero/commit/488de437e9c669da9870aefa39749322661bb8bf)
+- [ELF](https://github.com/pytorch/ELF/commit/751eb1cf85aac15e3c3c792a47afa1ac64ea810c)
+- [Gigo](https://github.com/godmoves/HappyGo/commit/d5df02c8bc13295bcc94c89a05363eb3c6819c0a)
 
 ## Result
 
