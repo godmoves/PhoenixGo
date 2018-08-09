@@ -1,4 +1,4 @@
-## Performance test of different engine
+## Performance test of different engines
 
 The elf v0 weight is used as the baseline weight.  
 Time settings: 5s per move, no ponder.
