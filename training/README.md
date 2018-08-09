@@ -1,18 +1,19 @@
 ## Test different ways to learn
 
 - [ ] continue from last 10b
-- [ ] quick/slow learning rate drop
-- [ ] different weight of value part (10, 1, 0.1, 0.01)  
-- [ ] cross entropy value part  
-- [ ] ResNext as Policy-Value net  
+- [ ] test different engines
 - [ ] with/without ELF data
+- [ ] quick/slow learning rate drop (100k, 200k, 400k, 800k)
+- [ ] different weight of value part (10, 1, 0.1, 0.01)
+- [ ] cross entropy value part
+- [ ] ResNext as Policy-Value net
 - [ ] dropout
 - [ ] imitate elf/phoenixgo
 - [ ] global pooling
 - [ ] [think fast and slow](https://arxiv.org/pdf/1705.08439.pdf)
-- [ ] new elf (?)  
-- [ ] counting net  
-- [ ] transfer learning of komi 6.5  
+- [ ] new elf (?)
+- [ ] counting net
+- [ ] transfer learning of komi 6.5
 
 ### Baseline
 
