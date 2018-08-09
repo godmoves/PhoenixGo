@@ -1,7 +1,7 @@
 ## Test different ways to learn
 
 - [ ] continue from last 10b
-- [ ] test different engines
+- [x] test different engines
 - [ ] with/without ELF data
 - [ ] quick/slow learning rate drop (100k, 200k, 400k, 800k)
 - [ ] different weight of value part (10, 1, 0.1, 0.01)
