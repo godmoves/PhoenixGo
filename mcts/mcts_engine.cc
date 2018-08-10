@@ -898,8 +898,9 @@ void MCTSEngine::SearchRoutine() {
     return;
   }
 
-  // set up timer
-  time_t start = clock();
+  // set up timer for mylizzie output
+  time_t elapsed, start = clock();
+  float elapsed_time;
 
   for (;;) {
     if (!m_search_threads_conductor.IsRunning()) {
@@ -917,10 +918,10 @@ void MCTSEngine::SearchRoutine() {
     TreeNode *node = Select(*board);
     m_monitor.MonSelectCostMs(timer.fms());
 
-    time_t elapsed = clock();
-    float elapsed_centis = float(elapsed - start);
+    elapsed = clock();
+    elapsed_time = float(elapsed - start);
 
-    if (elapsed_centis > 200000 && FLAGS_lizzie) { // 5 outputs per second
+    if (elapsed_time > 200000 && FLAGS_lizzie) { // 5 outputs per second
       start = elapsed;
       OutputAnalysis(m_root);
     }

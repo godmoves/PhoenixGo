@@ -1,0 +1,39 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_81
+Date 2018-08-08 18:17
+Result leelaz beat elf B+R
+leelaz cpu time: 1683.06s
+elf cpu time: 899.96s
+Black leelaz Leela Zero:0.15
+White elf DF2:1.0]
+CA[UTF-8]DT[2018-08-08]EV[test]GM[1]GN[test 0_81]KM[7.5]PB[Leela Zero:0.15]
+PW[DF2:1.0]RE[B+R]SZ[19];B[dp];W[dd];B[pp];W[qd];B[oc];W[pc];B[od];W[qf];B[gc];
+W[kc];B[pb];W[qb];B[pf];W[qg];B[pg];W[ph];B[oh];W[oi];B[nh];W[ic];B[he];W[je];
+B[cf];W[df];B[dg];W[ef];B[ce];W[cd];B[de];W[ee];B[ed];W[cg];B[bg];W[ch];B[bd];
+W[bc];B[bh];W[be];B[bf];W[ad];B[dc];W[ci];B[bi];W[ec];B[fd];W[db];B[fg];W[eg];
+B[eh];W[dh];B[cj];W[gf];B[di];W[ge];B[dg];W[hf];B[eq];W[ip];B[kq];W[fp];B[fq];
+W[jo];B[lo];W[pi];B[qn];W[fn];B[ho];W[hn];B[go];W[gn];B[hq];W[jm];B[lc];W[ld];
+B[kb];W[mc];B[lb];W[jb];B[kd];W[jc];B[md];W[le];B[qe];W[pe];B[pd];W[re];B[qc];
+W[iq];B[rc];W[ql];B[pl];W[qk];B[dn];W[dm];B[cm];W[mq];B[lq];W[pq];B[oq];W[or];
+B[qq];W[pr];B[op];W[qr];B[rq];W[nq];B[io];W[in];B[kn];W[gq];B[lr];W[gr];B[qm];
+W[cq];B[dr];W[oe];B[me];W[lf];B[mb];W[ml];B[mn];W[mf];B[hh];W[om];B[nm];W[nl];
+B[ol];W[ih];B[ii];W[hi];B[hj];W[gi];B[ig];W[jh];B[hg];W[fi];B[fh];W[if];B[ll];
+W[ok];B[em];W[lm];B[ij];W[ko];B[mp];W[fk];B[gl];W[gk];B[hk];W[fl];B[fm];W[hl];
+B[gm];W[kj];B[il];W[hm];B[ek];W[en];B[dl];W[cr];B[cp];W[bp];B[bo];W[br];B[ap];
+W[aq];B[bq];W[mm];B[nn];W[bp];B[ao];W[dq];B[ep];W[er];B[fr];W[ds];B[fs];W[ji];
+B[el];W[jk];B[ik];W[fj];B[ei];W[jj];B[ej];W[jl];B[gh];W[es];B[fo];W[eo];B[gp];
+W[im];B[gj];W[kp];B[lp];W[hp];B[fp];W[ln];B[pm];W[rm];B[rn];W[ir];B[rl];W[rk];
+B[rd];W[qe];B[sm];W[sk];B[jg];W[kg];B[jf];W[kf];B[ff];W[fe];B[pk];W[pj];B[gg];
+W[ie];B[bq];W[ar];B[gs];W[hr];B[jq];W[jp];B[ne];W[nf];B[nc];W[jr];B[ja];W[ia];
+B[ka];W[sl];B[rm];W[np];B[on];W[do];B[co];W[sd];B[sc];W[se];B[af];W[ae];B[hs];
+W[kr];B[ls];W[bp];B[nk];W[oj];B[bq];W[ks];B[is];W[bp];B[km];W[mk];B[bq];W[qp];
+B[rp];W[bp];B[cs];W[bs];B[bq];W[rr];B[sr];W[bp];B[ab];W[ac];B[bq];W[qo];B[po];
+W[bp];B[qj];W[rj];B[bq];W[cn];B[bn];W[bp];B[ri];W[qi];B[bq];W[mr];B[ms];W[bp];
+B[ib];W[hb];B[bq];W[ns];B[mo];W[bp];B[ha];W[ga];B[bq];W[sq];B[sp];W[bp];B[sj];
+W[qj];B[bq];W[cg];B[ch];W[bp];B[mj];W[lk];B[bq]
+C[leelaz beat elf B+R
+
+error reading response to 'quit' from player elf:
+engine has closed the response channel]
+)

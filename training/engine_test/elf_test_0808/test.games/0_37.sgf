@@ -1,0 +1,36 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_37
+Date 2018-08-08 03:55
+Result leelaz beat elf B+R
+leelaz cpu time: 1394.45s
+elf cpu time: 814.96s
+Black leelaz Leela Zero:0.15
+White elf DF2:1.0]
+CA[UTF-8]DT[2018-08-08]EV[test]GM[1]GN[test 0_37]KM[7.5]PB[Leela Zero:0.15]
+PW[DF2:1.0]RE[B+R]SZ[19];B[dp];W[pp];B[dd];W[pc];B[qe];W[qd];B[pe];W[nc];B[qm];
+W[qi];B[qk];W[oi];B[mf];W[qo];B[nl];W[ne];B[nf];W[me];B[lf];W[ok];B[ph];W[pi];
+B[ol];W[of];B[og];W[oe];B[qh];W[rh];B[rg];W[rj];B[sh];W[ri];B[pf];W[rf];B[pd];
+W[qc];B[od];W[mb];B[lc];W[nd];B[le];W[qg];B[pg];W[sg];B[nh];W[mj];B[ll];W[kj];
+B[np];W[fq];B[hq];W[id];B[gd];W[ge];B[fe];W[he];B[jh];W[ff];B[fd];W[gg];B[ii];
+W[df];B[jk];W[kd];B[ld];W[kl];B[kk];W[lk];B[lm];W[jj];B[ij];W[ik];B[jl];W[hk];
+B[gi];W[lh];B[je];W[hc];B[im];W[fb];B[db];W[hp];B[ip];W[ho];B[gq];W[eo];B[do];
+W[en];B[cm];W[iq];B[io];W[ir];B[re];W[rd];B[se];W[kh];B[lb];W[ji];B[sd];W[rb];
+B[sb];W[oc];B[jg];W[jb];B[ra];W[qa];B[hg];W[ce];B[cd];W[hn];B[dh];W[jm];B[km];
+W[jn];B[fh];W[eg];B[cg];W[be];B[eb];W[hb];B[jc];W[jd];B[kc];W[ic];B[bd];W[ad];
+B[ee];W[dg];B[ch];W[ia];B[ka];W[ja];B[fc];W[gb];B[in];W[il];B[kl];W[hm];B[ko];
+W[kp];B[jo];W[fr];B[ma];W[na];B[oa];W[la];B[gh];W[gf];B[ma];W[bc];B[bb];W[la];
+B[ie];W[hd];B[ma];W[cc];B[ab];W[la];B[jq];W[jr];B[ma];W[ac];B[cb];W[la];B[mk];
+W[lj];B[ma];W[dn];B[cn];W[la];B[kr];W[kq];B[ma];W[cq];B[nb];W[sc];B[rc];W[ck];
+B[dq];W[sc];B[lr];W[sa];B[qq];W[dr];B[pq];W[cl];B[bq];W[cr];B[bp];W[br];B[bl];
+W[bk];B[al];W[cp];B[co];W[aq];B[el];W[dj];B[ao];W[fj];B[ak];W[bi];B[bj];W[ci];
+B[bn];W[lo];B[mp];W[lp];B[mo];W[hj];B[hi];W[if];B[jf];W[ig];B[ih];W[hf];B[mc];
+W[kb];B[ob];W[jp];B[kn];W[eh];B[mh];W[dm];B[hr];W[gp];B[ln];W[sm];B[sn];W[pk];
+B[rl];W[pl];B[pm];W[jq];B[lq];W[hs];B[ai];W[bh];B[ah];W[ag];B[aj];W[ar];B[ap];
+W[gj];B[nk];W[nj];B[js];W[gr];B[dc];W[ae];B[pb];W[qb];B[rk];W[ea];B[eq];W[er];
+B[ep];W[fp];B[lg];W[da];B[ca];W[fa];B[bg];W[af];B[ei]
+C[leelaz beat elf B+R
+
+error reading response to 'quit' from player elf:
+engine has closed the response channel]
+)

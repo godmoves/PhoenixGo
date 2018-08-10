@@ -128,6 +128,11 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
     LOG(WARNING) << "read global step from " << tensorrt_model_path << ".step failed";
   }
 
+  m_value_from_black = model_config.value_from_black();
+  if (m_value_from_black) {
+    LOG(INFO) << "Value from black perspective";
+  }
+
   return 0;
 }
 
@@ -196,7 +201,7 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
 
   // elf always outputs value for black,
   // we need to reverse it when white to move.
-  if (FLAGS_elf) {
+  if (m_value_from_black) {
     for (int i = 0; i < batch_size; ++i) {
       if (inputs[i][16] < 0.5) {
         value[i] = - value[i];

@@ -1,0 +1,35 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_88
+Date 2018-08-06 14:44
+Result leelaz beat gigo B+R
+leelaz cpu time: 1114.55s
+gigo cpu time: 665.98s
+Black leelaz Leela Zero:0.15
+White gigo gigo:1.15]
+CA[UTF-8]DT[2018-08-06]EV[test]GM[1]GN[test 0_88]KM[7.5]PB[Leela Zero:0.15]
+PW[gigo:1.15]RE[B+R]SZ[19];B[pd];W[dd];B[pp];W[dq];B[co];W[cp];B[do];W[fq];
+B[cg];W[ck];B[ci];W[ek];B[gn];W[ce];B[fh];W[fo];B[fn];W[go];B[hn];W[cj];B[ho];
+W[hq];B[hp];W[gq];B[dl];W[di];B[dh];W[bi];B[ei];W[ch];B[bh];W[ci];B[eg];W[ej];
+B[gi];W[en];B[em];W[cm];B[eo];W[gc];B[bo];W[qc];B[qd];W[pc];B[nc];W[oc];B[od];
+W[nb];B[jq];W[qq];B[er];W[eq];B[bq];W[iq];B[jr];W[cr];B[jp];W[ir];B[qp];W[pq];
+B[oq];W[or];B[nr];W[nq];B[op];W[mr];B[pr];W[ns];B[qr];W[rq];B[rr];W[np];B[mn];
+W[pi];B[no];W[cl];B[dm];W[nd];B[mc];W[mb];B[qh];W[ph];B[qi];W[qj];B[pg];W[og];
+B[pf];W[pj];B[lc];W[of];B[rc];W[rb];B[re];W[mo];B[nn];W[lq];B[sb];W[lb];B[kc];
+W[ne];B[nh];W[oh];B[kf];W[qg];B[rg];W[qf];B[pe];W[ic];B[lo];W[df];B[dg];W[lh];
+B[ls];W[mp];B[ps];W[jg];B[hd];W[jd];B[hc];W[hb];B[gd];W[fc];B[ie];W[jo];B[ip];
+W[ln];B[lm];W[kn];B[kp];W[lp];B[js];W[rp];B[ro];W[qo];B[qn];W[rn];B[po];W[so];
+B[qo];W[ms];B[os];W[sr];B[rm];W[rs];B[nr];W[cn];B[dn];W[or];B[is];W[hs];B[nr];
+W[hf];B[or];W[ff];B[ef];W[fe];B[gs];W[hr];B[br];W[ji];B[bf];W[dr];B[al];W[am];
+B[bm];W[bl];B[an];W[ak];B[gb];W[ib];B[fd];W[ee];B[ec];W[fb];B[eb];W[ga];B[qb];
+W[pb];B[bc];W[ed];B[ra];W[pa];B[jj];W[kj];B[jk];W[ii];B[dk];W[bn];B[hj];W[cc];
+B[bd];W[dj];B[qa];W[kb];B[cb];W[db];B[da];W[dc];B[lk];W[be];B[ae];W[bb];B[lj];
+W[mi];B[ba];W[ca];B[rj];W[rk];B[cb];W[ab];B[ac];W[ca];B[ao];W[ah];B[bg];W[am];
+B[cb];W[kr];B[ks];W[ca];B[cs];W[ds];B[cb];W[bp];B[aa];W[ap];B[ea];W[nk];B[nj];
+W[mj];B[mk];W[nl];B[li];W[mh];B[gg];W[gf];B[ki];W[kh];B[ri];W[rl];B[pl];W[sm];
+B[sn];W[fa];B[ca];W[rn];B[ob];W[oa];B[sn];W[bb];B[ab];W[rn];B[na];W[ma];B[sn];
+W[ml];B[ll];W[rn];B[hg];W[if];B[sn];W[ij];B[ik];W[rn];B[ha];W[ia];B[sn];W[af];
+B[ag];W[rn];B[qm];W[pk];B[sn];W[sj];B[sl];W[sk];B[rh];W[sm];B[ol];W[ok];B[sl];
+W[gk];B[hl];W[sm];B[sp];W[gl];B[hi];W[ig];B[si];W[fj];B[hh];W[fi];B[fg];W[nm];
+B[ih];W[jh];B[dp];W[cq];B[ql];W[qk];B[om];W[gm];B[hm];W[ai];B[fm];W[fl];B[oe];
+W[mm];B[hk];W[sl];B[cf];W[de];B[eh]C[leelaz beat gigo B+R])

@@ -41,7 +41,6 @@ DEFINE_bool(gtp, false, "Run as gtp server.");
 DEFINE_int32(listen_port, 0, "Listen which port.");
 DEFINE_string(allow_ip, "", "List of client ip allowed to connect, seperated by comma.");
 DEFINE_bool(lizzie, false, "Run in lizzie mode.");
-DEFINE_bool(elf, false, "Using ELF OpenGo weight.");
 #if !defined(_WIN32) && !defined(_WIN64)
 DEFINE_bool(fork_per_request, true, "Fork for each request or not.");
 #endif
@@ -137,7 +136,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   std::istringstream ss(cmd);
   ss >> op;
   if (op == "name") {
-    return {true, "Leela Zero Phoenix"};
+    return {true, "HappyGo"};
   }
   if (op == "version") {
     return {true, "1.15"};
@@ -151,6 +150,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
                   "place_free_handicap\nset_free_handicap\nplay\ngenmove\nundo\n"
                   "final_score\nget_debug_info\nget_last_move_debug_info"};
   }
+  // TODO: fix command name
   if (op == "lz-analyze") {
     return {true, ""};
   }

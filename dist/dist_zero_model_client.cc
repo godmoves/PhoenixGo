@@ -75,11 +75,13 @@ int DistZeroModelClient::Forward(const std::vector<std::vector<bool>> &inputs,
   ForwardResp resp;
 
   for (const auto &features : inputs) {
-    if (features.size() != INPUT_DIM) {
-      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM
-                 << ", got " << features.size();
-      return ERR_INVALID_INPUT;
-    }
+    // Ignore inputs dim check here, bacause we will do this in real
+    // forward pass again.
+    // if (features.size() != INPUT_DIM) {
+    //   LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM
+    //              << ", got " << features.size();
+    //   return ERR_INVALID_INPUT;
+    // }
     std::string encode_features((INPUT_DIM + 7) / 8, 0);
     for (int i = 0; i < INPUT_DIM; ++i) {
       encode_features[i / 8] |= (unsigned char)features[i] << (i % 8);

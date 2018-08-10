@@ -34,9 +34,9 @@ if [[ -z $config ]]; then
 
         if [[ $has_cuda && $num_gpu -gt 0 ]]; then
             if [[ $has_tensorrt ]]; then
-                config="etc/mcts_${num_gpu}gpu.conf"
+                config="etc/mcts_${num_gpu}gpu_lz.conf"
             else
-                config="etc/mcts_${num_gpu}gpu_notensorrt.conf"
+                config="etc/mcts_${num_gpu}gpu_notrt_lz.conf"
             fi
         else
             config="etc/mcts_cpu.conf"

@@ -1,0 +1,28 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_14
+Date 2018-08-07 20:02
+Result elf beat leelaz B+R
+elf cpu time: 496.19s
+leelaz cpu time: 867.95s
+Black elf DF2:1.0
+White leelaz Leela Zero:0.15]
+CA[UTF-8]DT[2018-08-07]EV[test]GM[1]GN[test 0_14]KM[7.5]PB[DF2:1.0]
+PW[Leela Zero:0.15]RE[B+R]SZ[19];B[pp];W[dp];B[pd];W[dc];B[ce];W[cd];B[de];
+W[fc];B[cm];W[gp];B[cq];W[cp];B[dq];W[ep];B[fr];W[ci];B[bd];W[bc];B[fd];W[gc];
+B[ck];W[ei];B[fl];W[he];B[gf];W[gh];B[hf];W[ge];B[ff];W[gj];B[hl];W[if];B[ig];
+W[hg];B[cg];W[bh];B[ed];W[ec];B[bf];W[dl];B[dk];W[dh];B[dg];W[bq];B[br];W[ek];
+B[el];W[dm];B[dn];W[em];B[bn];W[en];B[bp];W[bo];B[aq];W[do];B[fh];W[fi];B[fk];
+W[ej];B[ao];W[ih];B[jg];W[ef];B[fe];W[jf];B[eh];W[jj];B[kg];W[kf];B[lg];W[lf];
+B[jl];W[cn];B[bl];W[mg];B[li];W[bj];B[bk];W[eg];B[fg];W[lj];B[mh];W[mj];B[oh];
+W[ad];B[ch];W[di];B[hi];W[hh];B[df];W[jo];B[jn];W[kn];B[in];W[io];B[km];W[ik];
+B[ho];W[hp];B[mm];W[ko];B[mf];W[ng];B[nh];W[nf];B[nk];W[bg];B[be];W[nj];B[oj];
+W[ok];B[pj];W[nl];B[hk];W[hj];B[mk];W[il];B[im];W[jk];B[ll];W[nd];B[no];W[pf];
+B[pg];W[pe];B[qd];W[oc];B[od];W[nc];B[qf];W[qp];B[qq];W[ro];B[rq];W[po];B[op];
+W[ql];B[rj];W[pk];B[rm];W[nm];B[mn];W[rk];B[qj];W[qm];B[rn];W[qn];B[on];W[nn];
+B[ml];W[ol];B[oo];W[rl];B[om];W[rp];B[pn];W[sp];B[sn];W[qk];B[pm];W[sk];B[ii]
+C[elf beat leelaz B+R
+
+error reading response to 'quit' from player elf:
+engine has closed the response channel]
+)

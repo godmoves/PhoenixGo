@@ -54,8 +54,8 @@ DataType toDataType(string value) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 9) {
-    cout << "Usage: <uff_filename> <plan_filename> <input_name> <policy_name>"
+  if (argc != 10) {
+    cout << "Usage: <uff_filename> <plan_filename> <input_name> <input_feature> <policy_name>"
          << " <value_name> <max_batch_size> <max_workspace_size> <data_type>\n";
     return 1;
   }
@@ -64,17 +64,18 @@ int main(int argc, char *argv[]) {
   string uffFilename = argv[1];
   string planFilename = argv[2];
   string inputName = argv[3];
-  string policyName = argv[4];
-  string valueName = argv[5];
-  int maxBatchSize = toInteger(argv[6]);
-  int maxWorkspaceSize = toInteger(argv[7]);
-  DataType dataType = toDataType(argv[8]);
+  int inputFeature = toInteger(argv[4]);
+  string policyName = argv[5];
+  string valueName = argv[6];
+  int maxBatchSize = toInteger(argv[7]);
+  int maxWorkspaceSize = toInteger(argv[8]);
+  DataType dataType = toDataType(argv[9]);
 
   /* parse uff */
   IBuilder *builder = createInferBuilder(gLogger);
   INetworkDefinition *network = builder->createNetwork();
   IUffParser *parser = createUffParser();
-  parser->registerInput(inputName.c_str(), DimsCHW(18, 19, 19), UffInputOrder::kNCHW);
+  parser->registerInput(inputName.c_str(), DimsCHW(inputFeature, 19, 19), UffInputOrder::kNCHW);
   parser->registerOutput(policyName.c_str());
   parser->registerOutput(valueName.c_str());
   if (!parser->parse(uffFilename.c_str(), *network, dataType)) {

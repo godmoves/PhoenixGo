@@ -1,0 +1,36 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_21
+Date 2018-08-07 22:20
+Result elf beat leelaz W+R
+leelaz cpu time: 1423.98s
+elf cpu time: 791.17s
+Black leelaz Leela Zero:0.15
+White elf DF2:1.0]
+CA[UTF-8]DT[2018-08-07]EV[test]GM[1]GN[test 0_21]KM[7.5]PB[Leela Zero:0.15]
+PW[DF2:1.0]RE[W+R]SZ[19];B[dd];W[dp];B[pd];W[qp];B[oq];W[pq];B[op];W[qn];B[gq];
+W[kq];B[pr];W[qr];B[pn];W[qm];B[iq];W[ko];B[pm];W[eq];B[hn];W[or];B[nr];W[ps];
+B[cn];W[bo];B[mq];W[po];B[oo];W[km];B[eo];W[bn];B[cl];W[cc];B[cd];W[dc];B[ed];
+W[fb];B[gc];W[im];B[pl];W[nn];B[ln];W[lm];B[mm];W[ml];B[nm];W[mn];B[lo];W[nl];
+B[om];W[lp];B[kn];W[jn];B[mo];W[mp];B[no];W[jo];B[ll];W[nj];B[lk];W[lj];B[kj];
+W[li];B[ki];W[pj];B[ql];W[rj];B[lr];W[kr];B[rm];W[rn];B[lh];W[ms];B[ls];W[ns];
+B[qj];W[qi];B[qk];W[nh];B[pi];W[qh];B[rk];W[jk];B[kk];W[gl];B[ep];W[dq];B[jp];
+W[kp];B[mh];W[oi];B[mj];W[ok];B[sn];W[so];B[sm];W[hj];B[fm];W[fl];B[co];W[cp];
+B[dj];W[hh];B[fj];W[fc];B[fd];W[gd];B[hc];W[hd];B[id];W[ie];B[jc];W[jd];B[ic];
+W[hf];B[kd];W[je];B[ke];W[fg];B[eg];W[eh];B[dh];W[ei];B[di];W[bd];B[be];W[bc];
+B[ff];W[ef];B[dg];W[gf];B[fe];W[pc];B[oc];W[qc];B[od];W[re];B[ik];W[hk];B[jl];
+W[il];B[jj];W[bm];B[fh];W[ks];B[mr];W[gm];B[gn];W[em];B[en];W[jm];B[dl];W[kf];
+B[lf];W[kg];B[ge];W[he];B[hm];W[hl];B[gg];W[hg];B[mf];W[gb];B[kb];W[gj];B[ro];
+W[qo];B[sp];W[rq];B[ob];W[ri];B[sk];W[pf];B[of];W[og];B[fr];W[er];B[bl];W[pb];
+B[gi];W[hi];B[jh];W[jg];B[pa];W[qd];B[fk];W[ir];B[hr];W[is];B[jq];W[jr];B[qa];
+W[pe];B[oe];W[gh];B[fi];W[al];B[ak];W[am];B[af];W[ad];B[bf];W[hb];B[rb];W[rc];
+B[ib];W[fn];B[gp];W[ho];B[go];W[ip];B[hq];W[el];B[ek];W[sb];B[cr];W[ds];B[ng];
+W[ni];B[mi];W[ia];B[ja];W[ha];B[os];W[ns];B[ih];W[ig];B[sq];W[sr];B[fs];W[ec];
+B[sj];W[si];B[pk];W[ph];B[ra];W[lg];B[mg];W[hs];B[fq];W[do];B[dn];W[bq];B[es];
+W[dr];B[fg];W[fo];B[gs];W[fm];B[fp];W[ii];B[kl];W[ij];B[jk];W[cm];B[dm];W[io];
+B[so];W[rp];B[ae];W[os];B[mk];W[nk];B[gk];
+C[elf beat leelaz W+R
+
+error reading response to 'quit' from player elf:
+engine has closed the response channel]
+W[np])
