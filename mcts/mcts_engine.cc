@@ -393,7 +393,10 @@ TreeNode *MCTSEngine::FindChild(TreeNode *node, int move) {
       return &ch[i];
     }
   }
-  return nullptr;
+  // if next move is not visited, create a new node and init it with this move 
+  TreeNode *unvisited_node = new TreeNode;
+  InitNode(unvisited_node, nullptr, move, 0.0);
+  return unvisited_node;
 }
 
 void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
