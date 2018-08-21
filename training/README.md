@@ -1,14 +1,19 @@
 ## Test different ways to learn
 
 - [ ] continue from last 10b
+- [ ] phoenixgo weight test
 - [x] [test different engines](https://github.com/godmoves/HappyGo/tree/training/training/engine_test)
+- [ ] reproducibility
 - [ ] with/without ELF data
 - [ ] quick/slow learning rate drop (100k, 200k, 400k, 800k)
 - [ ] different weight of value part (10, 1, 0.1, 0.01)
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
+- [ ] different b&f (33x128, 15x19, 9x256)
 - [ ] dropout
+- [ ] more features (alphago lee)
 - [ ] imitate elf/phoenixgo
+- [ ] TPU support
 - [ ] global pooling
 - [ ] [think fast and slow](https://arxiv.org/pdf/1705.08439.pdf)
 - [ ] new elf (?)
