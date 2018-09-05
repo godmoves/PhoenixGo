@@ -1,7 +1,7 @@
 ## Test different ways to learn
 
 - [ ] continue from last 10b
-- [ ] phoenixgo weight test
+- [x] [phoenixgo weight test](https://github.com/godmoves/HappyGo/blob/training/training/phgo_weight)
 - [x] [test different engines](https://github.com/godmoves/HappyGo/tree/training/training/engine_test)
 - [ ] reproducibility
 - [ ] with/without ELF data
