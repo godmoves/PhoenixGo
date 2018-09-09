@@ -267,7 +267,7 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   }
 
   int ret = m_board.Move(x, y);
-  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToId(x, y) << ", ret" << ret;
+  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToStr(x, y) << ", ret" << ret;
 
   ++m_num_moves;
   m_move_history.push_back(GoFunction::CoordToId(x, y));
@@ -278,6 +278,7 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   LOG(INFO) << "Move: " << m_moves_str;
 
   ChangeRoot(FindChild(m_root, GoFunction::CoordToId(x, y)));
+  m_root->move = GoFunction::CoordToId(x, y);
 
   m_debugger.UpdateLastMoveDebugStr();
   LOG(INFO) << m_debugger.GetLastMoveDebugStr();
@@ -393,10 +394,6 @@ TreeNode *MCTSEngine::FindChild(TreeNode *node, int move) {
       return &ch[i];
     }
   }
-  // if next move is not visited, create a new node and init it with this move 
-  TreeNode *unvisited_node = new TreeNode;
-  InitNode(unvisited_node, nullptr, move, 0.0);
-  return unvisited_node;
 }
 
 void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
@@ -414,14 +411,13 @@ void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
   int transform_mode = g_random_engine() & 7;
   TransformFeatures(features, transform_mode);
 
-  bool dumb_pass = board.GetLastMove() == GoComm::COORD_PASS &&
-                   board.GetWinner() != board.CurrentPlayer();
+  bool dumb_pass = board.GetWinner() != board.CurrentPlayer();
 
   callback = [this, callback, timer, transform_mode,
               dumb_pass](int ret, std::vector<float> policy, float value) {
     if (ret == 0) {
       if (dumb_pass && value < 0.5 && !m_config.disable_double_pass_scoring()) {
-        policy.back() = std::min(policy.back(), 1e-5f); // disallow second PASS
+        policy.back() = std::min(policy.back(), 1e-5f); // disallow dumb PASS
       }
 
       CHECK_EQ(policy.size(), GoComm::GOBOARD_SIZE + 1)
@@ -1019,6 +1015,14 @@ void MCTSEngine::InitRoot() {
           (1 - m_config.dirichlet_noise_ratio()) * ch[i].prior_prob +
           m_config.dirichlet_noise_ratio() * noise[i] / noise_sum;
     }
+    bool dumb_pass = m_board.GetWinner() != m_board.CurrentPlayer();
+    if (dumb_pass && m_root->value < 0.5 && !m_config.disable_double_pass_scoring()) {
+      for (int i = 0; i < ch_len; ++i) {
+        if (ch[i].move == GoComm::COORD_PASS) {
+          ch[i].prior_prob = 1e-5f;
+        }
+      }
+    }
   }
 }
 
@@ -1067,7 +1071,7 @@ int MCTSEngine::GetBestMove(float &v_resign) {
     } else {
       visit_count[i] = ch[i].visit_count;
       total_action[i] = (float)ch[i].total_action / k_action_value_base;
-      mean_action[i] = visit_count[i] == 0 ? 0.0f : total_action[i] / visit_count[i];
+      mean_action[i] = visit_count[i] == 0 ? -1.0f : total_action[i] / visit_count[i];
       prior_prob[i] = ch[i].prior_prob;
       value[i] = ch[i].value;
     }
