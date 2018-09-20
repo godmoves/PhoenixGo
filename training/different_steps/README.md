@@ -128,6 +128,8 @@ player lz_15b_base: Leela Zero:0.15
 
 ### Conclusion 
 
-- The longer training steps, the stronger net. Even the result in loss and 
-  accuracy is similar in 800k and 1600k, the performance is quite different.
-- The training data shows that the training procedure is quite reproducible.
+- As the training steps become longer, the net is also stronger. 
+- Even the result in loss and accuracy is similar in 800k and 1600k, the
+  performance is quite different.
+- The initial part of training result shows that the training procedure is
+  quite reproducible.
