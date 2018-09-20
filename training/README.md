@@ -3,7 +3,7 @@
 - [x] [continue from last 10b](https://github.com/godmoves/HappyGo/tree/lz/training/continue_last_10b)
 - [x] [phoenixgo weight test](https://github.com/godmoves/HappyGo/tree/lz/training/phgo_weight)
 - [x] [test different engines](https://github.com/godmoves/HappyGo/tree/lz/training/engine_test)
-- [x] [reproducibility]((https://github.com/godmoves/HappyGo/tree/lz/training/different_steps))
+- [x] [reproducibility](https://github.com/godmoves/HappyGo/tree/lz/training/different_steps)
 - [ ] with/without ELF data
 - [x] [quick/slow learning rate drop](https://github.com/godmoves/HappyGo/tree/lz/training/different_steps)
 - [ ] different weight of value part (10, 1, 0.1, 0.01)

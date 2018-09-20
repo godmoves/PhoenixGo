@@ -18,10 +18,13 @@ def prepare_data(folder_name, file_name, fig_idx):
     plt.figure(fig_idx, figsize=(12, 8))
     if fig_idx == 1:
         plt.title("accuracy")
+        plt.ylim(0.35, 0.55)
     elif fig_idx == 2:
         plt.title("mse loss")
+        plt.ylim(0.155, 0.20)
     else:
         plt.title("total loss")
+        plt.ylim(2.9, 4)
 
     plt.xlabel("steps (k)")
     plt.plot(step, value, label=folder_name[7:])
