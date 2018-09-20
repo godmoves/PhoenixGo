@@ -131,7 +131,7 @@ void GoState::CalcScoreWithColor(GoSize &cnt, const GoStoneColor color) const {
 GoStoneColor GoState::GetWinner(GoSize &score) const {
   GoSize black, white, empty;
   score = CalcScore(black, white, empty);
-  return score > 7.5 ? BLACK : GoComm::WHITE;
+  return score > 7.5 ? BLACK : WHITE;
 }
 
 GoStoneColor GoState::GetWinner() const {

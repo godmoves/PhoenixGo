@@ -10,9 +10,9 @@ http_archive(
 
 http_archive(
     name = "org_tensorflow",
-    urls = ["https://github.com/tensorflow/tensorflow/archive/v1.7.0.tar.gz"],
-    sha256 = "c676a96fc8700722816b2b98c85578b2f99fac7a7b2484c9c7f0641484f8d50d",
-    strip_prefix = "tensorflow-1.7.0",
+    urls = ["https://github.com/tensorflow/tensorflow/archive/v1.8.0.tar.gz"],
+    sha256 = "47646952590fd213b747247e6870d89bb4a368a95ae3561513d6c76e44f92a75",
+    strip_prefix = "tensorflow-1.8.0",
     patches = ["//third_party/tensorflow:tensorflow.patch"],
 )
 
@@ -31,9 +31,9 @@ tf_workspace(path_prefix = "", tf_repo_name = "org_tensorflow")
 
 http_archive(
     name = "com_github_nelhage_rules_boost",
-    urls = ["https://github.com/nelhage/rules_boost/archive/769c22fa72177314cd6fae505bd36116d6ed1f6b.tar.gz"],
-    sha256 = "b2fccaabeb6ee243c7632dd2a4d0419c78e43e1f063cb4b6a117630d060b440e",
-    strip_prefix = "rules_boost-769c22fa72177314cd6fae505bd36116d6ed1f6b",
+    urls = ["https://github.com/nelhage/rules_boost/archive/c1975a9a45c97823ae9e68fbccb821418099168f.tar.gz"],
+    sha256 = "ab8403986bea12da70c1ed86ef688e72c3062dd6b6a9a84035c4f13145defb93",
+    strip_prefix = "rules_boost-c1975a9a45c97823ae9e68fbccb821418099168f",
 )
 
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
