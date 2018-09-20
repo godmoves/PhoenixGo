@@ -1,11 +1,11 @@
 ## Test different ways to learn
 
-- [ ] continue from last 10b
-- [x] [phoenixgo weight test](https://github.com/godmoves/HappyGo/blob/training/training/phgo_weight)
-- [x] [test different engines](https://github.com/godmoves/HappyGo/tree/training/training/engine_test)
-- [ ] reproducibility
+- [x] [continue from last 10b](https://github.com/godmoves/HappyGo/tree/lz/training/continue_last_10b)
+- [x] [phoenixgo weight test](https://github.com/godmoves/HappyGo/tree/lz/training/phgo_weight)
+- [x] [test different engines](https://github.com/godmoves/HappyGo/tree/lz/training/engine_test)
+- [x] [reproducibility]((https://github.com/godmoves/HappyGo/tree/lz/training/different_steps))
 - [ ] with/without ELF data
-- [ ] quick/slow learning rate drop (100k, 200k, 400k, 800k)
+- [x] [quick/slow learning rate drop](https://github.com/godmoves/HappyGo/tree/lz/training/different_steps)
 - [ ] different weight of value part (10, 1, 0.1, 0.01)
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
