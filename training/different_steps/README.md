@@ -70,15 +70,15 @@ player fast_lr_400k: Leela Zero:0.15
 
 400k vs last 10b
 ```
-400k v lz_10b_base (102 games)
+fast_lr_400k v lz_10b_base (102 games)
 board size: 19   komi: 7.5
             wins              black         white       avg cpu
-400k          58 56.86%       33 64.71%     25 49.02%    120.10
+fast_lr_400k  58 56.86%       33 64.71%     25 49.02%    120.10
 lz_10b_base   44 43.14%       26 50.98%     18 35.29%    120.09
                               59 57.84%     43 42.16%
 
+player fast_lr_400k: Leela Zero:0.15
 player lz_10b_base: Leela Zero:0.15
-player 400k: Leela Zero:0.15
 ```
 
 800k vs last 10b

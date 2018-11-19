@@ -6,7 +6,7 @@
 - [x] [reproducibility](https://github.com/godmoves/HappyGo/tree/lz/training/different_steps#conclusion)
 - [ ] with/without ELF data
 - [x] [quick/slow learning rate drop](https://github.com/godmoves/HappyGo/tree/lz/training/different_steps)
-- [ ] different weight of value part (10, 1, 0.1, 0.01)
+- [x] [different weight of value part (10, 1, 0.1, 0.01)](https://github.com/godmoves/HappyGo/tree/lz/training/different_values)
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
 - [ ] different b&f (33x128, 15x19, 9x256)
