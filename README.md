@@ -63,6 +63,7 @@ First `git clone` this repository, then execute the commands below:
 $ cd scripts/u2p
 $ mkdir build && cd build
 $ cmake ..
+$ make
 $ cd ../..
 $ python net_to_model.py <lz-weight-name>
 ```
