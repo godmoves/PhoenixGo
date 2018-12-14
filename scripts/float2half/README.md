@@ -1,3 +1,5 @@
+## Deprecated
+
 ## Test of converting a FP32 model into FP16
 
 Reference links:  
