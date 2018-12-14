@@ -1,3 +1,9 @@
+**Status:** Active, breaking changes may occur.
+
+**TODO:**
+  - [ ] update to TensorRT 5
+  - [ ] update to TensorFlow 1.12
+
 # Leela Zero X PhoenixGo
 
 
