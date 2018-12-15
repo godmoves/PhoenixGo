@@ -171,8 +171,20 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
 
   m_context->execute(batch_size, m_cuda_buf.data());
 
+  value.resize(batch_size);
+  ret = cudaMemcpy(value.data(), m_cuda_buf[1],
+                   value.size() * sizeof(float),
+                   cudaMemcpyDeviceToHost);
+  if (ret != 0) {
+    LOG(ERROR) << "cuda memcpy err " << ret;
+    return ERR_CUDA_MEMCPY;
+  }
+  for (int i = 0; i < batch_size; ++i) {
+    value[i] = -value[i];
+  }
+
   std::vector<float> policy_flat(batch_size * OUTPUT_DIM);
-  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1],
+  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[2],
                    policy_flat.size() * sizeof(float),
                    cudaMemcpyDeviceToHost);
   if (ret != 0) {
@@ -185,18 +197,6 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     for (int j = 0; j < OUTPUT_DIM; ++j) {
       policy[i][j] = policy_flat[i * OUTPUT_DIM + j];
     }
-  }
-
-  value.resize(batch_size);
-  ret = cudaMemcpy(value.data(), m_cuda_buf[2],
-                   value.size() * sizeof(float),
-                   cudaMemcpyDeviceToHost);
-  if (ret != 0) {
-    LOG(ERROR) << "cuda memcpy err " << ret;
-    return ERR_CUDA_MEMCPY;
-  }
-  for (int i = 0; i < batch_size; ++i) {
-    value[i] = -value[i];
   }
 
   // elf always outputs value for black,
