@@ -1,13 +1,14 @@
 **Status:** Active, breaking changes may occur.
 
 **TODO:**
-  - [ ] update to TensorRT 5
-  - [ ] update to TensorFlow 1.12
+  - [x] update to TensorRT 5
+  - [x] update to TensorFlow 1.12
+  - [ ] clean up code
+  - [ ] add tests and benchmarks
 
 # Leela Zero X PhoenixGo
 
-
-## Info about PhoenixGo
+## About PhoenixGo
 
 ![PhoenixGo](images/logo.jpg?raw=true)
 
@@ -30,7 +31,7 @@ If you use PhoenixGo in your research, please consider citing the library as fol
 }
 ```
 
-## Info about Leela Zero
+## About Leela Zero
 
 **Leela Zero** is a free and open-source computer Go software released on 25 October 2017.
 It is developed by Belgian programmer [Gian-Carlo Pascutto](https://github.com/gcp), the author of chess engine Sjeng and Go engine Leela.
@@ -48,14 +49,14 @@ Additionally, in early 2018 the same team branched Leela Chess Zero from the sam
 
 ### Dependencies
 
-- python 3.5 (ubuntu 16.04) or python 3.x (ubuntu 18.04)
-- numpy  
-- pycuda  
-- tensorflow 1.10+  
-- [tensorrt 5](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
-- [uff](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
+- Python 3.5 on Ubuntu 16.04 / Python 3.x on Ubuntu 18.04  
+- Numpy  
+- Pycuda  
+- TensorFlow 1.12+  
+- [TensorRT 5](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
+- [UFF](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
 - cmake 3.1+  
-- gcc 6  
+- gcc 6/7  
 
 Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
@@ -70,7 +71,7 @@ $ mkdir build && cd build
 $ cmake ..
 $ make
 $ cd ../..
-$ python net_to_model.py <lz-weight-name>
+$ python net_to_model.py </path/to/lz-weight>
 ```
 You will get the `.uff`, `.PLAN` and the Tensorflow format of Leela Zero weight. Copy them to `ckpt` folder.
 
@@ -105,18 +106,16 @@ $ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr 
 
 **Known issue:** speed loss when there are too many points, turn off the pv may help with this. 
 
-## Building and Running
+## Build the engine on Linux
 
-### On Linux
-
-#### Requirements
+### Requirements
 
 * GCC with C++11 support
 * Bazel (0.19.2 is known-good, 0.20.2 has some [issues](https://github.com/tensorflow/tensorflow/issues/24124))
 * (Optional) CUDA 10 and cuDNN 7 (for GPU support)
 * (Optional) TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
 
-#### Building
+### Building
 
 Clone the repository and configure the building:
 
@@ -136,7 +135,7 @@ $ bazel build //mcts:mcts_main
 
 Dependices such as Tensorflow will be downloaded automatically. The building prosess may take a long time.
 
-#### Running
+### Running
 
 Download and extract the trained network, then run:
 
@@ -164,7 +163,7 @@ change `--logtostderr` to `--log_dir={log_dir}`
 
 You could modify your config file following [configure-guide](#configure-guide).
 
-#### Distribute mode
+### Distribute mode
 
 PhoenixGo support running with distributed workers, if there are GPUs on different machine.
 
@@ -272,22 +271,13 @@ Moreover, `--minloglevel=1` and `--minloglevel=2` could disable INFO log and WAR
 Or, if you just don't want to log to stderr, replace `--logtostderr` to `--log_dir={log_dir}`,
 then you could read your log from `{log_dir}/mcts_main.INFO`.
 
-**3. How to run with Sabaki?**
-
-Setting GTP engine in Sabaki's menu: `Engines -> Manage Engines`, fill `Path` with path of `start.sh`.
-Click `Engines -> Attach` to use the engine in your game.
-
-**4. How make PhoenixGo think with longer/shorter time?**
-
-Modify `timeout_ms_per_step` in your config file.
-
-**5. How make PhoenixGo think with constant time per move?**
+**3. How make PhoenixGo think with constant time per move?**
 
 Modify your config file. `early_stop`, `unstable_overtime`, `behind_overtime` and
 `time_control` are options that affect the search time, remove them if exist then
 each move will cost constant time/simulations.
 
-**6. GTP command `time_settings` doesn't work.**
+**4. GTP command `time_settings` doesn't work.**
 
 Add these lines in your config:
 
