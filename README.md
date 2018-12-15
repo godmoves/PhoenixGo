@@ -48,25 +48,24 @@ Additionally, in early 2018 the same team branched Leela Chess Zero from the sam
 
 ### Dependencies
 
-- python 3.5  
+- python 3.5 (ubuntu 16.04) or python 3.x (ubuntu 18.04)
 - numpy  
 - pycuda  
-- tensorflow 1.5+  
-- [tensorrt 3.0.4](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
+- tensorflow 1.10+  
+- [tensorrt 5](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
 - [uff](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
 - cmake 3.1+  
 - gcc 6  
 
 Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
-You need to install `tensorrt` by **tar package** to get python support, but now **only python 2.7 
-and python 3.5 are supported**. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
+You need to install `tensorrt` by **tar package** to get python support. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
 
 ### Build uff_to_plan and convert weight
 
 First `git clone` this repository, then execute the commands below:
 ```
-$ cd scripts/u2p
+$ cd scripts/uff2plan
 $ mkdir build && cd build
 $ cmake ..
 $ make
@@ -113,23 +112,23 @@ $ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr 
 #### Requirements
 
 * GCC with C++11 support
-* Bazel (0.11.1 is known-good)
-* (Optional) CUDA and cuDNN (for GPU support)
-* (Optional) TensorRT (for accelerating computation on GPU, 3.0.4 is known-good)
+* Bazel (0.19.2 is known-good, 0.20.2 has some [issues](https://github.com/tensorflow/tensorflow/issues/24124))
+* (Optional) CUDA 10 and cuDNN 7 (for GPU support)
+* (Optional) TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
 
 #### Building
 
 Clone the repository and configure the building:
 
 ```
-$ git clone https://github.com/Tencent/PhoenixGo.git
-$ cd PhoenixGo
+$ git clone https://github.com/godmoves/HappyGo.git
+$ cd HappyGo
 $ ./configure
 ```
 
 `./configure` will ask where CUDA and TensorRT have been installed, specify them if need.
 
-Then build with bazel:
+Then build with bazel, a known issue of bazel 0.19.2 is mentioned [here](https://github.com/tensorflow/tensorflow/issues/23401#issuecomment-434681778):
 
 ```
 $ bazel build //mcts:mcts_main
@@ -141,9 +140,8 @@ Dependices such as Tensorflow will be downloaded automatically. The building pro
 
 Download and extract the trained network, then run:
 
+Convert the Leela Zero weight as mentioned before, and run
 ```
-$ wget https://github.com/Tencent/PhoenixGo/releases/download/trained-network-20b-v1/trained-network-20b-v1.tar.gz
-$ tar xvzf trained-network-20b-v1.tar.gz
 $ scripts/start.sh
 ```
 or
