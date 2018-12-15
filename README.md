@@ -51,12 +51,12 @@ Additionally, in early 2018 the same team branched Leela Chess Zero from the sam
 
 - Python 3.5 on Ubuntu 16.04 / Python 3.x on Ubuntu 18.04  
 - Numpy  
-- Pycuda  
+- PyCUDA  
 - TensorFlow 1.12+  
 - [TensorRT 5](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
 - [UFF](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
-- cmake 3.1+  
-- gcc 6/7  
+- CMake 3.1+  
+- GCC 6/7  
 
 Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
@@ -112,8 +112,8 @@ $ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr 
 
 * GCC with C++11 support
 * Bazel (0.19.2 is known-good, 0.20.2 has some [issues](https://github.com/tensorflow/tensorflow/issues/24124))
-* (Optional) CUDA 10 and cuDNN 7 (for GPU support)
-* (Optional) TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
+* CUDA 10 and cuDNN 7 (for GPU support)
+* TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
 
 ### Building
 
@@ -198,7 +198,7 @@ Here are some important options in the config file:
 * `num_search_threads`: should a bit larger than `num_eval_threads * eval_batch_size`
 * `timeout_ms_per_step`: how many time will used for each move
 * `max_simulations_per_step`: how many simulations will do for each move
-* `gpu_list`: use which GPUs, sperated by comma
+* `gpu_list`: use which GPUs, separated by comma
 * `model_config -> train_dir`: directory where trained network stored
 * `model_config -> checkpoint_path`: use which checkpoint, get from `train_dir/checkpoint` if not set
 * `model_config -> enable_tensorrt`: use TensorRT or not
@@ -224,7 +224,7 @@ Options for async distribute mode:
 
 * `enable_async`: enable async mode
 * `enable_dist`: enable distribute mode
-* `dist_svr_addrs`: multiple lines, comma sperated lists of `ip:port` for each line
+* `dist_svr_addrs`: multiple lines, comma separated lists of `ip:port` for each line
 * `num_eval_threads`: should equal to number of `dist_svr_addrs` lines
 * `eval_task_queue_size`: tunning depend on number of distribute workers
 * `num_search_threads`: tunning depend on number of distribute workers
