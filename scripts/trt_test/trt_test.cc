@@ -94,6 +94,7 @@ int main() {
     }
   }
 
+  // preprare test inputs
   std::vector<float> feature(19 * 19 * 18, 0);
   for (int i = 0; i < 18; ++i) {
     for (int j = 0; j < 19; ++j) {
@@ -108,6 +109,7 @@ int main() {
 
   m_context = m_engine->createExecutionContext();
 
+  // allocate cuda memory
   int max_batch_size = m_engine->getMaxBatchSize();
   std::cout << "INFO: tensorrt max batch size: " << max_batch_size << "\n";
   for (int i = 0; i < m_engine->getNbBindings(); ++i) {
@@ -121,8 +123,9 @@ int main() {
       size *= dim.d[i];
     }
     dim_str += ")";
+    // need to pay attention to the order of output!
     std::cout << "INFO: tensorrt binding: " << m_engine->getBindingName(i)
-              << " " << dim_str << "\n";
+              << " " << dim_str << " \tsize[" << size << "]\n";
 
     void *buf;
     int ret = cudaMalloc(&buf, max_batch_size * size * sizeof(float));
@@ -134,7 +137,9 @@ int main() {
   }
 
   int batch_size = inputs.size();
+  std::cout << "INFO: Using batch size " << batch_size << "\n";
 
+  // copy data from host to device
   std::vector<float> inputs_flat(batch_size * INPUT_DIM);
   for (int i = 0; i < batch_size; ++i) {
     if (inputs[i].size() != INPUT_DIM) {
@@ -151,21 +156,26 @@ int main() {
                        inputs_flat.size() * sizeof(float),
                        cudaMemcpyHostToDevice);
   if (ret != 0) {
-    std::cout << "ERROR: cuda memcpy err " << ret << "\n";
+    std::cout << "ERROR[input]: cuda memcpy err " << ret << "\n";
     return 1;
   }
 
+  // execute the neural network calculation
   m_context->execute(batch_size, m_cuda_buf.data());
+  std::cout << "INFO: Finish execution\n";
 
+  // initialize host vector
   std::vector<std::vector<float>> policy;
   std::vector<float> value;
-
   std::vector<float> policy_flat(batch_size * OUTPUT_DIM);
-  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[1],
+
+  // get policy head result
+  std::cout << "INFO: Policy size " << policy_flat.size() << "\n";
+  ret = cudaMemcpy(policy_flat.data(), m_cuda_buf[2],
                    policy_flat.size() * sizeof(float),
                    cudaMemcpyDeviceToHost);
   if (ret != 0) {
-    std::cout << "ERROR: cuda memcpy err " << ret << "\n";
+    std::cout << "ERROR[policy]: cuda memcpy err " << ret << "\n";
     return 1;
   }
   policy.resize(batch_size);
@@ -176,22 +186,24 @@ int main() {
     }
   }
 
+  // get valuel head result
   value.resize(batch_size);
-  ret = cudaMemcpy(value.data(), m_cuda_buf[2],
+  ret = cudaMemcpy(value.data(), m_cuda_buf[1],
                    value.size() * sizeof(float),
                    cudaMemcpyDeviceToHost);
   if (ret != 0) {
-    std::cout << "ERROR: cuda memcpy err " << ret << "\n";
+    std::cout << "ERROR[value]: cuda memcpy err " << ret << "\n";
     return 1;
   }
   for (int i = 0; i < batch_size; ++i) {
     value[i] = -value[i];
   }
 
+  // print result to check
   std::cout << "policy head:\n";
   for (int i = 0; i < 19; ++i) {
     for (int j = 0; j < 19; ++j) {
-      printf("%.4f ", policy[0][19 * i + j]);
+      printf("%.2f ", policy[0][19 * i + j]);
     }
     printf("\n");
   }
