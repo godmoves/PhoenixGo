@@ -1,6 +1,16 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
+    name = "io_bazel_rules_closure",
+    sha256 = "a38539c5b5c358548e75b44141b4ab637bba7c4dc02b46b1f62a96d6433f56ae",
+    strip_prefix = "rules_closure-dbb96841cc0a5fb2664c37822803b06dab20c7d1",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/dbb96841cc0a5fb2664c37822803b06dab20c7d1.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/dbb96841cc0a5fb2664c37822803b06dab20c7d1.tar.gz",  # 2018-04-13
+    ],
+)
+
+http_archive(
     name = "com_github_google_glog",
     urls = ["https://github.com/google/glog/archive/55cc27b6eca3d7906fc1a920ca95df7717deb4e7.tar.gz"],
     sha256 = "4966f4233e4dcac53c7c7dd26054d17c045447e183bf9df7081575d2b888b95b",
@@ -10,20 +20,10 @@ http_archive(
 
 http_archive(
     name = "org_tensorflow",
-    urls = ["https://github.com/tensorflow/tensorflow/archive/v1.8.0.tar.gz"],
-    sha256 = "47646952590fd213b747247e6870d89bb4a368a95ae3561513d6c76e44f92a75",
-    strip_prefix = "tensorflow-1.8.0",
+    urls = ["https://github.com/tensorflow/tensorflow/archive/v1.12.0.tar.gz"],
+    sha256 = "3c87b81e37d4ed7f3da6200474fa5e656ffd20d8811068572f43610cae97ca92",
+    strip_prefix = "tensorflow-1.12.0",
     patches = ["//third_party/tensorflow:tensorflow.patch"],
-)
-
-http_archive(
-    name = "io_bazel_rules_closure",
-    sha256 = "6691c58a2cd30a86776dd9bb34898b041e37136f2dc7e24cadaeaf599c95c657",
-    strip_prefix = "rules_closure-08039ba8ca59f64248bb3b6ae016460fe9c9914f",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",
-        "https://github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",  # 2018-01-16
-    ],
 )
 
 load('@org_tensorflow//tensorflow:workspace.bzl', 'tf_workspace')
