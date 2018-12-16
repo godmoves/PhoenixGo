@@ -118,6 +118,7 @@ Clone the repository and configure the building:
 ```
 $ git clone https://github.com/godmoves/HappyGo.git
 $ cd HappyGo
+$ git checkout trt3
 $ ./configure
 ```
 
