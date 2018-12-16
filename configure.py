@@ -1555,7 +1555,7 @@ def main():
 
   reset_tf_configure_bazelrc()
   # Explicitly import tools/bazel.rc, this is needed for Bazel 0.19.0 or later
-  write_to_bazelrc('import %workspace%/third_party/tensorflow/bazel/rc')
+  write_to_bazelrc('import %workspace%/third_party/tensorflow/bazel.rc')
   write_to_bazelrc('build --config=opt')
 
   cleanup_makefile()
