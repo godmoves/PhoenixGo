@@ -1,10 +1,10 @@
 **Status:** Active, breaking changes may occur.
 
-**TODO:**
-  - [x] update to TensorRT 5
-  - [x] update to TensorFlow 1.12
-  - [ ] clean up code
-  - [ ] add tests and benchmarks
+**TODO:**  
+  - [x] update to TensorRT 5  
+  - [x] update to TensorFlow 1.12  
+  - [ ] clean up code  
+  - [ ] add tests and benchmarks  
 
 # Leela Zero X PhoenixGo
 
@@ -87,22 +87,22 @@ version, then add `meta_graph_path: "leelaz-model-0.meta"` into `model_config` a
 ### Run in ELF mode
 
 By enable `value_form_black` option in configure file:
-<pre>
+```
 model_config {
     train_dir: "ckpt.elf"
     enable_tensorrt: 1
     tensorrt_model_path: "leelaz-elf-0.PLAN"
-    <b>value_from_black: 1</b>
+    value_from_black: 1
 }
-</pre>
+```
 
 ### MyLizzie support (experimental)
 
 You can run the program in [myLizzie](https://github.com/aerisnju/mylizzie) mode by add flag `--lizzie` in command line.  
 For example:
-<pre>
-$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr --v=1 <b>--lizzie</b>
-</pre>
+```
+$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr --v=1 --lizzie
+```
 
 **Known issue:** speed loss when there are too many points, turn off the pv may help with this. 
 
@@ -259,9 +259,9 @@ Glog options are also supported:
 
 Print in the log, something like:
 
-<pre>
-I0514 12:51:32.724236 14467 mcts_engine.cc:157] 1th move(b): dp, <b>winrate=44.110905%</b>, N=654, Q=-0.117782, p=0.079232, v=-0.116534, cost 39042.679688ms, sims=7132, height=11, avg_height=5.782244, global_step=639200
-</pre>
+```
+I0514 12:51:32.724236 14467 mcts_engine.cc:157] 1th move(b): dp, winrate=44.110905%, N=654, Q=-0.117782, p=0.079232, v=-0.116534, cost 39042.679688ms, sims=7132, height=11, avg_height=5.782244, global_step=639200
+```
 
 **2. There are too much log.**
 
