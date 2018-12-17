@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/bb/mankitpong/happygo/tree/trt5.svg?style=svg&circle-token=66b3dbb293ddd4cf7a13af92eb7e9b1952215f06)](https://circleci.com/bb/mankitpong/happygo/tree/trt5)
+
 **Status:** Active, breaking changes may occur.
 
 **TODO:**  
