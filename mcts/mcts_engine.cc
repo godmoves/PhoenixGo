@@ -39,43 +39,6 @@ DECLARE_bool(lizzie); // run in lizzie mode.
 static thread_local std::random_device g_random_device;
 static thread_local std::minstd_rand g_random_engine(g_random_device());
 
-class OutputAnalysisData {
-public:
-  OutputAnalysisData(const std::string& move, int visits, float winrate,
-                     float policy, std::string pv)
-      : m_move(move),
-        m_visits(visits),
-        m_winrate(winrate),
-        m_policy(policy), 
-        m_pv(pv) {};
-
-  std::string get_info_string(int order) const {
-    auto tmp = "info move " + m_move +
-               " visits " + std::to_string(m_visits) +
-               " winrate " + std::to_string(m_winrate) +
-               " network " + std::to_string(m_policy);
-    if (order >= 0) {
-      tmp += " order " + std::to_string(order);
-    }
-    tmp += " pv " + m_pv;
-    return tmp;
-  }
-
-  friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
-    if (a.m_visits == b.m_visits) {
-      return a.m_winrate < b.m_winrate;
-    }
-    return a.m_visits < b.m_visits;
-  }
-
-private:
-  std::string m_move;
-  int m_visits;
-  float m_winrate;
-  float m_policy;
-  std::string m_pv;
-};
-
 void MCTSEngine::OutputAnalysis(TreeNode *parent) {
   // We need to make a copy of the data before sorting
   auto sortable_data = std::vector<OutputAnalysisData>();
@@ -91,7 +54,7 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
 
     std::string move = GoFunction::IdToStr(node[i].move);
 
-    // TODO: add pv later. Seems PhoenixGo doesn't support pv
+    // TODO: use a better way to get pv
     std::string pv = move + " " + m_debugger.GetMainMovePath(&node[i]); 
 
     // Not sure the meaning of value

@@ -6,6 +6,8 @@
   - [x] update to TensorRT 5  
   - [x] update to TensorFlow 1.12  
   - [ ] clean up code  
+  - [ ] move structure TreeNode to a better file, it should belong to mcts
+  - [ ] consider add sgf- and board- prefix to differ XToStr and StrToX
   - [ ] add tests and benchmarks  
 
 # Leela Zero X PhoenixGo
