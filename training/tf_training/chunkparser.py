@@ -17,12 +17,14 @@
 #    along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
-import multiprocessing as mp
-import numpy as np
 import random
-import shufflebuffer as sb
 import struct
 import unittest
+import multiprocessing as mp
+
+import numpy as np
+
+import shufflebuffer as sb
 
 # 16 planes, 1 side to move, 1 x 362 probs, 1 winner = 19 lines
 DATA_ITEM_LINES = 16 + 1 + 1 + 1

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+
 from tfprocess import TFProcess
 
 with open(sys.argv[1], 'r') as f:

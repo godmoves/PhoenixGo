@@ -18,12 +18,13 @@
 
 import logging
 import math
-import numpy as np
 import os
-import tensorflow as tf
 import time
 import unittest
 from collections import deque
+
+import numpy as np
+import tensorflow as tf
 
 
 def weight_variable(name, shape):

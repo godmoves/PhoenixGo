@@ -15,14 +15,16 @@
 # 5. Write out to compressed v2 chunk files.
 #
 
-from chunkparser import ChunkParser
-import glob
-import gzip
+import sys
 import itertools
 import multiprocessing as mp
-import numpy as np
+
+import glob
+import gzip
 import pymongo
-import sys
+import numpy as np
+
+from ..chunkparser import ChunkParser
 
 
 def mongo_fetch_games(q_out, num_games):

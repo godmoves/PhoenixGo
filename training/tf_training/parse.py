@@ -16,18 +16,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from tfprocess import TFProcess
-from chunkparser import ChunkParser
 import argparse
 import glob
 import gzip
 import logging
-import multiprocessing as mp
 import os
 import random
 import time
 import unittest
+import multiprocessing as mp
+
+from chunkparser import ChunkParser
+from tfprocess import TFProcess
 
 # Sane values are from 4096 to 64 or so.
 # You need to adjust the learning rate if you change this. Should be

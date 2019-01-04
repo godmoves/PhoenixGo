@@ -18,9 +18,10 @@
 
 import argparse
 import os
+from copy import deepcopy
+
 import numpy as np
 import scipy.signal as signal
-from copy import deepcopy
 
 
 def convolve(w, x, bn=None, bn_epsilon=1e-5):
