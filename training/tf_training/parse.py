@@ -19,7 +19,6 @@
 import argparse
 import glob
 import gzip
-import logging
 import os
 import random
 import time
@@ -28,6 +27,7 @@ import multiprocessing as mp
 
 from chunkparser import ChunkParser
 from tfprocess import TFProcess
+from utils import TrainLogger
 
 # Sane values are from 4096 to 64 or so.
 # You need to adjust the learning rate if you change this. Should be
@@ -88,7 +88,7 @@ def benchmark(parser):
             RAM_BATCH_SIZE * batch / (end - start), (end - start)))
 
 
-def benchmark1(t):
+def benchmark_full(t):
     """
         Benchmark for full input pipeline, including tensorflow conversion
     """
@@ -107,38 +107,6 @@ def benchmark1(t):
 def split_chunks(chunks, test_ratio):
     splitpoint = 1 + int(len(chunks) * (1.0 - test_ratio))
     return (chunks[:splitpoint], chunks[splitpoint:])
-
-
-def get_logger():
-    # set logger and level
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
-
-    # log to file
-    rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
-    log_path = os.path.dirname(os.getcwd()) + '/tf_training/traininglogs/'
-    print(log_path)
-
-    if not os.path.exists(log_path):
-        os.makedirs(log_path)
-
-    log_name = log_path + 'train-' + rq + '.log'
-    fh = logging.FileHandler(log_name, mode='w')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-
-    # log to terminal
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(formatter)
-
-    # add log handler
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-
-    return logger
 
 
 def main():
@@ -160,7 +128,7 @@ def main():
     args = parser.parse_args()
 
     # set logger to log to terminal and file
-    logger = get_logger()
+    logger = TrainLogger().logger
 
     train_data_prefix = args.train or args.trainpref
     restore_prefix = args.restore or args.restorepref
@@ -202,7 +170,7 @@ def main():
                    logbase=args.logbase,
                    macrobatch=BATCH_SIZE // RAM_BATCH_SIZE)
 
-    # benchmark1(tfprocess)
+    # benchmark_full(tfprocess)
 
     if restore_prefix:
         tfprocess.restore(restore_prefix)

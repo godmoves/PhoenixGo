@@ -1,5 +1,7 @@
+import os
 import math
 import time
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -54,3 +56,35 @@ class Timer:
     def reset(self):
         t = time.time()
         self.last = t
+
+
+# Training logger
+class TrainLogger:
+    def __init__(self):
+        # set logger and level
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+
+        # log to file
+        rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
+        log_path = os.path.dirname(os.getcwd()) + '/tf_training/traininglogs/'
+        print(log_path)
+
+        if not os.path.exists(log_path):
+            os.makedirs(log_path)
+
+        log_name = log_path + 'train-' + rq + '.log'
+        fh = logging.FileHandler(log_name, mode='w')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+
+        # log to terminal
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        ch.setFormatter(formatter)
+
+        # add log handler
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
