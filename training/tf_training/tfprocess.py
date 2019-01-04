@@ -119,7 +119,7 @@ class Timer:
         self.last = t
         return e
 
-    def restart(self):
+    def reset(self):
         t = time.time()
         self.last = t
 
@@ -518,24 +518,27 @@ class TFProcess:
 
                 # Write out current model and checkpoint
                 path = os.path.join(os.getcwd(), "weigthts/leelaz-model")
-                save_path = self.saver.save(self.session, path,
-                                            global_step=steps)
-                self.logger.info("Model saved in file: {}".format(save_path))
-                leela_path = path + "-" + str(steps) + ".txt"
-                self.save_leelaz_weights(leela_path)
-                self.logger.info("Leela weights saved to {}".format(leela_path))
+                tf_model_path = self.saver.save(self.session, path, global_step=steps)
+                self.logger.info("Model saved in file: {}".format(tf_model_path))
+
+                # Actually we do not need to write lz weight every time, because
+                # we can generate lz weight from tf model. This can save the
+                # time of writing lz weight, which is relatively long for large
+                # network.
+                # leela_weight_path = path + "-" + str(steps) + ".txt"
+                # self.save_leelaz_weights(leela_weight_path)
+                # self.logger.info("Leela weights saved to {}".format(leela_weight_path))
 
                 # Things have likely changed enough
                 # that stats are no longer valid.
                 if self.swa_enabled:
-                    self.save_swa_network(steps, path, leela_path, train_data)
+                    self.save_swa_network(steps, path, train_data)
 
-                save_path = self.saver.save(self.session, path,
-                                            global_step=steps)
-                self.logger.info("SWA Model saved in file: {}".format(save_path))
+                tf_model_path = self.saver.save(self.session, path, global_step=steps)
+                self.logger.info("SWA Model saved in file: {}".format(tf_model_path))
 
-                # restart the timer to skip test time.
-                timer.restart()
+                # reset the timer to skip test time.
+                timer.reset()
 
     def save_leelaz_weights(self, filename):
         with open(filename, "w") as file:
@@ -710,7 +713,7 @@ class TFProcess:
         # Restore variables in the current graph from the snapshot.
         self.session.run(self.restore_op)
 
-    def save_swa_network(self, steps, path, leela_path, data):
+    def save_swa_network(self, steps, path, data):
         # Sample 1 in self.swa_c of the networks. Compute in this way so
         # that it's safe to change the value of self.swa_c
         rem = self.session.run(tf.assign_add(self.swa_skip, -1))
@@ -724,8 +727,6 @@ class TFProcess:
         if self.swa_max_n is not None:
             num = min(num, self.swa_max_n)
             self.swa_count.load(float(num), self.session)
-
-        swa_path = path + "-swa-" + str(int(num)) + "-" + str(steps) + ".txt"
 
         # save the current network.
         self.snap_save()
@@ -741,11 +742,13 @@ class TFProcess:
                                self.planes: batch[0], self.probs: batch[1],
                                self.winner: batch[2]})
 
-        self.save_leelaz_weights(swa_path)
+        # do not save lz weight to speed up training
+        # swa_path = path + "-swa-" + str(int(num)) + "-" + str(steps) + ".txt"
+        # self.save_leelaz_weights(swa_path)
+        # self.logger.info("Wrote averaged network to {}".format(swa_path))
+
         # restore the saved network.
         self.snap_restore()
-
-        self.logger.info("Wrote averaged network to {}".format(swa_path))
 
 
 # Unit tests for TFProcess.
