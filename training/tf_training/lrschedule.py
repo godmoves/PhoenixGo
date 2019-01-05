@@ -116,11 +116,11 @@ class OneCycle:
 
     def update_lr_val(self):
         if self.global_step <= self.up_step:
-            self.lr_val += self.up_rate * self.step
+            self.lr_val += self.up_rate * self.global_step
         elif self.global_step <= self.down_step:
-            self.lr_val += self.down_rate * (self.step - self.up_step)
+            self.lr_val += self.down_rate * (self.global_step - self.up_step)
         elif self.global_step <= self.tail_step:
-            self.lr_val += self.tail_rate * (self.step - self.down_step)
+            self.lr_val += self.tail_rate * (self.global_step - self.down_step)
         else:
             self.is_end = True
 
