@@ -321,7 +321,6 @@ class TFProcess:
                 'accuracy': r[3], 'total': r[0] + r[1] + r[2]}
 
     def process(self, train_data, test_data):
-        info_steps = 1000
         stats = Stats()
         timer = Timer()
         while True:
@@ -339,14 +338,14 @@ class TFProcess:
                 # Clear the accumulated gradient.
                 self.session.run([self.clear_op])
 
-            if steps % info_steps == 0:
-                speed = info_steps * self.batch_size / timer.elapsed()
+            if steps % 1000 == 0:
+                speed = 1000 * self.batch_size / timer.elapsed()
 
                 # adjust learning rate according to lr schedule
                 learning_rate = self.lrs.step(stats.mean('total'))
 
-                self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
-                    steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
+                self.logger.info("step {}k lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
+                    steps / 1000, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
 
                 # exit when lr is smaller than target.

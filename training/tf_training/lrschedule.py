@@ -83,3 +83,46 @@ class LRFinder:
 
     def end(self):
         return self.is_end
+
+
+class OneCycle:
+    def __init__(self, sess, low_lr=0.032, high_lr=0.32, end_lr=1e-5,
+                 up_range=400, down_range=400, tail_range=200):
+        # Generally we set up_step = down_step, and tail_step = 1/2 * up_step.
+        # high_lr is the highest lr found by LRFinder and low_lr is usually set
+        # to 1/10 * high_lr, choose end_lr = 1e-5 is fine.
+        self.sess = sess
+        self.is_end = False
+        self.step = 0
+
+        # here we convert the length of each range into total steps, and all
+        # steps are counted in thousand
+        self.up_step = up_range
+        self.down_step = up_range + down_range
+        self.tail_step = up_range + down_range + tail_range
+
+        self.up_rate = (high_lr - low_lr) / up_range
+        self.down_rate = (low_lr - high_lr) / down_range
+        self.tail_rate = (end_lr - low_lr) / tail_range
+
+        self.lr_val = low_lr
+        self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
+
+    def step(self, loss):
+        self.step += 1
+        self.update_lr_val()
+        self.sess.run(tf.assign(self.lr, self.lr_val))
+        return self.lr_val
+
+    def update_lr_val(self):
+        if self.step <= self.up_step:
+            self.lr_val += self.up_rate * self.step
+        elif self.step <= self.down_step:
+            self.lr_val += self.down_rate * (self.step - self.up_step)
+        elif self.sess <= self.tail_step:
+            self.lr_val += self.tail_rate * (self.step - self.down_step)
+        else:
+            self.is_end = True
+
+    def end(self):
+        return self.is_end
