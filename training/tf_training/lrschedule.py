@@ -58,7 +58,8 @@ class AutoDrop:
 
 class LRFinder:
     def __init__(self, sess, initial_lr=1e-5):
-        self.loss_record = [1]
+        self.loss_record = []
+        self.min_loss = 10
         self.sess = sess
         self.initial_lr = initial_lr
         self.logger = DefaultLogger
@@ -68,14 +69,17 @@ class LRFinder:
 
     def step(self, loss):
         self.loss_record.append(loss)
-        if loss > 10 * self.loss_record[-2]:
+        self.min_loss = min(self.min_loss, loss)
+        if loss > 1.5 * self.min_loss:
             # if loss explode, we will end the lr finder
             self.is_end = True
-            self.logger.info("LRFinder: Loss curve: {}".format(self.loss_record[1:]))
+            self.logger.info("LRFinder: Loss curve: {}".format(self.loss_record))
         else:
             # otherwise increse the lr
-            self.logger.info("LRFinder: Double the LR")
             self.sess.run(tf.assign(self.lr, self.lr * 2))
+        learning_rate = self.sess.run(self.lr)
+        self.logger.info("LRFinder: Increse LR to {}".format(learning_rate))
+        return learning_rate
 
     def end(self):
         return self.is_end

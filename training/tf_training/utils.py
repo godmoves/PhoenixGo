@@ -65,7 +65,7 @@ class Logger:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter(
-            "%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+            "%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s: %(message)s")
 
         # log to file
         rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
