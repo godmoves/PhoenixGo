@@ -93,7 +93,7 @@ class OneCycle:
         # to 1/10 * high_lr, choose end_lr = 1e-5 is fine.
         self.sess = sess
         self.is_end = False
-        self.step = 0
+        self.global_step = 0
 
         # here we convert the length of each range into total steps, and all
         # steps are counted in thousand
@@ -109,17 +109,17 @@ class OneCycle:
         self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
 
     def step(self, loss):
-        self.step += 1
+        self.global_step += 1
         self.update_lr_val()
         self.sess.run(tf.assign(self.lr, self.lr_val))
         return self.lr_val
 
     def update_lr_val(self):
-        if self.step <= self.up_step:
+        if self.global_step <= self.up_step:
             self.lr_val += self.up_rate * self.step
-        elif self.step <= self.down_step:
+        elif self.global_step <= self.down_step:
             self.lr_val += self.down_rate * (self.step - self.up_step)
-        elif self.sess <= self.tail_step:
+        elif self.global_step <= self.tail_step:
             self.lr_val += self.tail_rate * (self.step - self.down_step)
         else:
             self.is_end = True
