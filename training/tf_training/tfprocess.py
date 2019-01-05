@@ -19,12 +19,12 @@
 import logging
 import os
 import unittest
-from collections import deque
 
 import numpy as np
 import tensorflow as tf
 
 from utils import Timer, Stats
+from lrschedule import AutoDrop
 
 
 def weight_variable(name, shape):
@@ -110,13 +110,8 @@ class TFProcess:
         self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
-        self.max_loss_range = 400
-        self.ready_lr_drop_count = 0
-        self.drop_rate_threshold = 0.01
-        self.total_loss_record = deque(maxlen=self.max_loss_range)
-
-        self.min_lr = 1e-5
-        self.lr = tf.Variable(0.1, dtype=tf.float32, name='lr', trainable=False)
+        # set the learning rate schedule
+        self.lrs = AutoDrop(self.session, max_range=800, min_lr=1e-5, threshold=0.01)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -154,7 +149,7 @@ class TFProcess:
         # You need to change the learning rate here if you are training
         # from a self-play training set, for example start with 0.005 instead.
         opt = tf.train.MomentumOptimizer(
-            learning_rate=self.lr, momentum=0.9, use_nesterov=True)
+            learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
         # Construct net here.
         tower_grads = []
@@ -324,35 +319,6 @@ class TFProcess:
         return {'policy': r[0], 'mse': r[1] / 4., 'reg': r[2],
                 'accuracy': r[3], 'total': r[0] + r[1] + r[2]}
 
-    def auto_adjust_lr(self, total_loss):
-        self.total_loss_record.append(total_loss)
-        # keep this for more debug info
-        self.logger.debug(self.total_loss_record)
-        if len(self.total_loss_record) >= self.max_loss_range:
-            first_loss = self.total_loss_record[0]
-            last_loss = self.total_loss_record[-1]
-            mean_loss = (first_loss + last_loss) / 2
-
-            drop_rate = (first_loss - last_loss) / mean_loss
-
-            if drop_rate < self.drop_rate_threshold:
-                self.ready_lr_drop_count += 1
-                self.logger.info("Learning rate ready dropping count = {}".format(
-                    self.ready_lr_drop_count))
-
-                # drop lr only when the loss really has no progress.
-                # this will avoid some false alarms.
-                if self.ready_lr_drop_count > 5:
-                    self.logger.info("First loss {:g}, last loss {:g}".format(
-                        first_loss, last_loss))
-                    self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
-                        drop_rate, self.drop_rate_threshold))
-                    # if no enough progress, drop the learning rate
-                    self.session.run(tf.assign(self.lr, self.lr * 0.1))
-                    # reset loss record and count
-                    self.total_loss_record.clear()
-                    self.ready_lr_drop_count = 0
-
     def process(self, train_data, test_data):
         info_steps = 1000
         stats = Stats()
@@ -375,16 +341,15 @@ class TFProcess:
             if steps % info_steps == 0:
                 speed = info_steps * self.batch_size / timer.elapsed()
 
-                # adjust learning rate automatically
-                learning_rate = self.session.run(self.lr)
+                # adjust learning rate according to lr schedule
+                learning_rate = self.lrs.step(stats.mean('total'))
 
                 self.logger.info("step {} lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
                     steps, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
 
-                self.auto_adjust_lr(stats.mean('total'))
                 # exit when lr is smaller than target.
-                if learning_rate < self.min_lr:
+                if learning_rate < self.lrs.min_lr:
                     self.logger.info('learning rate smaller than target, stop training')
                     exit()
 
