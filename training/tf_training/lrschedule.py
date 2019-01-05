@@ -6,10 +6,11 @@ from utils import DefaultLogger
 
 
 class AutoDrop:
-    def __init__(self, sess, logger, max_range=800, min_lr=1e-5, threshold=0.01):
+    def __init__(self, sess, max_range=800, min_lr=1e-5, threshold=0.01, max_drop_count=5):
         self.min_lr = min_lr
         self.max_range = max_range
         self.drop_count = 0
+        self.max_drop_count = max_drop_count
         self.drop_threshold = threshold
         self.loss_record = deque(maxlen=self.max_range)
         self.logger = DefaultLogger
@@ -35,7 +36,7 @@ class AutoDrop:
 
                 # drop lr only when the loss really has no progress.
                 # this will avoid some false alarms.
-                if self.drop_count > 5:
+                if self.drop_count > self.max_drop_count:
                     self.logger.info("First loss {:g}, last loss {:g}".format(
                         first_loss, last_loss))
                     self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
