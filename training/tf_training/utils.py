@@ -59,7 +59,7 @@ class Timer:
 
 
 # Training logger
-class TrainLogger:
+class Logger:
     def __init__(self):
         # set logger and level
         self.logger = logging.getLogger()
@@ -88,3 +88,6 @@ class TrainLogger:
         # add log handler
         self.logger.addHandler(fh)
         self.logger.addHandler(ch)
+
+
+DefaultLogger = Logger().logger

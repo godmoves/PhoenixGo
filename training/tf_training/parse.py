@@ -27,17 +27,17 @@ import multiprocessing as mp
 
 from chunkparser import ChunkParser
 from tfprocess import TFProcess
-from utils import TrainLogger
+from utils import DefaultLogger
 
 # Sane values are from 4096 to 64 or so.
 # You need to adjust the learning rate if you change this. Should be
 # a multiple of RAM_BATCH_SIZE. NB: It's rare that large batch sizes are
 # actually required.
-BATCH_SIZE = 128
+BATCH_SIZE = 512
 # Number of examples in a GPU batch. Higher values are more efficient.
 # The maximum depends on the amount of RAM in your GPU and the network size.
 # Must be smaller than BATCH_SIZE.
-RAM_BATCH_SIZE = 128
+RAM_BATCH_SIZE = 512
 
 # Use a random sample input data read. This helps improve the spread of
 # games in the shuffle buffer.
@@ -128,7 +128,7 @@ def main():
     args = parser.parse_args()
 
     # set logger to log to terminal and file
-    logger = TrainLogger().logger
+    logger = DefaultLogger
 
     train_data_prefix = args.train or args.trainpref
     restore_prefix = args.restore or args.restorepref
@@ -159,7 +159,6 @@ def main():
                               batch_size=RAM_BATCH_SIZE).parse()
 
     tfprocess = TFProcess()
-    tfprocess.logger = logger
 
     logger.info("Training target: {} blocks {} filters on {} GPU(s)".format(
         tfprocess.RESIDUAL_BLOCKS, tfprocess.RESIDUAL_FILTERS, tfprocess.gpus_num))

@@ -16,7 +16,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 import os
 import unittest
 
@@ -25,6 +24,7 @@ import tensorflow as tf
 
 from utils import Timer, Stats
 from lrschedule import AutoDrop
+from utils import DefaultLogger
 
 
 def weight_variable(name, shape):
@@ -101,7 +101,7 @@ class TFProcess:
         self.swa_recalc_bn = True
 
         # logger
-        self.logger = logging.getLogger()
+        self.logger = DefaultLogger
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
         config = tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)

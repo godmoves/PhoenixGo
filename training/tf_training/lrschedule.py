@@ -2,17 +2,17 @@ from collections import deque
 
 import tensorflow as tf
 
-from utils import TrainLogger
+from utils import DefaultLogger
 
 
 class AutoDrop:
-    def __init__(self, sess, max_range=800, min_lr=1e-5, threshold=0.01):
+    def __init__(self, sess, logger, max_range=800, min_lr=1e-5, threshold=0.01):
         self.min_lr = min_lr
         self.max_range = max_range
         self.drop_count = 0
         self.drop_threshold = threshold
         self.loss_record = deque(maxlen=self.max_range)
-        self.logger = TrainLogger().logger
+        self.logger = DefaultLogger
         self.sess = sess
 
         # initial learning rate
@@ -22,7 +22,7 @@ class AutoDrop:
         self.loss_record.append(loss)
         # keep this for more debug info
         self.logger.debug(self.loss_record)
-        if len(self.total_loss_record) >= self.loss_range:
+        if len(self.loss_record) >= self.max_range:
             first_loss = self.loss_record[0]
             last_loss = self.loss_record[-1]
             mean_loss = (first_loss + last_loss) / 2
