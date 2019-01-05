@@ -350,7 +350,7 @@ class TFProcess:
                     stats.mean('total'), speed))
 
                 # exit when lr is smaller than target.
-                if learning_rate < self.lrs.min_lr:
+                if self.lrs.end():
                     self.logger.info('learning rate smaller than target, stop training')
                     exit()
 
