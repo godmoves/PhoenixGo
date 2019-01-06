@@ -361,8 +361,7 @@ class TFProcess:
                 summaries += [tf.Summary.Value(tag='Speed', simple_value=speed)]
                 summaries += [tf.Summary.Value(tag='Learning Rate', simple_value=learning_rate)]
 
-                self.train_writer.add_summary(
-                    tf.Summary(value=summaries), steps)
+                self.train_writer.add_summary(tf.Summary(value=summaries), steps)
                 stats.clear()
 
             if steps % 8000 == 0:

@@ -1,16 +1,16 @@
 ## Test different ways to learn
 
-- [x] [continue from last 10b](https://github.com/godmoves/HappyGo/tree/trt5/training/results/continue_last_10b)
-- [x] [phoenixgo weight test](https://github.com/godmoves/HappyGo/tree/trt5/training/results/phgo_weight)
-- [x] [test different engines](https://github.com/godmoves/HappyGo/tree/trt5/training/results/engine_test)
-- [x] [reproducibility](https://github.com/godmoves/HappyGo/tree/trt5/training/results/different_steps#conclusion)
+- [x] [continue from last 10b](results/continue_last_10b)
+- [x] [phoenixgo weight test](results/phgo_weight)
+- [x] [test different engines](results/engine_test)
+- [x] [reproducibility](results/different_steps#conclusion)
 - [ ] with/without ELF data
-- [x] [quick/slow learning rate drop](https://github.com/godmoves/HappyGo/tree/trt5/training/results/different_steps)
-- [x] [different weight of value part (10, 1, 0.1, 0.01)](https://github.com/godmoves/HappyGo/tree/trt5/training/results/different_values)
+- [x] [quick/slow learning rate drop](results/different_steps)
+- [x] [different weight of value part (10, 1, 0.1, 0.01)](results/different_values)
 - [ ] one cycle learning rate policy
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
-- [ ] different b&f (33x128, 15x19, 9x256)
+- [ ] different b&f (135x64, 33x128, 15x192, 9x256)
 - [ ] dropout
 - [ ] more features (alphago lee)
 - [ ] imitate elf/phoenixgo
@@ -50,6 +50,8 @@ Default training data set includes ELF data and Leela Zero data listed below.
 
 ### Learning rate schedule
 
+#### AutoDrop
+
 When total loss drops less than 1% in target steps (eg. 100k/200k/400k), the learning rate will be
 lowered (x0.1). If learning rate less than 1e-5, then the training process will
 stop.  
@@ -57,10 +59,17 @@ stop.
 We can use the [pre-defined functions](https://blog.csdn.net/u013555719/article/details/79334359)
 in TensorFlow or just [do it manually](https://blog.csdn.net/yyqq188/article/details/79138919).
 
+#### OneCycle
+
+Increase the learning rate at first and drop it later. You can find more info about it
+[here](https://sgugger.github.io/the-1cycle-policy.html).
+
+For more implementation details, you can check out the 'lrschedule.py'.
+
 ### Result
 
 Tensorflow logs will be saved in `tf_training/leelalogs`, weight files and
 Tensorflow checkpoint will be saved in `tf_training/weights` and training logs
 are in `tf_training/traininglogs`. 
 
-Check the real time learning process at [this site](http://101.231.109.4:6006/#scalars&run=test&_smoothingWeight=0&_ignoreYOutliers=false).
+Check the real time learning process at [this site](http://101.231.109.5:6006/#scalars&run=test&_smoothingWeight=0&_ignoreYOutliers=false).
