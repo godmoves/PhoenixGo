@@ -40,8 +40,9 @@ class AutoDropLR:
                 if self.drop_count > self.max_drop_count:
                     self.logger.info("First loss {:g}, last loss {:g}".format(
                         first_loss, last_loss))
-                    self.logger.info("Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
-                        drop_rate, self.drop_threshold))
+                    self.logger.info(
+                        "Total loss drop rate {:g} < {:g}, auto drop learning rate.".format(
+                            drop_rate, self.drop_threshold))
                     # if no enough progress, drop the learning rate
                     self.sess.run(tf.assign(self.lr, self.lr * 0.1))
                     # reset loss record and count
@@ -158,7 +159,7 @@ class CyclicalLR:
         in_cycle_step = self.global_step % self.cycle_step
         cycle_id = self.global_step // self.cycle_step
 
-        high_lr_lim = max(self.high_lr / (self.exp_factor ** cycle_id), self.low_lr)
+        high_lr_lim = (self.high_lr - self.low_lr) / (self.exp_factor ** cycle_id) + self.low_lr
         if in_cycle_step < self.up_range:
             self.lr_val = self.low_lr + (high_lr_lim - self.low_lr) * \
                 in_cycle_step / self.up_step
