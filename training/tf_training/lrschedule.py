@@ -5,7 +5,7 @@ import tensorflow as tf
 from utils import DefaultLogger
 
 
-class AutoDrop:
+class AutoDropLR:
     def __init__(self, sess, max_range=800, min_lr=1e-5, threshold=0.01, max_drop_count=5):
         self.min_lr = min_lr
         self.max_range = max_range
@@ -85,9 +85,9 @@ class LRFinder:
         return self.is_end
 
 
-class OneCycle:
-    def __init__(self, sess, low_lr=0.032, high_lr=0.32, end_lr=1e-5,
-                 up_range=400, down_range=400, tail_range=200):
+class OneCycleLR:
+    def __init__(self, sess, low_lr=0.01, high_lr=0.1, end_lr=1e-5,
+                 up_range=600, down_range=600, tail_range=400):
         # Generally we set up_step = down_step, and tail_step = 1/2 * up_step.
         # high_lr is the highest lr found by LRFinder and low_lr is usually set
         # to 1/10 * high_lr, choose end_lr = 1e-5 is fine.
@@ -123,6 +123,48 @@ class OneCycle:
             self.lr_val += self.tail_rate
         else:
             self.is_end = True
+
+    def end(self):
+        return self.is_end
+
+
+class CyclicalLR:
+    def __init__(self, sess, low_lr=3e-4, high_lr=0.1, up_range=100,
+                 down_range=100, exp_factor=1.5):
+        self.sess = sess
+        self.is_end = False
+        self.global_step = 0
+
+        self.low_lr = low_lr
+        self.high_lr = high_lr
+
+        self.up_range = up_range
+        self.down_range = down_range
+
+        self.exp_factor = exp_factor
+        self.cycle_step = up_range + down_range
+
+        self.lr_val = low_lr
+        self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
+
+    def step(self):
+        self.global_step += 1
+        self.update_lr_val()
+        self.sess.run(tf.assign(self.lr, self.lr_val))
+        return self.lr_val
+
+    def update_lr_val(self):
+        self.global_step += 1
+        in_cycle_step = self.global_step % self.cycle_step
+        cycle_id = self.global_step // self.cycle_step
+
+        high_lr_lim = max(self.high_lr / (self.exp_factor ** cycle_id), self.low_lr)
+        if in_cycle_step < self.up_range:
+            self.lr_val = self.low_lr + (high_lr_lim - self.low_lr) * \
+                in_cycle_step / self.up_step
+        else:
+            self.lr_val = high_lr_lim + (self.low_lr - high_lr_lim) * \
+                (in_cycle_step - self.up_range) / self.down_range
 
     def end(self):
         return self.is_end

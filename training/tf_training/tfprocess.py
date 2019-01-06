@@ -23,7 +23,7 @@ import numpy as np
 import tensorflow as tf
 
 from utils import Timer, Stats
-from lrschedule import AutoDrop
+from lrschedule import AutoDropLR
 from utils import DefaultLogger
 
 
@@ -111,8 +111,8 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = AutoDrop(sess=self.session, max_range=800, min_lr=1e-5,
-                            threshold=0.01, max_drop_count=5)
+        self.lrs = AutoDropLR(sess=self.session, max_range=800, min_lr=1e-5,
+                              threshold=0.01, max_drop_count=5)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
