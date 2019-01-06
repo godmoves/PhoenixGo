@@ -88,7 +88,7 @@ class LRFinder:
 
 class OneCycleLR:
     def __init__(self, sess, low_lr=0.01, high_lr=0.1, end_lr=1e-5,
-                 up_range=600, down_range=600, tail_range=400):
+                 up_range=400, down_range=400, tail_range=200):
         # Generally we set up_step = down_step, and tail_step = 1/2 * up_step.
         # high_lr is the highest lr found by LRFinder and low_lr is usually set
         # to 1/10 * high_lr, choose end_lr = 1e-5 is fine.
@@ -131,7 +131,7 @@ class OneCycleLR:
 
 class CyclicalLR:
     def __init__(self, sess, low_lr=3e-4, high_lr=0.1, up_range=100,
-                 down_range=100, exp_factor=1.5):
+                 down_range=100, exp_factor=2):
         self.sess = sess
         self.is_end = False
         self.global_step = 0
