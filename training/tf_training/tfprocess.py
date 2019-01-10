@@ -23,7 +23,7 @@ import numpy as np
 import tensorflow as tf
 
 from utils import Timer, Stats
-from lrschedule import AutoDropLR, OneCycleLR
+from lrschedule import AutoDropLR, CyclicalLR 
 from utils import DefaultLogger
 
 
@@ -111,7 +111,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = OneCycleLR(self.session, up_range=300, down_range=800, tail_range=400, low_lr=1e-3) 
+        self.lrs = CyclicalLR(self.session) 
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size

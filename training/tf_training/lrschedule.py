@@ -148,7 +148,7 @@ class CyclicalLR:
         self.lr_val = low_lr
         self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
 
-    def step(self):
+    def step(self, loss):
         self.global_step += 1
         self.update_lr_val()
         self.sess.run(tf.assign(self.lr, self.lr_val))
@@ -162,7 +162,7 @@ class CyclicalLR:
         high_lr_lim = (self.high_lr - self.low_lr) / (self.exp_factor ** cycle_id) + self.low_lr
         if in_cycle_step < self.up_range:
             self.lr_val = self.low_lr + (high_lr_lim - self.low_lr) * \
-                in_cycle_step / self.up_step
+                in_cycle_step / self.up_range
         else:
             self.lr_val = high_lr_lim + (self.low_lr - high_lr_lim) * \
                 (in_cycle_step - self.up_range) / self.down_range
