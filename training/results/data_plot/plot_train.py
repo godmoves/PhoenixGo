@@ -50,6 +50,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for f in args.folder:
+        f = "data/" + f
         print(f)
         plot_train_loop(f, args.plot_test)
     for idx in range(3):
