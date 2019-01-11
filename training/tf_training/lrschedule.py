@@ -58,28 +58,35 @@ class AutoDropLR:
 
 
 class LRFinder:
-    def __init__(self, sess, initial_lr=1e-5):
-        self.loss_record = []
-        self.min_loss = 10
+    def __init__(self, sess, low_lr=1e-5, high_lr=3, up_range=500):
+        # low_lr: the initial learning rate
+        # high_lr: the max test learning rate
+        # up_range: total test steps, count in thousand
         self.sess = sess
-        self.initial_lr = initial_lr
-        self.logger = DefaultLogger
         self.is_end = False
+        self.logger = DefaultLogger
 
-        self.lr = tf.Variable(self.initial_lr, dtype=tf.float32, name='lr', trainable=False)
+        self.min_loss = 10
+        self.loss_record = []
+        self.up_rate = (high_lr - low_lr) / up_range
+
+        self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
 
     def step(self, loss):
         self.loss_record.append(loss)
         self.min_loss = min(self.min_loss, loss)
+
         if loss > 1.5 * self.min_loss:
             # if loss explode, we will end the lr finder
             self.is_end = True
             self.logger.info("LRFinder: Loss curve: {}".format(self.loss_record))
         else:
-            # otherwise increse the lr
-            self.sess.run(tf.assign(self.lr, self.lr * 2))
+            # otherwise increase the lr (according to the super convergence paper,
+            # the LRFinder should increase the lr linearly)
+            self.sess.run(tf.assign(self.lr, self.lr + self.up_rate))
+
         learning_rate = self.sess.run(self.lr)
-        self.logger.info("LRFinder: Increse LR to {}".format(learning_rate))
+        self.logger.info("LRFinder: Increase LR to {}".format(learning_rate))
         return learning_rate
 
     def end(self):
