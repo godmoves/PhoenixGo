@@ -148,6 +148,9 @@ class TFProcess:
 
         # You need to change the learning rate here if you are training
         # from a self-play training set, for example start with 0.005 instead.
+
+        # Nesterov momentum method can achieve super-convergence, but Adam will
+        # fail to do it. Set momentum to 0.9 is OK according to the paper.
         opt = tf.train.MomentumOptimizer(
             learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
@@ -280,23 +283,25 @@ class TFProcess:
     def tower_loss(self, x, y_, z_):
         y_conv, z_conv = self.construct_net(x)
         # Calculate loss on policy head
-        cross_entropy = \
-            tf.nn.softmax_cross_entropy_with_logits(labels=y_,
-                                                    logits=y_conv)
+        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_,
+                                                                logits=y_conv)
         policy_loss = tf.reduce_mean(cross_entropy)
 
         # Loss on value head
-        mse_loss = \
-            tf.reduce_mean(tf.squared_difference(z_, z_conv))
+        mse_loss = tf.reduce_mean(tf.squared_difference(z_, z_conv))
 
         # Regularizer
+        # TODO: For OneCycle learning rate schedule, you may need to use a
+        # smaller weight decay factor, e.g. 3e-6, default factor for AutoDrop
+        # learning rate schedule is 1e-4. But it seems this is not crucial 
+        # to the final performance.
         regularizer = tf.contrib.layers.l2_regularizer(scale=0.0001)
         reg_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
-        reg_term = \
-            tf.contrib.layers.apply_regularization(regularizer, reg_variables)
+        reg_term = tf.contrib.layers.apply_regularization(regularizer,
+                                                          reg_variables)
 
         # For training from a (smaller) dataset of strong players, you will
-        # want to reduce the factor in front of self.mse_loss here.
+        # want to reduce the factor in front of mse_loss here.
         loss = 1.0 * policy_loss + 1.0 * mse_loss + reg_term
 
         return loss, policy_loss, mse_loss, reg_term, y_conv
@@ -421,11 +426,16 @@ class TFProcess:
         # The weights are internal to the batchnorm layer, so apply
         # a unique scope that we can store, and use to look them back up
         # later on.
+
+        # TODO: Default BN momentum is 0.99, which is suitable for longer training
+        # time but a little bit larger than the recommended value (0.95-0.97)
+        # for OneCycle policy.
         scope = self.get_batchnorm_key()
         with tf.variable_scope(scope):
             net = tf.layers.batch_normalization(
                 net,
-                epsilon=1e-5, axis=1, fused=True,
+                momentum=0.99, axis=1,
+                epsilon=1e-5, fused=True,
                 center=True, scale=False,
                 training=self.training,
                 reuse=self.reuse_var)
