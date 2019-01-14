@@ -122,9 +122,9 @@ player lz_15b_base: Leela Zero:0.15
 
 ### Training graph
 
-![fig_0](../data_prepare/image/different_steps_0.png)  
-![fig_1](../data_prepare/image/different_steps_1.png)  
-![fig_2](../data_prepare/image/different_steps_2.png)  
+![fig_0](../data_plot/image/different_steps_0.png)  
+![fig_1](../data_plot/image/different_steps_1.png)  
+![fig_2](../data_plot/image/different_steps_2.png)  
 
 ### Conclusion 
 
