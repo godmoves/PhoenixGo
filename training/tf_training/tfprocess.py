@@ -83,6 +83,9 @@ class TFProcess:
         # Set number of GPUs for training
         self.gpus_num = 1
 
+        # l2 regularization scale, default value from alphago paper
+        self.l2_scale = 1e-4
+
         # For exporting
         self.weights = []
 
@@ -100,7 +103,7 @@ class TFProcess:
         # Recalculate SWA weight batchnorm means and variances
         self.swa_recalc_bn = True
 
-        # logger
+        # logger training info
         self.logger = DefaultLogger
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
@@ -252,11 +255,9 @@ class TFProcess:
 
         # Summary part
         self.test_writer = tf.summary.FileWriter(
-            os.path.join(os.getcwd(),
-                         self.logbase + "/test"), self.session.graph)
+            os.path.join(os.getcwd(), self.logbase + "/test"), self.session.graph)
         self.train_writer = tf.summary.FileWriter(
-            os.path.join(os.getcwd(),
-                         self.logbase + "/train"), self.session.graph)
+            os.path.join(os.getcwd(), self.logbase + "/train"), self.session.graph)
 
         # Build checkpoint saver
         self.saver = tf.train.Saver()
@@ -296,7 +297,7 @@ class TFProcess:
         # smaller weight decay factor, e.g. 3e-6, default factor for AutoDrop
         # learning rate schedule is 1e-4. But it seems this is not crucial 
         # to the final performance.
-        regularizer = tf.contrib.layers.l2_regularizer(scale=0.0001)
+        regularizer = tf.contrib.layers.l2_regularizer(scale=self.l2_scale)
         reg_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
         reg_term = tf.contrib.layers.apply_regularization(regularizer,
                                                           reg_variables)
@@ -356,7 +357,8 @@ class TFProcess:
                 # exit when lr is smaller than target.
                 if self.lrs.end():
                     self.logger.info('learning rate smaller than target, stop training')
-                    exit()
+                    # we return the final total loss at the end of trianing
+                    return stats.mean('total')
 
                 summaries = stats.summaries({'Policy Loss': 'policy',
                                              'MSE Loss': 'mse',
@@ -427,10 +429,6 @@ class TFProcess:
         # The weights are internal to the batchnorm layer, so apply
         # a unique scope that we can store, and use to look them back up
         # later on.
-
-        # TODO: Default BN momentum is 0.99, which is suitable for longer training
-        # time but a little bit larger than the recommended value (0.95-0.97)
-        # for OneCycle policy.
         scope = self.get_batchnorm_key()
         with tf.variable_scope(scope):
             net = tf.layers.batch_normalization(
