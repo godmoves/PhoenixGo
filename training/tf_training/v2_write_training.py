@@ -24,7 +24,7 @@ import gzip
 import pymongo
 import numpy as np
 
-from ..chunkparser import ChunkParser
+from chunkparser import ChunkParser
 
 
 def mongo_fetch_games(q_out, num_games):
