@@ -27,6 +27,6 @@ player fast_lr_drop: Leela Zero:0.15
 
 ### Training graph
 
-![fig_0](../data_prepare/image/continue_10b_0.png)  
-![fig_1](../data_prepare/image/continue_10b_1.png)  
-![fig_2](../data_prepare/image/continue_10b_2.png)  
+![fig_0](../data_plot/image/continue_10b_0.png)  
+![fig_1](../data_plot/image/continue_10b_1.png)  
+![fig_2](../data_plot/image/continue_10b_2.png)  

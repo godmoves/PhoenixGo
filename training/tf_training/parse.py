@@ -173,7 +173,7 @@ def main():
 
     if restore_prefix:
         tfprocess.restore(restore_prefix)
-    tfprocess.process(train_parser, test_parser)
+    final_total_loss = tfprocess.process(train_parser, test_parser)
 
 
 if __name__ == "__main__":
