@@ -48,9 +48,10 @@ class BayesianOptimizer:
         self.logger = DefaultLogger
 
     def suggest_next_location(self, res=None):
-        if res is not Node:
-            self.X_init = np.vstack(self.X_init, self.X_next)
-            self.Y_init = np.vstack(self.Y_init, res)
+        if res is not None:
+            res = np.expand_dims(res, axis=0)
+            self.X_init = np.vstack((self.X_init, self.X_next))
+            self.Y_init = np.vstack((self.Y_init, res))
 
         # construct Bayesian optimizer
         bayes_opt = GPyOpt.methods.BayesianOptimization(f=None,     
@@ -59,7 +60,7 @@ class BayesianOptimizer:
                                                         acquisition_type='EI',
                                                         X=self.X_init,
                                                         Y=self.Y_init)
-        self.X_next = bayes_opt.suggest_next_locations()
+        self.X_next = bayes_opt.suggest_next_locations()[0]
 
     def log_info(self, log_base):
         self.logger.info(log_base)
@@ -72,15 +73,14 @@ class BayesianOptimizer:
         self.logger.info("")
 
     def get_next_lrs(self, sess, res=None):
-        res = np.expand_dims(res, axis=0)
         self.suggest_next_location(res)
         self.experiment_id += 1
         lrs = OneCycleLR(sess=sess,
                          low_lr=self.X_next[0],
                          high_lr=self.X_next[1],
-                         up_range=self.X_next[2],
-                         down_range=self.X_next[3],
-                         tail_range=self.X_next[4])
+                         up_range=int(self.X_next[2]),
+                         down_range=int(self.X_next[3]),
+                         tail_range=int(self.X_next[4]))
         l2_scale = self.X_next[5]
         log_base = "tflogs/bayes_opt_" + str(self.experiment_id)
         self.log_info(log_base)
@@ -129,12 +129,12 @@ def main():
     train_parser = ChunkParser(FileDataSrc(training),
                                shuffle_size=1 << 20,  # 2.2GB of RAM.
                                sample=args.sample,
-                               batch_size=RAM_BATCH_SIZE).parse()
+                               batch_size=128).parse()
 
     test_parser = ChunkParser(FileDataSrc(test),
                               shuffle_size=1 << 19,
                               sample=args.sample,
-                              batch_size=RAM_BATCH_SIZE).parse()
+                              batch_size=128).parse()
 
     bopt = BayesianOptimizer()
     final_total_loss = None

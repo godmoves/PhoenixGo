@@ -270,7 +270,7 @@ class TFProcess:
         for grad_and_vars in zip(*tower_grads):
             grads = []
             for g, _ in grad_and_vars:
-                expanded_g = tf.expand_dims(g, dim=0)
+                expanded_g = tf.expand_dims(g, axis=0)
                 grads.append(expanded_g)
 
             grad = tf.concat(grads, axis=0)
@@ -284,8 +284,8 @@ class TFProcess:
     def tower_loss(self, x, y_, z_):
         y_conv, z_conv = self.construct_net(x)
         # Calculate loss on policy head
-        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_,
-                                                                logits=y_conv)
+        cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_,
+                                                                   logits=y_conv)
         policy_loss = tf.reduce_mean(cross_entropy)
 
         # Loss on value head
@@ -355,7 +355,7 @@ class TFProcess:
 
                 # exit when lr is smaller than target.
                 if self.lrs.end():
-                    self.logger.info('learning rate smaller than target, stop training')
+                    self.logger.info('learning schedule ended')
                     # we return the final total loss at the end of trianing
                     return stats.mean('total')
 
