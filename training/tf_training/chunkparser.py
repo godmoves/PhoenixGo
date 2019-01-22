@@ -46,9 +46,8 @@ def remap_vertex(vertex, symmetry):
         y = 19 - y - 1
     return y * 19 + x
 
+
 # Interface for a chunk data source.
-
-
 class ChunkDataSrc:
     def __init__(self, items):
         self.items = items
