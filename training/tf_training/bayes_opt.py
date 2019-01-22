@@ -1,10 +1,5 @@
 import argparse
-import glob
-import gzip
-import os
 import random
-import time
-import unittest
 import multiprocessing as mp
 
 import GPyOpt

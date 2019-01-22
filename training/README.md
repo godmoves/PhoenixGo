@@ -8,6 +8,7 @@
 - [x] [quick/slow learning rate drop](results/different_steps)
 - [x] [different weight of value part (10, 1, 0.1, 0.01)](results/different_values)
 - [ ] one cycle learning rate policy
+- [ ] bayesian optimization
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
 - [ ] different b&f (135x64, 33x128, 15x192, 9x256)
@@ -59,12 +60,12 @@ stop.
 We can use the [pre-defined functions](https://blog.csdn.net/u013555719/article/details/79334359)
 in TensorFlow or just [do it manually](https://blog.csdn.net/yyqq188/article/details/79138919).
 
-#### OneCycle
+#### OneCycle & Others
 
 Increase the learning rate at first and drop it later. You can find more info about it
 [here](https://sgugger.github.io/the-1cycle-policy.html).
 
-For more implementation details, you can check out the 'lrschedule.py'.
+For more implementation details, you can check out the `lrschedule.py`.
 
 ### Result
 
