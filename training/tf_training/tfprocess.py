@@ -23,7 +23,7 @@ import numpy as np
 import tensorflow as tf
 
 from utils import Timer, Stats
-from lrschedule import AutoDropLR, CyclicalLR 
+from lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
 from utils import DefaultLogger
 
 
@@ -114,7 +114,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = CyclicalLR(self.session) 
+        self.lrs = CyclicalLR(self.session)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -294,7 +294,7 @@ class TFProcess:
         # Regularizer
         # TODO: For OneCycle learning rate schedule, you may need to use a
         # smaller weight decay factor, e.g. 3e-6, default factor for AutoDrop
-        # learning rate schedule is 1e-4. But it seems this is not crucial 
+        # learning rate schedule is 1e-4. But it seems this is not crucial
         # to the final performance.
         regularizer = tf.contrib.layers.l2_regularizer(scale=self.l2_scale)
         reg_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)

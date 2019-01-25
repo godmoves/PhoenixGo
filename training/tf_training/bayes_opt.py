@@ -50,7 +50,7 @@ class BayesianOptimizer:
             self.Y_init = np.vstack((self.Y_init, res))
 
         # construct Bayesian optimizer
-        bayes_opt = GPyOpt.methods.BayesianOptimization(f=None,     
+        bayes_opt = GPyOpt.methods.BayesianOptimization(f=None,
                                                         domain=self.bounds,
                                                         model='GP',
                                                         acquisition_type='EI',
