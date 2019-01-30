@@ -2,9 +2,8 @@
 
 **Status:** Active, breaking changes may occur.
 
-**TODO:**  
-  - [x] update to TensorRT 5  
-  - [x] update to TensorFlow 1.12  
+**TODO:**   
+  - [ ] update feature conversion  
   - [ ] clean up code  
   - [ ] move structure TreeNode to a better file, it should belong to mcts
   - [ ] consider add sgf- and board- prefix to differ XToStr and StrToX
@@ -54,7 +53,7 @@ Additionally, in early 2018 the same team branched Leela Chess Zero from the sam
 ### Dependencies
 
 - Python 3.5 on Ubuntu 16.04 / Python 3.x on Ubuntu 18.04  
-- Numpy  
+- NumPy  
 - PyCUDA  
 - TensorFlow 1.12+  
 - [TensorRT 5](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
@@ -62,9 +61,9 @@ Additionally, in early 2018 the same team branched Leela Chess Zero from the sam
 - CMake 3.1+  
 - GCC 6/7  
 
-Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
+Use `pip` to install what you need. For `TensorRT`, `PyCUDA` and `UFF`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
-You need to install `tensorrt` by **tar package** to get python support. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
+You need to install `TensorRT` by **tar package** to get python support. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
 
 ### Build uff_to_plan and convert weight
 
@@ -74,7 +73,7 @@ $ bazel build //model:build_tensorrt_model
 $ cd scripts
 $ python net_to_model.py </path/to/lz-weight>
 ```
-You will get the `.uff`, `.PLAN` and the Tensorflow format of Leela Zero weight. Copy them to `ckpt` folder.
+You will get the `.uff`, `.PLAN` and the TensorFlow format of Leela Zero weight. Copy them to `ckpt` folder.
 
 ### Modify the configure file
 
@@ -111,10 +110,10 @@ $ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr 
 
 ### Requirements
 
-* GCC with C++11 support
-* Bazel (0.19.2 is known-good, 0.20.2 has some [issues](https://github.com/tensorflow/tensorflow/issues/24124))
-* CUDA 10 and cuDNN 7 (for GPU support)
-* TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
+- GCC with C++11 support
+- Bazel (0.19.2 is known-good, 0.20.2 has some [issues](https://github.com/tensorflow/tensorflow/issues/24124))
+- CUDA 10 and cuDNN 7 (for GPU support)
+- TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
 
 ### Building
 
@@ -133,8 +132,13 @@ Then build with bazel, a known issue of bazel 0.19.2 is mentioned [here](https:/
 ```
 $ bazel build //mcts:mcts_main
 ```
+or
+```
+$ tools/auto_build.sh
+```
+Then second command will build everything automatically.
 
-Dependices such as Tensorflow will be downloaded automatically. The building prosess may take a long time.
+Dependencies such as TensorFlow will be downloaded automatically. The building process may take a long time.
 
 ### Running
 
@@ -142,7 +146,7 @@ Download and extract the trained network, then run:
 
 Convert the Leela Zero weight as mentioned before, and run
 ```
-$ scripts/start.sh
+$ scripts/start.sh etc/{config}
 ```
 or
 ```
