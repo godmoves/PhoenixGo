@@ -7,24 +7,30 @@ import uff
 
 import subprocess
 
-UFF_TO_PLAN_EXE_PATH = 'uff2plan/build/uff_to_plan'
+UFF_TO_PLAN_EXE_PATH = '../bazel-bin/model/build_tensorrt_model'
 UFF_FILENAME = 'leelaz-model-0.uff'
 
 
-def graphToPlan(uff_model_name, plan_filename, input_name, input_feature, policy_name,
+def graphToPlan(uff_model_name, input_name, policy_name,
                 value_name, max_batch_size, max_workspace_size, data_type):
 
     # convert frozen graph to engine (plan)
     args = [
-        uff_model_name,
-        plan_filename,
+        "--model_path",
+        uff_model_name[:-4],
+        "--input_name",
         input_name,
-        str(input_feature),
+        "--policy_name",
         policy_name,
+        "--value_name",
         value_name,
+        "--max_batch_size",
         str(max_batch_size),
+        "--max_workspace_size",
         str(max_workspace_size),
-        data_type  # float / half
+        "--data_type",
+        data_type,  # FP16 / FP32
+        "--logtostderr"
     ]
     subprocess.call([UFF_TO_PLAN_EXE_PATH] + args)
 
@@ -58,8 +64,7 @@ with open(sys.argv[1], 'r') as f:
     tf_model = tfprocess.replace_weights(weights)
     uff_model = uff.from_tensorflow(tf_model, output_nodes=["policy", "value"],
                                     input_nodes=["inputs"], output_filename=UFF_FILENAME)
-    graphToPlan(UFF_FILENAME, "leelaz-model-0.PLAN", "inputs", 18,
-                "policy", "value", 4, 1 << 20, "float")
+    graphToPlan(UFF_FILENAME, "inputs", "policy", "value", 8, 1 << 20, "FP32")
 
     path = os.path.join(os.getcwd(), "leelaz-model")
     save_path = tfprocess.saver.save(tfprocess.session, path, global_step=0)

@@ -70,11 +70,8 @@ You need to install `tensorrt` by **tar package** to get python support. Find mo
 
 First `git clone` this repository, then execute the commands below:
 ```
-$ cd scripts/uff2plan
-$ mkdir build && cd build
-$ cmake ..
-$ make
-$ cd ../..
+$ bazel build //model:build_tensorrt_model
+$ cd scripts
 $ python net_to_model.py </path/to/lz-weight>
 ```
 You will get the `.uff`, `.PLAN` and the Tensorflow format of Leela Zero weight. Copy them to `ckpt` folder.

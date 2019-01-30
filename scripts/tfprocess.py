@@ -18,6 +18,8 @@
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
+from tensorflow.python.framework import dtypes
 
 
 def weight_variable(shape):
@@ -102,7 +104,8 @@ class TFProcess:
                                                                     graphdef,
                                                                     ["policy", "value"])
 
-        return tf.graph_util.remove_training_nodes(frozen_graph)
+        return optimize_for_inference(frozen_graph, ["inputs"], ["policy", "value"],
+                                      dtypes.float32.as_datatype_enum)
 
     def get_batchnorm_key(self):
         result = "bn" + str(self.batch_norm_count)

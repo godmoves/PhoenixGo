@@ -18,6 +18,7 @@
  */
 #if GOOGLE_TENSORRT
 
+#include <iostream>
 #include <fstream>
 #include <string>
 
@@ -70,9 +71,9 @@ int main(int argc, char *argv[]) {
   /* parse uff */
   IUffParser *parser = createUffParser();
   // 18 is the feature size for lz/elf, and the convolution order is channel first.
-  parser->registerInput(input_name.c_str(), DimsCHW(18, 19, 19), UffInputOrder::kNCHW);
-  parser->registerOutput(policy_name.c_str());
-  parser->registerOutput(value_name.c_str());
+  parser->registerInput(FLAGS_input_name.c_str(), DimsCHW(18, 19, 19), UffInputOrder::kNCHW);
+  parser->registerOutput(FLAGS_policy_name.c_str());
+  parser->registerOutput(FLAGS_value_name.c_str());
 
   IBuilder *builder = createInferBuilder(g_logger);
   INetworkDefinition *network = builder->createNetwork();
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]) {
   /* serialize engine and write to file */
   IHostMemory *serialized_engine = engine->serialize();
 
+  std::cout << "PLAN Output written to " << output_path << std::endl;
   std::ofstream output(output_path, std::ios::binary);
   output.write(reinterpret_cast<const char*>(serialized_engine->data()), serialized_engine->size());
 
