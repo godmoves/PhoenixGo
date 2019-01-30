@@ -137,8 +137,7 @@ class TFProcess:
         probs = tf.reshape(probs, (batch_size, 19 * 19 + 1))
         winner = tf.reshape(winner, (batch_size, 1))
 
-        if gpus_num is None:
-            gpus_num = self.gpus_num
+        gpus_num = self.gpus_num if gpus_num is None else gpus_num
         self.init_net(planes, probs, winner, gpus_num)
 
     def init_net(self, planes, probs, winner, gpus_num):
