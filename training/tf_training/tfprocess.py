@@ -25,6 +25,7 @@ import tensorflow as tf
 from model.resnet import ResNet
 from utils.logger import Timer, Stats, DefaultLogger
 from model.lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
+from model.mixprec import float32_variable_storage_getter, LossScalingOptimizer
 
 
 # Restore session from checkpoint. It silently ignore mis-matches
@@ -91,10 +92,10 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = CyclicalLR(self.session)
+        self.lrs = AutoDropLR(self.session, max_range=400)
 
         # model architecture
-        self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS)
+        self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS, dtype=tf.float16)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -107,11 +108,13 @@ class TFProcess:
 
         # Mini-batches come as raw packed strings. Decode
         # into tensors to feed into network.
-        planes = tf.decode_raw(self.planes, tf.uint8)
+        # We use fp16 to store the input data to speed up the
+        # training process and save space.
+        planes = tf.decode_raw(self.planes, tf.float16)
+        # Learning targets are stored in fp32, this can prevent
+        # loss overflow/underflow.
         probs = tf.decode_raw(self.probs, tf.float32)
         winner = tf.decode_raw(self.winner, tf.float32)
-
-        planes = tf.to_float(planes)
 
         planes = tf.reshape(planes, (batch_size, 18, 19 * 19))
         probs = tf.reshape(probs, (batch_size, 19 * 19 + 1))
@@ -134,6 +137,10 @@ class TFProcess:
         opt = tf.train.MomentumOptimizer(
             learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
+        # TODO: use better scale value
+        # Scale loss to make it in a appropriate range.
+        opt = LossScalingOptimizer(opt, scale=1)
+
         # Construct net here.
         tower_grads = []
         tower_loss = []
@@ -141,7 +148,9 @@ class TFProcess:
         tower_mse_loss = []
         tower_reg_term = []
         tower_y_conv = []
-        with tf.variable_scope(tf.get_variable_scope()):
+        with tf.variable_scope(name='fp32_storage',
+                               # this force trainable variables to be stored as float32.
+                               custom_getter=float32_variable_storage_getter):
             for i in range(gpus_num):
                 with tf.device("/gpu:%d" % i):
                     with tf.name_scope("tower_%d" % i):
@@ -257,6 +266,11 @@ class TFProcess:
 
     def tower_loss(self, x, y_, z_):
         y_conv, z_conv = self.model.construct_net(x)
+
+        # cast the nn result to fp32 to avoid loss overflow/underflow
+        y_conv = tf.cast(y_conv, tf.float32)
+        z_conv = tf.cast(z_conv, tf.float32)
+
         # Calculate loss on policy head
         cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_,
                                                                    logits=y_conv)

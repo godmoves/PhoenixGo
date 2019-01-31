@@ -2,11 +2,11 @@ import numpy as np
 import tensorflow as tf
 
 
-def weight_variable(name, shape):
+def weight_variable(name, shape, dtype):
     """Xavier initialization"""
     stddev = np.sqrt(2.0 / (sum(shape)))
     initial = tf.truncated_normal(shape, stddev=stddev)
-    weights = tf.get_variable(name, initializer=initial)
+    weights = tf.get_variable(name, initializer=initial, dtype=dtype)
     tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
     return weights
 
@@ -14,9 +14,9 @@ def weight_variable(name, shape):
 # Bias weights for layers not followed by BatchNorm
 # We do not regularize biases, so they are not
 # added to the regularizer collection
-def bias_variable(name, shape):
+def bias_variable(name, shape, dtype):
     initial = tf.constant(0.0, shape=shape)
-    bias = tf.get_variable(name, initializer=initial)
+    bias = tf.get_variable(name, initializer=initial, dtype=dtype)
     return bias
 
 
@@ -26,11 +26,12 @@ def conv2d(x, W):
 
 
 class ResNet:
-    def __init__(self, blocks, filters):
+    def __init__(self, blocks, filters, dtype):
         self.batch_norm_count = 0
         self.reuse_var = None
         self.blocks = blocks
         self.filters = filters
+        self.dtype = dtype
 
     def get_batchnorm_key(self):
         result = "bn" + str(self.batch_norm_count)
@@ -69,7 +70,8 @@ class ResNet:
     def conv_block(self, inputs, filter_size, input_channels, output_channels, name):
         W_conv = weight_variable(
             name,
-            [filter_size, filter_size, input_channels, output_channels])
+            [filter_size, filter_size, input_channels, output_channels],
+            self.dtype)
 
         self.add_weights(W_conv)
 
@@ -84,7 +86,7 @@ class ResNet:
         orig = tf.identity(net)
 
         # First convnet weights
-        W_conv_1 = weight_variable(name + "_conv_1", [3, 3, channels, channels])
+        W_conv_1 = weight_variable(name + "_conv_1", [3, 3, channels, channels], self.dtype)
         self.add_weights(W_conv_1)
 
         net = conv2d(net, W_conv_1)
@@ -92,7 +94,7 @@ class ResNet:
         net = tf.nn.relu(net)
 
         # Second convnet weights
-        W_conv_2 = weight_variable(name + "_conv_2", [3, 3, channels, channels])
+        W_conv_2 = weight_variable(name + "_conv_2", [3, 3, channels, channels], self.dtype)
         self.add_weights(W_conv_2)
 
         net = conv2d(net, W_conv_2)
@@ -124,8 +126,8 @@ class ResNet:
                                    output_channels=2,
                                    name="policy_head")
         h_conv_pol_flat = tf.reshape(conv_pol, [-1, 2 * 19 * 19])
-        W_fc1 = weight_variable("w_fc_1", [2 * 19 * 19, (19 * 19) + 1])
-        b_fc1 = bias_variable("b_fc_1", [(19 * 19) + 1])
+        W_fc1 = weight_variable("w_fc_1", [2 * 19 * 19, (19 * 19) + 1], self.dtype)
+        b_fc1 = bias_variable("b_fc_1", [(19 * 19) + 1], self.dtype)
         self.add_weights(W_fc1)
         self.add_weights(b_fc1)
         h_fc1 = tf.add(tf.matmul(h_conv_pol_flat, W_fc1), b_fc1)
@@ -136,13 +138,13 @@ class ResNet:
                                    output_channels=1,
                                    name="value_head")
         h_conv_val_flat = tf.reshape(conv_val, [-1, 19 * 19])
-        W_fc2 = weight_variable("w_fc_2", [19 * 19, 256])
-        b_fc2 = bias_variable("b_fc_2", [256])
+        W_fc2 = weight_variable("w_fc_2", [19 * 19, 256], self.dtype)
+        b_fc2 = bias_variable("b_fc_2", [256], self.dtype)
         self.add_weights(W_fc2)
         self.add_weights(b_fc2)
         h_fc2 = tf.nn.relu(tf.add(tf.matmul(h_conv_val_flat, W_fc2), b_fc2))
-        W_fc3 = weight_variable("w_fc_3", [256, 1])
-        b_fc3 = bias_variable("b_fc_3", [1])
+        W_fc3 = weight_variable("w_fc_3", [256, 1], self.dtype)
+        b_fc3 = bias_variable("b_fc_3", [1], self.dtype)
         self.add_weights(W_fc3)
         self.add_weights(b_fc3)
         h_fc3 = tf.nn.tanh(tf.add(tf.matmul(h_fc2, W_fc3), b_fc3))
