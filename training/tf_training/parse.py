@@ -25,9 +25,9 @@ import time
 import unittest
 import multiprocessing as mp
 
-from chunkparser import ChunkParser
 from tfprocess import TFProcess
-from utils import DefaultLogger
+from utils.chunkparser import ChunkParser
+from utils.logger import DefaultLogger
 
 # Sane values are from 4096 to 64 or so.
 # You need to adjust the learning rate if you change this. Should be

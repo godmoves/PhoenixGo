@@ -3,7 +3,7 @@ import os
 import argparse
 
 from tfprocess import TFProcess
-from utils import DefaultLogger
+from utils.logger import DefaultLogger
 
 
 def net_to_model(file_path):

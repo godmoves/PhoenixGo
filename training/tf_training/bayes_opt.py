@@ -8,9 +8,9 @@ import numpy as np
 import tensorflow as tf
 from numpy.random import seed
 
-from chunkparser import ChunkParser
 from tfprocess import TFProcess
-from utils import DefaultLogger
+from utils.chunkparser import ChunkParser
+from utuls.logger import DefaultLogger
 from lrschedule import OneCycleLR
 from parse import get_chunks, split_chunks, FileDataSrc
 

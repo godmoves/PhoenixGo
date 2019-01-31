@@ -22,9 +22,8 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-from utils import Timer, Stats
+from utils.logger import Timer, Stats, DefaultLogger
 from lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
-from utils import DefaultLogger
 
 
 def weight_variable(name, shape):

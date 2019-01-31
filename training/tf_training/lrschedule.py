@@ -3,7 +3,7 @@ from collections import deque
 
 import tensorflow as tf
 
-from utils import DefaultLogger
+from utils.logger import DefaultLogger
 
 
 class AutoDropLR:
