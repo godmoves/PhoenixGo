@@ -281,5 +281,6 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # usage python -m tools.v2_write_training
     mp.set_start_method('spawn')
     main(sys.argv[1:])

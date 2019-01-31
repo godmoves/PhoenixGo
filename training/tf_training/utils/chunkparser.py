@@ -24,7 +24,7 @@ import multiprocessing as mp
 
 import numpy as np
 
-import shufflebuffer as sb
+import utils.shufflebuffer as sb
 
 # 16 planes, 1 side to move, 1 x 362 probs, 1 winner = 19 lines
 DATA_ITEM_LINES = 16 + 1 + 1 + 1

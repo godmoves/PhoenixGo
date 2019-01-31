@@ -11,7 +11,7 @@ from numpy.random import seed
 from tfprocess import TFProcess
 from utils.chunkparser import ChunkParser
 from utuls.logger import DefaultLogger
-from lrschedule import OneCycleLR
+from model.lrschedule import OneCycleLR
 from parse import get_chunks, split_chunks, FileDataSrc
 
 
