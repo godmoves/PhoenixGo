@@ -37,8 +37,8 @@ def weight_variable(name, shape):
 
 
 # Bias weights for layers not followed by BatchNorm
-# We do not regularlize biases, so they are not
-# added to the regularlizer collection
+# We do not regularize biases, so they are not
+# added to the regularizer collection
 def bias_variable(name, shape):
     initial = tf.constant(0.0, shape=shape)
     bias = tf.get_variable(name, initializer=initial)
@@ -192,7 +192,7 @@ class TFProcess:
         self.y_conv = tf.concat(tower_y_conv, axis=0)
         self.mean_grads = self.average_gradients(tower_grads)
 
-        # Do swa after we contruct the net
+        # Do swa after we construct the net
         if self.swa_enabled is True:
             # Count of networks accumulated into SWA
             self.swa_count = tf.Variable(0., name='swa_count', trainable=False)
@@ -233,7 +233,7 @@ class TFProcess:
         # Op to compute gradients and add to running total in 'gsum/'
         self.grad_op = tf.group(*grad_ops)
 
-        # Op to apply accmulated gradients
+        # Op to apply accumulated gradients
         self.train_op = opt.apply_gradients(total_grad)
 
         zero_ops = []
@@ -355,7 +355,7 @@ class TFProcess:
                 # exit when lr is smaller than target.
                 if self.lrs.end():
                     self.logger.info('learning schedule ended')
-                    # we return the final total loss at the end of trianing
+                    # we return the final total loss at the end of training
                     return stats.mean('total')
 
                 summaries = stats.summaries({'Policy Loss': 'policy',

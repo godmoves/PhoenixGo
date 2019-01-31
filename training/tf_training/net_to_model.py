@@ -28,7 +28,7 @@ def net_to_model(file_path):
         logger.info("Blocks {}".format(blocks))
 
     tfprocess = TFProcess()
-    # set the bolcks and filters as target weight
+    # set the blocks and filters as target weight
     tfprocess.RESIDUAL_BLOCKS = blocks
     tfprocess.RESIDUAL_FILTERS = channels
 
@@ -51,10 +51,10 @@ def model_to_net(file_path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="net and model convertion")
+    parser = argparse.ArgumentParser(description="lz net and tf model conversion")
     parser.add_argument("-f", "--file", help="path to lz weight or tf model")
     parser.add_argument("-r", "--reverse", default=False, action="store_true",
-                        help="swith from net_to_model to model_to_net")
+                        help="switch from net_to_model to model_to_net")
     args = parser.parse_args()
     logger = DefaultLogger
     if args.reverse:

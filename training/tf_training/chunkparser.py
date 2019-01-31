@@ -64,7 +64,7 @@ class ChunkParser:
         """
             Read data and yield batches of raw tensors.
 
-            'chunkdatasrc' is an object yeilding chunkdata
+            'chunkdatasrc' is an object yielding chunkdata
             'shuffle_size' is the size of the shuffle buffer.
             'sample' is the rate to down-sample.
             'workers' is the number of child workers to use.
@@ -74,27 +74,27 @@ class ChunkParser:
 
             chunk: The name of a file containing chunkdata
 
-            chunkdata: type Bytes. Either mutiple records of v1 format,
+            chunkdata: type Bytes. Either multiple records of v1 format,
             or multiple records of v2 format.
 
             v1: The original text format describing a move. 19 lines long.
             VERY slow to decode. Typically around 2500 bytes long.
-            Used only for backward compatability.
+            Used only for backward compatibility.
 
             v2: Packed binary representation of v1. Fixed length,
-            no record seperator. The most compact format.
+            no record separator. The most compact format.
             Data in the shuffle buffer is held in this
             format as it allows the largest possible shuffle buffer.
             Very fast to decode. Preferred format to use on disk.
             2176 bytes long.
 
-            raw: A byte string holding raw tensors contenated together.
+            raw: A byte string holding raw tensors concatenated together.
             This is used to pass data from the workers to the parent.
             Exists because TensorFlow doesn't have a fast way to
             unpack bit vectors.
             7950 bytes long.
         """
-        # Build probility reflection tables.
+        # Build probability reflection tables.
         # The last element is 'pass' and is identity mapped.
         self.prob_reflection_table = [
             [remap_vertex(vertex, sym)
@@ -266,7 +266,7 @@ class ChunkParser:
         # Now we add the two final planes, being the 'color to move' planes.
         stm = to_move
         assert stm == 0 or stm == 1
-        # Flattern all planes to a single byte string
+        # Flatten all planes to a single byte string
         planes = planes.tobytes() + self.flat_planes[stm]
         assert len(planes) == (18 * 19 * 19), len(planes)
 

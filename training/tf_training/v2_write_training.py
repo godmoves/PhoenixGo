@@ -125,7 +125,7 @@ def queue_gen(q, out_qs):
         Turn a queue into a generator
 
         Yields items pulled from 'q' until a 'STOP' item is seen.
-        The STOP item will be propogated to all the queues in
+        The STOP item will be propagated to all the queues in
         the list 'out_qs' (if any).
     """
     while True:
