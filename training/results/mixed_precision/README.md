@@ -49,12 +49,12 @@ For this particular network, shifting by 3 exponent values (multiply by 8) was s
 
 Maintain a master copy of weights in FP32  
 For each iteration:  
-    - Make an FP16 copy of the weights
-    - Forward propagation (FP16 weights and activations)
-    - Multiply the resulting loss with the scaling factor S
-    - Backward propagation (FP16 weights, activations, and their gradients)
-    - Multiply the weight gradient with 1/S
-    - Complete the weight update (including gradient clipping, etc.)
+    - Make an FP16 copy of the weights  
+    - Forward propagation (FP16 weights and activations)  
+    - Multiply the resulting loss with the scaling factor S  
+    - Backward propagation (FP16 weights, activations, and their gradients)  
+    - Multiply the weight gradient with 1/S  
+    - Complete the weight update (including gradient clipping, etc.)  
 
 ![fig3](procedure.png)
 
@@ -66,9 +66,9 @@ For each iteration:
 |------------|----------|------------------|------------------|
 |10x128      |128       |1300              |1490              |
 |            |256       |1195              |1397              |
-|            |512       |OOM               |1358              |
+|            |512       |OOM*              |1358              |
 |20x256      |128       |205               |337               |
-|            |256       |OOM               |278               |
+|            |256       |OOM*              |278               |
 
 2080ti (TensorCore)
 
@@ -76,9 +76,11 @@ For each iteration:
 |------------|----------|------------------|------------------|
 |10x128      |128       |1752              |2543              |
 |            |256       |1810              |2753              |
-|            |512       |OOM               |2529              |
+|            |512       |OOM*              |2529              |
 |20x256      |128       |381               |562               |
-|            |256       |OOM               |251               |
+|            |256       |OOM*              |251               |
+
+OOM: Out of memory.
 
 
 ### More Information
