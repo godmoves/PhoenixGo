@@ -64,9 +64,6 @@ class TFProcess:
         # l2 regularization scale, default value from alphago paper
         self.l2_scale = 1e-4
 
-        # For exporting
-        self.weights = []
-
         # Output weight file with averaged weights
         self.swa_enabled = True
 
@@ -84,18 +81,19 @@ class TFProcess:
         # logger training info
         self.logger = DefaultLogger
 
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
         config = tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
         self.session = tf.Session(config=config)
 
-        self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
         self.lrs = AutoDropLR(self.session, max_range=400)
 
         # model architecture
-        self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS, dtype=tf.float16)
+        self.model_dtype = tf.float16
+        self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
+                            dtype=self.model_dtype)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -110,7 +108,8 @@ class TFProcess:
         # into tensors to feed into network.
         # We use fp16 to store the input data to speed up the
         # training process and save space.
-        planes = tf.decode_raw(self.planes, tf.float16)
+        planes = tf.decode_raw(self.planes, tf.int8)
+        planes = tf.cast(planes, self.model_dtype)
         # Learning targets are stored in fp32, this can prevent
         # loss overflow/underflow.
         probs = tf.decode_raw(self.probs, tf.float32)
@@ -148,7 +147,7 @@ class TFProcess:
         tower_mse_loss = []
         tower_reg_term = []
         tower_y_conv = []
-        with tf.variable_scope(name='fp32_storage',
+        with tf.variable_scope('fp32_storage',
                                # this force trainable variables to be stored as float32.
                                custom_getter=float32_variable_storage_getter):
             for i in range(gpus_num):
@@ -177,7 +176,7 @@ class TFProcess:
         self.mean_grads = self.average_gradients(tower_grads)
 
         # Do swa after we construct the net
-        if self.swa_enabled is True:
+        if self.swa_enabled:
             # Count of networks accumulated into SWA
             self.swa_count = tf.Variable(0., name='swa_count', trainable=False)
             # Count of networks to skip
@@ -186,7 +185,7 @@ class TFProcess:
             accum = []
             load = []
             n = self.swa_count
-            for w in self.weights:
+            for w in self.model.weights:
                 name = w.name.split(':')[0]
                 var = tf.Variable(
                     tf.zeros(shape=w.shape), name='swa/' + name, trainable=False)
@@ -268,8 +267,9 @@ class TFProcess:
         y_conv, z_conv = self.model.construct_net(x)
 
         # cast the nn result to fp32 to avoid loss overflow/underflow
-        y_conv = tf.cast(y_conv, tf.float32)
-        z_conv = tf.cast(z_conv, tf.float32)
+        if self.model_dtype != tf.float32:
+            y_conv = tf.cast(y_conv, tf.float32)
+            z_conv = tf.cast(z_conv, tf.float32)
 
         # Calculate loss on policy head
         cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_,
@@ -288,6 +288,8 @@ class TFProcess:
         reg_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
         reg_term = tf.contrib.layers.apply_regularization(regularizer,
                                                           reg_variables)
+        if self.model_dtype != tf.float32:
+            reg_term = tf.cast(reg_term, tf.float32)
 
         # For training from a (smaller) dataset of strong players, you will
         # want to reduce the factor in front of mse_loss here.
@@ -305,7 +307,7 @@ class TFProcess:
         ops = [self.policy_loss, self.mse_loss, self.reg_term, self.accuracy]
         if training:
             ops += [self.grad_op, self.step_op],
-        r = self.session.run(ops, feed_dict={self.training: training,
+        r = self.session.run(ops, feed_dict={self.model.training: training,
                                              self.planes: batch[0],
                                              self.probs: batch[1],
                                              self.winner: batch[2]})
@@ -404,7 +406,7 @@ class TFProcess:
         if not hasattr(self, 'save_op'):
             save_ops = []
             rest_ops = []
-            for var in self.weights:
+            for var in self.model.weights:
                 if isinstance(var, str):
                     var = tf.get_default_graph().get_tensor_by_name(var)
                 name = var.name.split(':')[0]
@@ -444,7 +446,7 @@ class TFProcess:
                 batch = next(data)
                 self.session.run(
                     [self.loss, self.update_ops],
-                    feed_dict={self.training: True,
+                    feed_dict={self.model.training: True,
                                self.planes: batch[0], self.probs: batch[1],
                                self.winner: batch[2]})
 
@@ -468,7 +470,7 @@ class TFProcess:
         with open(filename, "w") as file:
             # Version tag
             file.write("1")
-            for weights in self.weights:
+            for weights in self.model.weights:
                 # Newline unless last line (single bias)
                 file.write("\n")
                 work_weights = None
@@ -502,7 +504,7 @@ class TFProcess:
                 file.write(" ".join(wt_str))
 
     def replace_weights(self, new_weights):
-        for e, weights in enumerate(self.weights):
+        for e, weights in enumerate(self.model.weights):
             if isinstance(weights, str):
                 weights = tf.get_default_graph().get_tensor_by_name(weights)
             if weights.name.endswith('/batch_normalization/beta:0'):

@@ -9,11 +9,19 @@ def float32_variable_storage_getter(getter, name, shape=None, dtype=None,
     float32 precision and then casts them to the training precision."""
     storage_dtype = tf.float32 if trainable else dtype
     variable = getter(name, shape, dtype=storage_dtype,
-                      initializer=initializer, regularizer=regularizer,
+                      initializer=initializer,
+                      regularizer=regularizer if trainable and 'BatchNorm' not in name else None,
                       trainable=trainable,
                       *args, **kwargs)
     if trainable and dtype != tf.float32:
-        variable = tf.cast(variable, dtype)
+        cast_name = name + '/fp16_cast'
+        try:
+            cast_variable = tf.get_default_graph().get_tensor_by_name(
+                cast_name + ':0')
+        except KeyError:
+            cast_variable = tf.cast(variable, dtype, name=cast_name)
+        cast_variable._ref = variable._ref
+        variable = cast_variable
     return variable
 
 

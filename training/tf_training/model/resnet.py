@@ -1,12 +1,15 @@
 import numpy as np
 import tensorflow as tf
 
+from model.mixprec import float32_variable_storage_getter
+
 
 def weight_variable(name, shape, dtype):
     """Xavier initialization"""
     stddev = np.sqrt(2.0 / (sum(shape)))
-    initial = tf.truncated_normal(shape, stddev=stddev)
-    weights = tf.get_variable(name, initializer=initial, dtype=dtype)
+    # do not use constant as the initializer, that will make the
+    # variable stored in wrong type.
+    weights = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev, dtype=dtype), dtype=dtype)
     tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
     return weights
 
@@ -15,8 +18,7 @@ def weight_variable(name, shape, dtype):
 # We do not regularize biases, so they are not
 # added to the regularizer collection
 def bias_variable(name, shape, dtype):
-    initial = tf.constant(0.0, shape=shape)
-    bias = tf.get_variable(name, initializer=initial, dtype=dtype)
+    bias = tf.get_variable(name, shape, initializer=tf.zeros_initializer(), dtype=dtype)
     return bias
 
 
@@ -32,6 +34,9 @@ class ResNet:
         self.blocks = blocks
         self.filters = filters
         self.dtype = dtype
+        # For exporting
+        self.weights = []
+        self.training = tf.placeholder(tf.bool)
 
     def get_batchnorm_key(self):
         result = "bn" + str(self.batch_norm_count)
@@ -42,16 +47,21 @@ class ResNet:
         self.batch_norm_count = 0
         self.reuse_var = True
 
-    def add_weights(self, variable):
+    def add_weights(self, var):
         if self.reuse_var is None:
-            self.weights.append(variable)
+            if var.name[-11:] == "fp16_cast:0":
+                name = var.name[:-12] + ":0"
+                var = tf.get_default_graph().get_tensor_by_name(name)
+            # all variables should be stored as fp32
+            assert var.dtype.base_dtype == tf.float32
+            self.weights.append(var)
 
     def batch_norm(self, net):
         # The weights are internal to the batchnorm layer, so apply
         # a unique scope that we can store, and use to look them back up
         # later on.
         scope = self.get_batchnorm_key()
-        with tf.variable_scope(scope):
+        with tf.variable_scope(scope, custom_getter=float32_variable_storage_getter):
             net = tf.layers.batch_normalization(
                 net,
                 momentum=0.99, axis=1,
@@ -61,7 +71,7 @@ class ResNet:
                 reuse=self.reuse_var)
 
         for v in ['beta', 'moving_mean', 'moving_variance']:
-            name = scope + '/batch_normalization/' + v + ':0'
+            name = "fp32_storage/" + scope + '/batch_normalization/' + v + ':0'
             var = tf.get_default_graph().get_tensor_by_name(name)
             self.add_weights(var)
 
