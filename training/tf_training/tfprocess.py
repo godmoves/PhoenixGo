@@ -90,6 +90,11 @@ class TFProcess:
         # set the learning rate schedule
         self.lrs = AutoDropLR(self.session, max_range=400)
 
+        # TODO: use better scale value, we may need to record the histogram of
+        # the gradient for further analysis.
+        # scale loss to prevent gradient underflow
+        self.loss_scale = 128
+
         # model architecture
         self.model_dtype = tf.float16
         self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
@@ -136,9 +141,8 @@ class TFProcess:
         opt = tf.train.MomentumOptimizer(
             learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
-        # TODO: use better scale value
-        # Scale loss to make it in a appropriate range.
-        opt = LossScalingOptimizer(opt, scale=1)
+        # Wrap the optimizer to scale loss to make it in a appropriate range.
+        opt = LossScalingOptimizer(opt, scale=self.loss_scale)
 
         # Construct net here.
         tower_grads = []
