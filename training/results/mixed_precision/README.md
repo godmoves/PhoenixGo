@@ -29,7 +29,7 @@ Some example magnitudes:
 
 Some networks require their gradient values to be shifted into FP16 representable range to match the accuracy of FP32 training sessions. The figure below illustrates one such case.
 
-Figure 1. Histogram of activation gradient magnitudes throughout FP32 training of Multibox SSD network. The x-axis is logarithmic, except for the zero entry. For example, 66.8% of values were 0, 4% had magnitude in the (2-32 , 2-30) range.
+Figure 1. Histogram of activation gradient magnitudes throughout FP32 training of Multibox SSD network. The x-axis is logarithmic, except for the zero entry. For example, 66.8% of values were 0, 4% had magnitude in the (2^-32 , 2^-30) range.
 
 ![fig1](gradients.png)
 
@@ -75,9 +75,9 @@ For each iteration:
 |Architecture|Batch Size|FP32 Speed (pos/s)|FP16 Speed (pos/s)|Speed Boost|
 |------------|----------|------------------|------------------|-----------|
 |10x128      |128       |1752              |2543              |45.1%      |
-|            |256       |1810              |2753              |52.1       |
+|            |256       |1810              |2753              |52.1%      |
 |            |512       |OOM*              |2529              |           |
-|20x256      |128       |381               |562               |47.5       |
+|20x256      |128       |381               |562               |47.5%      |
 |            |256       |OOM*              |251               |           |
 
 OOM: Out of memory.
