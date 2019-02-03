@@ -84,7 +84,9 @@ OOM: Out of memory.
 
 ### Performance Benchmark
 
-(WIP)
+This is the Tensorboard of my test. The full precision (dark blue) and mix precision (light blue) losses are identical, but the mix precision training is faster (improve from 1260 pos/s to 1480 pos/s, I do the full training test for 10b128f network only due to hardware limitation).
+
+![fig4](./train.png)
 
 ### More Information
 
