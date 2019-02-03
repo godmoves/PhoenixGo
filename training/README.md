@@ -7,8 +7,12 @@
 - [ ] with/without ELF data
 - [x] [quick/slow learning rate drop](results/different_steps)
 - [x] [different weight of value part (10, 1, 0.1, 0.01)](results/different_values)
+- [x] [mixed precision training support](results/mixed_precision)
 - [ ] one cycle learning rate policy
 - [ ] bayesian optimization
+- [ ] move swa, save, restore into a seperate file
+- [ ] optimize the multi gpu support
+- [ ] SEnet, this seems to work
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
 - [ ] different b&f (135x64, 33x128, 15x192, 9x256)
@@ -66,6 +70,11 @@ Increase the learning rate at first and drop it later. You can find more info ab
 [here](https://sgugger.github.io/the-1cycle-policy.html).
 
 For more implementation details, you can check out the `lrschedule.py`.
+
+### Training setting
+
+We support mixed precision training to speed up the training procedure for large
+networks. For more information, you can checkout the [mix precision explanation](results/mixed_precision)
 
 ### Result
 

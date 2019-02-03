@@ -3,7 +3,7 @@ import os
 import argparse
 
 from tfprocess import TFProcess
-from utils import DefaultLogger
+from utils.logger import DefaultLogger
 
 
 def net_to_model(file_path):
@@ -51,6 +51,7 @@ def model_to_net(file_path):
 
 
 if __name__ == '__main__':
+    # usage: python -m tools.net_to_model [options]
     parser = argparse.ArgumentParser(description="lz net and tf model conversion")
     parser.add_argument("-f", "--file", help="path to lz weight or tf model")
     parser.add_argument("-r", "--reverse", default=False, action="store_true",

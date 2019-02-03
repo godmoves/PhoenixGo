@@ -3,16 +3,15 @@ from collections import deque
 
 import tensorflow as tf
 
-from utils import DefaultLogger
+from utils.logger import DefaultLogger
 
 
 class AutoDropLR:
-    '''
-        If the loss decrease less than the threshold after target steps, this
-        learning rate schedule will drop the learning rate automatically.
-        If the learning rate is smaller than the minimal learning rate, we
-        will stop the training.
-    '''
+    '''If the loss decrease less than the threshold after target steps, this
+    learning rate schedule will drop the learning rate automatically.
+    If the learning rate is smaller than the minimal learning rate, we
+    will stop the training.'''
+
     def __init__(self, sess, max_range=800, min_lr=1e-5, threshold=0.01, max_drop_count=5):
         self.min_lr = min_lr
         # we will check the percentage of loss reduction if we are more than
@@ -71,10 +70,9 @@ class AutoDropLR:
 
 
 class LRFinder:
-    '''
-        This class is used to find the maximum learning rate that can be used
-        to train a specific neural network architecture.
-    '''
+    '''This class is used to find the maximum learning rate that can be used
+    to train a specific neural network architecture.'''
+
     def __init__(self, sess, low_lr=1e-5, high_lr=3, up_range=500):
         # low_lr: the initial learning rate
         # high_lr: the max test learning rate
@@ -111,11 +109,10 @@ class LRFinder:
 
 
 class OneCycleLR:
-    '''
-        Implementation of 1 Cycle learning rate policy.
-        Paper: https://arxiv.org/abs/1708.07120
-        A modified version mentioned here: https://www.fast.ai/2018/07/02/adam-weight-decay/
-    '''
+    '''Implementation of 1 Cycle learning rate policy.
+    Paper: https://arxiv.org/abs/1708.07120
+    A modified version mentioned here: https://www.fast.ai/2018/07/02/adam-weight-decay/'''
+
     def __init__(self, sess, low_lr=0.01, high_lr=0.1, end_lr=1e-5,
                  up_range=400, down_range=400, tail_range=200):
         # Generally we set up_step = down_step, and tail_step = 1/2 * up_step.
@@ -161,11 +158,10 @@ class OneCycleLR:
 
 
 class CyclicalLR:
-    '''
-        Implementation of Cyclical learning rate policy.
-        This is the triangle2 policy mentioned in the paper.
-        Paper: https://arxiv.org/abs/1506.01186
-    '''
+    '''Implementation of Cyclical learning rate policy.
+    This is the triangle2 policy mentioned in the paper.
+    Paper: https://arxiv.org/abs/1506.01186'''
+
     def __init__(self, sess, low_lr=3e-4, high_lr=0.1, up_range=100,
                  down_range=100, exp_factor=2):
         self.sess = sess

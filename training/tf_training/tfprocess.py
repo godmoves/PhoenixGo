@@ -22,32 +22,10 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-from utils import Timer, Stats
-from lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
-from utils import DefaultLogger
-
-
-def weight_variable(name, shape):
-    """Xavier initialization"""
-    stddev = np.sqrt(2.0 / (sum(shape)))
-    initial = tf.truncated_normal(shape, stddev=stddev)
-    weights = tf.get_variable(name, initializer=initial)
-    tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
-    return weights
-
-
-# Bias weights for layers not followed by BatchNorm
-# We do not regularize biases, so they are not
-# added to the regularizer collection
-def bias_variable(name, shape):
-    initial = tf.constant(0.0, shape=shape)
-    bias = tf.get_variable(name, initializer=initial)
-    return bias
-
-
-def conv2d(x, W):
-    return tf.nn.conv2d(x, W, data_format='NCHW',
-                        strides=[1, 1, 1, 1], padding='SAME')
+from model.resnet import ResNet
+from utils.logger import Timer, Stats, DefaultLogger
+from model.lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
+from model.mixprec import float32_variable_storage_getter, LossScalingOptimizer
 
 
 # Restore session from checkpoint. It silently ignore mis-matches
@@ -86,9 +64,6 @@ class TFProcess:
         # l2 regularization scale, default value from alphago paper
         self.l2_scale = 1e-4
 
-        # For exporting
-        self.weights = []
-
         # Output weight file with averaged weights
         self.swa_enabled = True
 
@@ -106,15 +81,24 @@ class TFProcess:
         # logger training info
         self.logger = DefaultLogger
 
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
         config = tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
         self.session = tf.Session(config=config)
 
-        self.training = tf.placeholder(tf.bool)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = CyclicalLR(self.session)
+        self.lrs = AutoDropLR(self.session, max_range=400)
+
+        # TODO: use better scale value, we may need to record the histogram of
+        # the gradient for further analysis.
+        # scale loss to prevent gradient underflow
+        self.loss_scale = 128
+
+        # model architecture
+        self.model_dtype = tf.float16
+        self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
+                            dtype=self.model_dtype)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -127,11 +111,14 @@ class TFProcess:
 
         # Mini-batches come as raw packed strings. Decode
         # into tensors to feed into network.
-        planes = tf.decode_raw(self.planes, tf.uint8)
+        # We use fp16 to store the input data to speed up the
+        # training process and save space.
+        planes = tf.decode_raw(self.planes, tf.int8)
+        planes = tf.cast(planes, self.model_dtype)
+        # Learning targets are stored in fp32, this can prevent
+        # loss overflow/underflow.
         probs = tf.decode_raw(self.probs, tf.float32)
         winner = tf.decode_raw(self.winner, tf.float32)
-
-        planes = tf.to_float(planes)
 
         planes = tf.reshape(planes, (batch_size, 18, 19 * 19))
         probs = tf.reshape(probs, (batch_size, 19 * 19 + 1))
@@ -145,8 +132,6 @@ class TFProcess:
         self.sx = tf.split(planes, gpus_num)
         self.sy_ = tf.split(probs, gpus_num)
         self.sz_ = tf.split(winner, gpus_num)
-        self.batch_norm_count = 0
-        self.reuse_var = None
 
         # You need to change the learning rate here if you are training
         # from a self-play training set, for example start with 0.005 instead.
@@ -156,6 +141,9 @@ class TFProcess:
         opt = tf.train.MomentumOptimizer(
             learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
+        # Wrap the optimizer to scale loss to make it in a appropriate range.
+        opt = LossScalingOptimizer(opt, scale=self.loss_scale)
+
         # Construct net here.
         tower_grads = []
         tower_loss = []
@@ -163,15 +151,14 @@ class TFProcess:
         tower_mse_loss = []
         tower_reg_term = []
         tower_y_conv = []
-        with tf.variable_scope(tf.get_variable_scope()):
+        with tf.variable_scope('fp32_storage',
+                               # this force trainable variables to be stored as float32.
+                               custom_getter=float32_variable_storage_getter):
             for i in range(gpus_num):
                 with tf.device("/gpu:%d" % i):
                     with tf.name_scope("tower_%d" % i):
                         loss, policy_loss, mse_loss, reg_term, y_conv = self.tower_loss(
                             self.sx[i], self.sy_[i], self.sz_[i])
-
-                        # Reset batchnorm key to 0.
-                        self.reset_batchnorm_key()
 
                         tf.get_variable_scope().reuse_variables()
                         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
@@ -193,7 +180,7 @@ class TFProcess:
         self.mean_grads = self.average_gradients(tower_grads)
 
         # Do swa after we construct the net
-        if self.swa_enabled is True:
+        if self.swa_enabled:
             # Count of networks accumulated into SWA
             self.swa_count = tf.Variable(0., name='swa_count', trainable=False)
             # Count of networks to skip
@@ -202,7 +189,7 @@ class TFProcess:
             accum = []
             load = []
             n = self.swa_count
-            for w in self.weights:
+            for w in self.model.weights:
                 name = w.name.split(':')[0]
                 var = tf.Variable(
                     tf.zeros(shape=w.shape), name='swa/' + name, trainable=False)
@@ -281,7 +268,13 @@ class TFProcess:
         return average_grads
 
     def tower_loss(self, x, y_, z_):
-        y_conv, z_conv = self.construct_net(x)
+        y_conv, z_conv = self.model.construct_net(x)
+
+        # cast the nn result to fp32 to avoid loss overflow/underflow
+        if self.model_dtype != tf.float32:
+            y_conv = tf.cast(y_conv, tf.float32)
+            z_conv = tf.cast(z_conv, tf.float32)
+
         # Calculate loss on policy head
         cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_,
                                                                    logits=y_conv)
@@ -299,6 +292,8 @@ class TFProcess:
         reg_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
         reg_term = tf.contrib.layers.apply_regularization(regularizer,
                                                           reg_variables)
+        if self.model_dtype != tf.float32:
+            reg_term = tf.cast(reg_term, tf.float32)
 
         # For training from a (smaller) dataset of strong players, you will
         # want to reduce the factor in front of mse_loss here.
@@ -316,7 +311,7 @@ class TFProcess:
         ops = [self.policy_loss, self.mse_loss, self.reg_term, self.accuracy]
         if training:
             ops += [self.grad_op, self.step_op],
-        r = self.session.run(ops, feed_dict={self.training: training,
+        r = self.session.run(ops, feed_dict={self.model.training: training,
                                              self.planes: batch[0],
                                              self.probs: batch[1],
                                              self.winner: batch[2]})
@@ -410,129 +405,12 @@ class TFProcess:
                 # reset the timer to skip test time.
                 timer.reset()
 
-    def get_batchnorm_key(self):
-        result = "bn" + str(self.batch_norm_count)
-        self.batch_norm_count += 1
-        return result
-
-    def reset_batchnorm_key(self):
-        self.batch_norm_count = 0
-        self.reuse_var = True
-
-    def add_weights(self, variable):
-        if self.reuse_var is None:
-            self.weights.append(variable)
-
-    def batch_norm(self, net):
-        # The weights are internal to the batchnorm layer, so apply
-        # a unique scope that we can store, and use to look them back up
-        # later on.
-        scope = self.get_batchnorm_key()
-        with tf.variable_scope(scope):
-            net = tf.layers.batch_normalization(
-                net,
-                momentum=0.99, axis=1,
-                epsilon=1e-5, fused=True,
-                center=True, scale=False,
-                training=self.training,
-                reuse=self.reuse_var)
-
-        for v in ['beta', 'moving_mean', 'moving_variance']:
-            name = scope + '/batch_normalization/' + v + ':0'
-            var = tf.get_default_graph().get_tensor_by_name(name)
-            self.add_weights(var)
-
-        return net
-
-    def conv_block(self, inputs, filter_size, input_channels, output_channels, name):
-        W_conv = weight_variable(
-            name,
-            [filter_size, filter_size, input_channels, output_channels])
-
-        self.add_weights(W_conv)
-
-        net = inputs
-        net = conv2d(net, W_conv)
-        net = self.batch_norm(net)
-        net = tf.nn.relu(net)
-        return net
-
-    def residual_block(self, inputs, channels, name):
-        net = inputs
-        orig = tf.identity(net)
-
-        # First convnet weights
-        W_conv_1 = weight_variable(name + "_conv_1", [3, 3, channels, channels])
-        self.add_weights(W_conv_1)
-
-        net = conv2d(net, W_conv_1)
-        net = self.batch_norm(net)
-        net = tf.nn.relu(net)
-
-        # Second convnet weights
-        W_conv_2 = weight_variable(name + "_conv_2", [3, 3, channels, channels])
-        self.add_weights(W_conv_2)
-
-        net = conv2d(net, W_conv_2)
-        net = self.batch_norm(net)
-        net = tf.add(net, orig)
-        net = tf.nn.relu(net)
-
-        return net
-
-    def construct_net(self, planes):
-        # NCHW format
-        # batch, 18 channels, 19 x 19
-        x_planes = tf.reshape(planes, [-1, 18, 19, 19])
-
-        # Input convolution
-        flow = self.conv_block(x_planes, filter_size=3,
-                               input_channels=18,
-                               output_channels=self.RESIDUAL_FILTERS,
-                               name="input_conv")
-        # Residual tower
-        for i in range(0, self.RESIDUAL_BLOCKS):
-            block_name = "res_" + str(i)
-            flow = self.residual_block(flow, self.RESIDUAL_FILTERS,
-                                       name=block_name)
-
-        # Policy head
-        conv_pol = self.conv_block(flow, filter_size=1,
-                                   input_channels=self.RESIDUAL_FILTERS,
-                                   output_channels=2,
-                                   name="policy_head")
-        h_conv_pol_flat = tf.reshape(conv_pol, [-1, 2 * 19 * 19])
-        W_fc1 = weight_variable("w_fc_1", [2 * 19 * 19, (19 * 19) + 1])
-        b_fc1 = bias_variable("b_fc_1", [(19 * 19) + 1])
-        self.add_weights(W_fc1)
-        self.add_weights(b_fc1)
-        h_fc1 = tf.add(tf.matmul(h_conv_pol_flat, W_fc1), b_fc1)
-
-        # Value head
-        conv_val = self.conv_block(flow, filter_size=1,
-                                   input_channels=self.RESIDUAL_FILTERS,
-                                   output_channels=1,
-                                   name="value_head")
-        h_conv_val_flat = tf.reshape(conv_val, [-1, 19 * 19])
-        W_fc2 = weight_variable("w_fc_2", [19 * 19, 256])
-        b_fc2 = bias_variable("b_fc_2", [256])
-        self.add_weights(W_fc2)
-        self.add_weights(b_fc2)
-        h_fc2 = tf.nn.relu(tf.add(tf.matmul(h_conv_val_flat, W_fc2), b_fc2))
-        W_fc3 = weight_variable("w_fc_3", [256, 1])
-        b_fc3 = bias_variable("b_fc_3", [1])
-        self.add_weights(W_fc3)
-        self.add_weights(b_fc3)
-        h_fc3 = tf.nn.tanh(tf.add(tf.matmul(h_fc2, W_fc3), b_fc3))
-
-        return h_fc1, h_fc3
-
     def snap_save(self):
         # Save a snapshot of all the variables in the current graph.
         if not hasattr(self, 'save_op'):
             save_ops = []
             rest_ops = []
-            for var in self.weights:
+            for var in self.model.weights:
                 if isinstance(var, str):
                     var = tf.get_default_graph().get_tensor_by_name(var)
                 name = var.name.split(':')[0]
@@ -572,7 +450,7 @@ class TFProcess:
                 batch = next(data)
                 self.session.run(
                     [self.loss, self.update_ops],
-                    feed_dict={self.training: True,
+                    feed_dict={self.model.training: True,
                                self.planes: batch[0], self.probs: batch[1],
                                self.winner: batch[2]})
 
@@ -596,7 +474,7 @@ class TFProcess:
         with open(filename, "w") as file:
             # Version tag
             file.write("1")
-            for weights in self.weights:
+            for weights in self.model.weights:
                 # Newline unless last line (single bias)
                 file.write("\n")
                 work_weights = None
@@ -630,7 +508,7 @@ class TFProcess:
                 file.write(" ".join(wt_str))
 
     def replace_weights(self, new_weights):
-        for e, weights in enumerate(self.weights):
+        for e, weights in enumerate(self.model.weights):
             if isinstance(weights, str):
                 weights = tf.get_default_graph().get_tensor_by_name(weights)
             if weights.name.endswith('/batch_normalization/beta:0'):

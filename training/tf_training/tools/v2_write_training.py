@@ -24,7 +24,7 @@ import gzip
 import pymongo
 import numpy as np
 
-from chunkparser import ChunkParser
+from utils.chunkparser import ChunkParser
 
 
 def mongo_fetch_games(q_out, num_games):
@@ -281,5 +281,6 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # usage python -m tools.v2_write_training
     mp.set_start_method('spawn')
     main(sys.argv[1:])
