@@ -10,6 +10,9 @@
 - [x] [mixed precision training support](results/mixed_precision)
 - [ ] one cycle learning rate policy
 - [ ] bayesian optimization
+- [ ] move swa, save, restore into a seperate file
+- [ ] optimize the multi gpu support
+- [ ] SEnet, this seems to work
 - [ ] cross entropy value part
 - [ ] ResNext as Policy-Value net
 - [ ] different b&f (135x64, 33x128, 15x192, 9x256)
