@@ -22,6 +22,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
+from model.swa import SWA
 from model.resnet import ResNet
 from utils.logger import Timer, Stats, DefaultLogger
 from model.lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
@@ -67,17 +68,6 @@ class TFProcess:
         # Output weight file with averaged weights
         self.swa_enabled = True
 
-        # Net sampling rate (e.g 2 == every 2nd network).
-        self.swa_c = 1
-
-        # Take an exponentially weighted moving average over this
-        # many networks. Under the SWA assumptions, this will reduce
-        # the distance to the optimal value by a factor of 1/sqrt(n)
-        self.swa_max_n = 16
-
-        # Recalculate SWA weight batchnorm means and variances
-        self.swa_recalc_bn = True
-
         # logger training info
         self.logger = DefaultLogger
 
@@ -99,6 +89,9 @@ class TFProcess:
         self.model_dtype = tf.float16
         self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
                             dtype=self.model_dtype)
+
+        if self.swa_enabled:
+            self.model = SWA(self.session, self.model)
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -135,9 +128,6 @@ class TFProcess:
 
         # You need to change the learning rate here if you are training
         # from a self-play training set, for example start with 0.005 instead.
-
-        # Nesterov momentum method can achieve super-convergence, but Adam will
-        # fail to do it. Set momentum to 0.9 is OK according to the paper.
         opt = tf.train.MomentumOptimizer(
             learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
@@ -181,24 +171,7 @@ class TFProcess:
 
         # Do swa after we construct the net
         if self.swa_enabled:
-            # Count of networks accumulated into SWA
-            self.swa_count = tf.Variable(0., name='swa_count', trainable=False)
-            # Count of networks to skip
-            self.swa_skip = tf.Variable(self.swa_c, name='swa_skip', trainable=False)
-            # Build the SWA variables and accumulators
-            accum = []
-            load = []
-            n = self.swa_count
-            for w in self.model.weights:
-                name = w.name.split(':')[0]
-                var = tf.Variable(
-                    tf.zeros(shape=w.shape), name='swa/' + name, trainable=False)
-                accum.append(
-                    tf.assign(var, var * (n / (n + 1.)) + w * (1. / (n + 1.))))
-                load.append(tf.assign(w, var))
-            with tf.control_dependencies(accum):
-                self.swa_accum_op = tf.assign_add(n, 1.)
-            self.swa_load_op = tf.group(*load)
+            self.model.init_swa()
 
         # Accumulate gradients
         self.update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -233,8 +206,7 @@ class TFProcess:
         # Op to increment global step counter
         self.step_op = tf.assign_add(self.global_step, 1)
 
-        correct_prediction = \
-            tf.equal(tf.argmax(self.y_conv, 1), tf.argmax(self.y_, 1))
+        correct_prediction = tf.equal(tf.argmax(self.y_conv, 1), tf.argmax(self.y_, 1))
         correct_prediction = tf.cast(correct_prediction, tf.float32)
         self.accuracy = tf.reduce_mean(correct_prediction)
 
@@ -386,10 +358,10 @@ class TFProcess:
                 tf_model_path = self.saver.save(self.session, path, global_step=steps)
                 self.logger.info("Model saved in file: {}".format(tf_model_path))
 
-                # Actually we do not need to write lz weight every time, because
-                # we can generate lz weight from tf model. This can save the
-                # time of writing lz weight, which is relatively long for large
-                # network.
+                # Deprecated: Actually we do not need to write lz weight every
+                # time, because we can generate lz weight from tf model. This
+                # can save the time of writing lz weight, which is relatively
+                # long for large network.
                 # leela_weight_path = path + "-" + str(steps) + ".txt"
                 # self.save_leelaz_weights(leela_weight_path)
                 # self.logger.info("Leela weights saved to {}".format(leela_weight_path))
@@ -397,70 +369,13 @@ class TFProcess:
                 # Things have likely changed enough
                 # that stats are no longer valid.
                 if self.swa_enabled:
-                    self.save_swa_network(steps, path, train_data)
+                    self.model.save_swa_network(steps, path, train_data)
 
                 tf_model_path = self.saver.save(self.session, path, global_step=steps)
                 self.logger.info("SWA Model saved in file: {}".format(tf_model_path))
 
                 # reset the timer to skip test time.
                 timer.reset()
-
-    def snap_save(self):
-        # Save a snapshot of all the variables in the current graph.
-        if not hasattr(self, 'save_op'):
-            save_ops = []
-            rest_ops = []
-            for var in self.model.weights:
-                if isinstance(var, str):
-                    var = tf.get_default_graph().get_tensor_by_name(var)
-                name = var.name.split(':')[0]
-                v = tf.Variable(var, name='save/' + name, trainable=False)
-                save_ops.append(tf.assign(v, var))
-                rest_ops.append(tf.assign(var, v))
-            self.save_op = tf.group(*save_ops)
-            self.restore_op = tf.group(*rest_ops)
-        self.session.run(self.save_op)
-
-    def snap_restore(self):
-        # Restore variables in the current graph from the snapshot.
-        self.session.run(self.restore_op)
-
-    def save_swa_network(self, steps, path, data):
-        # Sample 1 in self.swa_c of the networks. Compute in this way so
-        # that it's safe to change the value of self.swa_c
-        rem = self.session.run(tf.assign_add(self.swa_skip, -1))
-        if rem > 0:
-            return
-        self.swa_skip.load(self.swa_c, self.session)
-
-        # Add the current weight vars to the running average.
-        num = self.session.run(self.swa_accum_op)
-
-        if self.swa_max_n is not None:
-            num = min(num, self.swa_max_n)
-            self.swa_count.load(float(num), self.session)
-
-        # save the current network.
-        self.snap_save()
-        # Copy the swa weights into the current network.
-        self.session.run(self.swa_load_op)
-        if self.swa_recalc_bn:
-            self.logger.info("Refining SWA batch normalization")
-            for _ in range(200):
-                batch = next(data)
-                self.session.run(
-                    [self.loss, self.update_ops],
-                    feed_dict={self.model.training: True,
-                               self.planes: batch[0], self.probs: batch[1],
-                               self.winner: batch[2]})
-
-        # do not save lz weight to speed up training
-        # swa_path = path + "-swa-" + str(int(num)) + "-" + str(steps) + ".txt"
-        # self.save_leelaz_weights(swa_path)
-        # self.logger.info("Wrote averaged network to {}".format(swa_path))
-
-        # restore the saved network.
-        self.snap_restore()
 
     def assign(self, var, values):
         try:

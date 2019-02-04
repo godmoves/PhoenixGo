@@ -4,6 +4,10 @@ import tensorflow as tf
 from model.mixprec import float32_variable_storage_getter
 
 
+# model.weight, model.training, model.construct_net is the API that used to
+# communicate with tfprocess.py
+
+
 def weight_variable(name, shape, dtype):
     """Xavier initialization"""
     stddev = np.sqrt(2.0 / (sum(shape)))
@@ -35,8 +39,9 @@ class ResNet:
         self.blocks = blocks
         self.filters = filters
         self.dtype = dtype
-        # For exporting
+        # For exporting, needed by SWA and net saving
         self.weights = []
+        # The state of the network, needed by SWA and net training/testing
         self.training = tf.placeholder(tf.bool)
 
     def get_batchnorm_key(self):
