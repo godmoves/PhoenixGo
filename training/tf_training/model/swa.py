@@ -1,6 +1,5 @@
 #!/use/bin/env python3
 import tensorflow as tf
-from utils.logger import DefaultLogger
 
 
 # SWA (stochastic weight averaging) is a technique we use to help the neural
@@ -11,7 +10,6 @@ class SWA:
     def __init__(self, session, model, c=1, max_n=16, recalc_bn=True):
         self.model = model
         self.session = session
-        self.logger = DefaultLogger
 
         # Net sampling rate (e.g 2 == every 2nd network).
         self.swa_c = c
@@ -29,6 +27,13 @@ class SWA:
 
         # Count of networks to skip
         self.swa_skip = tf.Variable(self.swa_c, name='swa_skip', trainable=False)
+
+    def construct_net(self, x):
+        return self.model.construct_net(x)
+
+    @property
+    def training(self):
+        return self.model.training
 
     def init_swa(self):
         # Build the SWA variables and accumulators
@@ -64,7 +69,6 @@ class SWA:
         # Copy the swa weights into the current network.
         self.session.run(self.swa_load_op)
         if self.swa_recalc_bn:
-            self.logger.info("Refining SWA batch normalization")
             for _ in range(200):
                 batch = next(data)
                 self.session.run(
