@@ -97,25 +97,27 @@ class SENet:
     def squeeze_excitation(self, x, channels, ratio, name):
         assert channels % ratio == 0
 
-        net = tf.nn.avg_pool(x, [1, 1, 19, 19], [1, 1, 1, 1],
-                             padding='VALID', data_format='NCHW')
-        net_flat = tf.reshape(net, [-1, channels])
+        net = tf.reduce_mean(x, axis=[2, 3])
 
         W_fc1 = weight_variable(name + "_w_fc_1", [channels, channels // ratio], self.dtype)
         b_fc1 = bias_variable(name + "_b_fc_1", [channels // ratio], self.dtype)
         self.add_weights(W_fc1)
         self.add_weights(b_fc1)
 
-        net = tf.nn.relu(tf.add(tf.matmul(net_flat, W_fc1), b_fc1))
+        net = tf.nn.relu(tf.add(tf.matmul(net, W_fc1), b_fc1))
 
-        W_fc2 = weight_variable(name + "_w_fc_2", [channels // ratio, channels], self.dtype)
-        b_fc2 = bias_variable(name + "_b_fc_2", [channels], self.dtype)
+        W_fc2 = weight_variable(name + "_w_fc_2", [channels // ratio, 2 * channels], self.dtype)
+        b_fc2 = bias_variable(name + "_b_fc_2", [2 * channels], self.dtype)
         self.add_weights(W_fc2)
         self.add_weights(b_fc2)
 
         net = tf.nn.sigmoid(tf.add(tf.matmul(net, W_fc2), b_fc2))
-        net = tf.reshape(net, [-1, channels, 1, 1])
-        return x * net
+        net = tf.reshape(net, [-1, 2 * channels, 1, 1])
+
+        # Split to scale and bias
+        gammas, bias = tf.split(net, 2, axis=1)
+        out = tf.nn.sigmoid(gammas) * x + bias
+        return out
 
     def parametric_relu(self, layer, name):
         # TODO: don't know if this is useful, but still implement it.
