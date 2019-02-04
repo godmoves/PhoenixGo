@@ -9,7 +9,8 @@ def weight_variable(name, shape, dtype):
     stddev = np.sqrt(2.0 / (sum(shape)))
     # do not use constant as the initializer, that will make the
     # variable stored in wrong type.
-    weights = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev, dtype=dtype), dtype=dtype)
+    weights = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(
+        stddev=stddev, dtype=dtype), dtype=dtype)
     tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
     return weights
 

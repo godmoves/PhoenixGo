@@ -30,7 +30,7 @@ class AutoDropLR:
         self.is_end = False
 
         # initial learning rate
-        self.lr = tf.Variable(0.1, dtype=tf.float32, name='lr', trainable=False)
+        self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
 
     def step(self, loss):
         self.loss_record.append(loss)
