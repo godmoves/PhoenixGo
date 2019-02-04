@@ -27,17 +27,24 @@ def bias_variable(name, shape, dtype):
     return bias
 
 
+def bias_variable_reg(name, shape, dtype):
+    weights = tf.get_variable(name, shape, initializer=tf.zeros_initializer(), dtype=dtype)
+    tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
+    return weights
+
+
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, data_format='NCHW',
                         strides=[1, 1, 1, 1], padding='SAME')
 
 
-class ResNet:
-    def __init__(self, blocks, filters, dtype):
-        self.name = "resnet"
+class SENet:
+    def __init__(self, blocks, filters, dtype, se_ratio=6):
+        self.name = "senet"
         self.blocks = blocks
         self.filters = filters
         self.dtype = dtype
+        self.se_ratio = se_ratio
 
         # For exporting, needed by SWA and net saving
         self.weights = []
@@ -79,12 +86,44 @@ class ResNet:
                 training=self.training,
                 reuse=self.reuse_var)
 
+        # TODO: not sure if we need gamma, maybe we use it for scale?
         for v in ['beta', 'moving_mean', 'moving_variance']:
             name = "fp32_storage/" + scope + '/batch_normalization/' + v + ':0'
             var = tf.get_default_graph().get_tensor_by_name(name)
             self.add_weights(var)
 
         return net
+
+    def squeeze_excitation(self, x, channels, ratio, name):
+        assert channels % ratio == 0
+
+        net = tf.nn.avg_pool(x, [1, 1, 19, 19], [1, 1, 1, 1],
+                             padding='VALID', data_format='NCHW')
+        net_flat = tf.reshape(net, [-1, channels])
+
+        W_fc1 = weight_variable(name + "_w_fc_1", [channels, channels // ratio], self.dtype)
+        b_fc1 = bias_variable(name + "_b_fc_1", [channels // ratio], self.dtype)
+        self.add_weights(W_fc1)
+        self.add_weights(b_fc1)
+
+        net = tf.nn.relu(tf.add(tf.matmul(net_flat, W_fc1), b_fc1))
+
+        W_fc2 = weight_variable(name + "_w_fc_2", [channels // ratio, channels], self.dtype)
+        b_fc2 = bias_variable(name + "_b_fc_2", [channels], self.dtype)
+        self.add_weights(W_fc2)
+        self.add_weights(b_fc2)
+
+        net = tf.nn.sigmoid(tf.add(tf.matmul(net, W_fc2), b_fc2))
+        net = tf.reshape(net, [-1, channels, 1, 1])
+        return x * net
+
+    def parametric_relu(self, layer, name):
+        # TODO: don't know if this is useful, but still implement it.
+        assert len(layer.shape) == 4
+        num_channels = layer.shape[1].value
+        alphas = bias_variable_reg(name + "param_relu", [1, num_channels, 1, 1], self.dtype)
+        self.add_weights(alphas)
+        return tf.nn.relu(layer) - alphas * tf.nn.relu(-layer)
 
     def conv_block(self, inputs, filter_size, input_channels, output_channels, name):
         W_conv = weight_variable(
@@ -118,6 +157,9 @@ class ResNet:
 
         net = conv2d(net, W_conv_2)
         net = self.batch_norm(net)
+
+        # Squeeze excitation here
+        net = self.squeeze_excitation(net, channels, self.se_ratio, name)
         net = tf.add(net, orig)
         net = tf.nn.relu(net)
 
