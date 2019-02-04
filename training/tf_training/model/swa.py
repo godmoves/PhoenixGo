@@ -10,6 +10,7 @@ class SWA:
     def __init__(self, session, model, c=1, max_n=16, recalc_bn=True):
         self.model = model
         self.session = session
+        self.name = 'swa_' + self.model.name
 
         # Net sampling rate (e.g 2 == every 2nd network).
         self.swa_c = c
@@ -28,6 +29,8 @@ class SWA:
         # Count of networks to skip
         self.swa_skip = tf.Variable(self.swa_c, name='swa_skip', trainable=False)
 
+        self.update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
     def construct_net(self, x):
         return self.model.construct_net(x)
 
@@ -35,7 +38,12 @@ class SWA:
     def training(self):
         return self.model.training
 
-    def init_swa(self):
+    def init_swa(self, loss, planes, probs, winner):
+        self.loss = loss
+        self.planes = planes
+        self.probs = probs
+        self.winner = winner
+
         # Build the SWA variables and accumulators
         accum = []
         load = []
@@ -74,7 +82,8 @@ class SWA:
                 self.session.run(
                     [self.loss, self.update_ops],
                     feed_dict={self.model.training: True,
-                               self.planes: batch[0], self.probs: batch[1],
+                               self.planes: batch[0],
+                               self.probs: batch[1],
                                self.winner: batch[2]})
 
         # Deprecated: do not save lz weight to speed up training
