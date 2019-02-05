@@ -126,7 +126,7 @@ class ResNet:
     def construct_net(self, planes):
         # NCHW format
         # batch, 18 channels, 19 x 19
-        x_planes = tf.reshape(planes, [-1, 18, 19, 19])
+        x_planes = tf.reshape(planes, [-1, 18, 19, 19], name='inputs')
 
         # Input convolution
         flow = self.conv_block(x_planes, filter_size=3,
@@ -150,6 +150,7 @@ class ResNet:
         self.add_weights(W_fc1)
         self.add_weights(b_fc1)
         h_fc1 = tf.add(tf.matmul(h_conv_pol_flat, W_fc1), b_fc1)
+        tf.nn.softmax(h_fc1, name='policy')  # for graph freezing
 
         # Value head
         conv_val = self.conv_block(flow, filter_size=1,
@@ -166,7 +167,7 @@ class ResNet:
         b_fc3 = bias_variable("b_fc_3", [1], self.dtype)
         self.add_weights(W_fc3)
         self.add_weights(b_fc3)
-        h_fc3 = tf.nn.tanh(tf.add(tf.matmul(h_fc2, W_fc3), b_fc3))
+        h_fc3 = tf.nn.tanh(tf.add(tf.matmul(h_fc2, W_fc3), b_fc3), name='value')
 
         # Reset batchnorm key to 0.
         self.reset_batchnorm_key()
