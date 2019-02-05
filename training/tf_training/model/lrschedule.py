@@ -6,6 +6,33 @@ import tensorflow as tf
 from utils.logger import DefaultLogger
 
 
+class StepwiseLR:
+    '''Stepwise constant learning rate schedule'''
+
+    def __init__(self, sess, min_lr=1e-5, drop_steps=[511, 844, 1071, 1262]):
+        self.sess = sess
+        self.drop_steps = drop_steps
+        self.min_lr = min_lr
+        self.global_step = 0
+
+        self.is_end = False
+
+        self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
+
+    def step(self, loss):
+        self.global_step += 1
+        # drop the lr at target steps
+        if self.global_step / 1000 in self.drop_steps:
+            self.sess.run(tf.assign(self.lr, self.lr * 0.1))
+        learning_rate = self.sess.run(self.lr)
+        if learning_rate < self.min_lr:
+            self.is_end = True
+        return learning_rate
+
+    def end(self):
+        return self.is_end
+
+
 class AutoDropLR:
     '''If the loss decrease less than the threshold after target steps, this
     learning rate schedule will drop the learning rate automatically.
