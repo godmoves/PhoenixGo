@@ -24,6 +24,7 @@ import tensorflow as tf
 
 from model.swa import SWA
 from model.resnet import ResNet
+from model.senet import SENet
 from utils.logger import Timer, Stats, DefaultLogger
 from model.lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
 from model.mixprec import float32_variable_storage_getter, LossScalingOptimizer
@@ -68,7 +69,7 @@ class TFProcess:
         # Output weight file with averaged weights
         self.swa_enabled = True
 
-        # logger training info
+        # log training info
         self.logger = DefaultLogger
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
@@ -78,7 +79,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = AutoDropLR(self.session, max_range=400)
+        self.lrs = AutoDropLR(self.session, max_range=200)
 
         # TODO: use better scale value, we may need to record the histogram of
         # the gradient for further analysis.
@@ -87,11 +88,14 @@ class TFProcess:
 
         # model architecture
         self.model_dtype = tf.float16
-        self.model = ResNet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
-                            dtype=self.model_dtype)
+        self.model = SENet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
+                           dtype=self.model_dtype, se_ratio=4)
 
         if self.swa_enabled:
             self.model = SWA(self.session, self.model)
+
+        self.logger.info("Model name {}, precision {}".format(
+            self.model.name, self.model_dtype))
 
     def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
@@ -171,10 +175,9 @@ class TFProcess:
 
         # Do swa after we construct the net
         if self.swa_enabled:
-            self.model.init_swa()
+            self.model.init_swa(self.loss, self.planes, self.probs, self.winner)
 
         # Accumulate gradients
-        self.update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         total_grad = []
         grad_ops = []
         clear_var = []
@@ -336,7 +339,7 @@ class TFProcess:
                 self.train_writer.add_summary(tf.Summary(value=summaries), steps)
                 stats.clear()
 
-            if steps % 8000 == 0:
+            if steps % 16000 == 0:
                 test_stats = Stats()
                 test_batches = 800  # reduce sample mean variance by ~28x
                 for _ in range(0, test_batches):
@@ -348,8 +351,8 @@ class TFProcess:
                                                   'Accuracy': 'accuracy',
                                                   'Total Loss': 'total'})
                 self.test_writer.add_summary(tf.Summary(value=summaries), steps)
-                self.logger.info("step {}, policy={:g} training accuracy={:g}%, mse={:g}".format(
-                    steps, test_stats.mean('policy'),
+                self.logger.info("step {}k policy={:g} training accuracy={:g}%, mse={:g}".format(
+                    steps / 1000, test_stats.mean('policy'),
                     test_stats.mean('accuracy') * 100.0,
                     test_stats.mean('mse')))
 
