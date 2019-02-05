@@ -26,7 +26,7 @@ from model.swa import SWA
 from model.resnet import ResNet
 from model.senet import SENet
 from utils.logger import Timer, Stats, DefaultLogger
-from model.lrschedule import AutoDropLR, CyclicalLR, OneCycleLR
+from model.lrschedule import AutoDropLR, CyclicalLR, OneCycleLR, StepwiseLR
 from model.mixprec import float32_variable_storage_getter, LossScalingOptimizer
 
 
@@ -79,7 +79,7 @@ class TFProcess:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = AutoDropLR(self.session, max_range=200)
+        self.lrs = StepwiseLR(self.session)
 
         # TODO: use better scale value, we may need to record the histogram of
         # the gradient for further analysis.
@@ -171,7 +171,6 @@ class TFProcess:
         self.mse_loss = tf.reduce_mean(tower_mse_loss)
         self.reg_term = tf.reduce_mean(tower_reg_term)
         self.y_conv = tf.concat(tower_y_conv, axis=0)
-        self.mean_grads = self.average_gradients(tower_grads)
 
         # Do swa after we construct the net
         if self.swa_enabled:
@@ -181,7 +180,7 @@ class TFProcess:
         total_grad = []
         grad_ops = []
         clear_var = []
-        self.grad_op_real = self.mean_grads
+        self.grad_op_real = self.average_gradients(tower_grads)
         for (g, v) in self.grad_op_real:
             if g is None:
                 total_grad.append((g, v))
@@ -318,6 +317,8 @@ class TFProcess:
                 # adjust learning rate according to lr schedule
                 learning_rate = self.lrs.step(stats.mean('total'))
 
+                stats.add({'speed': speed, 'lr': learning_rate})
+
                 self.logger.info("step {}k lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
                     steps / 1000, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                     stats.mean('total'), speed))
@@ -332,9 +333,9 @@ class TFProcess:
                                              'MSE Loss': 'mse',
                                              'Regularization Term': 'reg',
                                              'Accuracy': 'accuracy',
-                                             'Total Loss': 'total'})
-                summaries += [tf.Summary.Value(tag='Speed', simple_value=speed)]
-                summaries += [tf.Summary.Value(tag='Learning Rate', simple_value=learning_rate)]
+                                             'Total Loss': 'total',
+                                             'Speed': 'speed',
+                                             'Learning Rate': 'lr'})
 
                 self.train_writer.add_summary(tf.Summary(value=summaries), steps)
                 stats.clear()
