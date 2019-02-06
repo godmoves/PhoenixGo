@@ -170,7 +170,8 @@ class SENet:
     def construct_net(self, planes):
         # NCHW format
         # batch, 18 channels, 19 x 19
-        x_planes = tf.reshape(planes, [-1, 18, 19, 19], name='inputs')
+        planes = tf.identity(planes, name='inputs')
+        x_planes = tf.reshape(planes, [-1, 18, 19, 19])
 
         # Input convolution
         flow = self.conv_block(x_planes, filter_size=3,
