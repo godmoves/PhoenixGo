@@ -44,26 +44,29 @@ with tf.Session() as sess:
 
     graph_def = tf.get_default_graph().as_graph_def()
 
-    # output_graph_def = tf.GraphDef()
-    # for node in graphdef.node:
-    #     replace_node = tf.NodeDef()
-    #     replace_node.CopyFrom(node)
-    #     if node.name == "value":
-    #         continue
-    #     if node.name == "zero/value_head/Reshape_1":
-    #         replace_node.name = "value"
-    #     if node.name == "inputs":
-    #         replace_node.attr["dtype"].CopyFrom(tf.AttrValue(type=tf.float32.as_datatype_enum))
-    #     for i, inp in enumerate(node.input):
-    #         if inp == "Cast":
-    #             replace_node.input[i] = "inputs"
-    #             output_graph_def.node.extend([replace_node])
+    output_graph = tf.GraphDef()
+    for node in graph_def.node:
+        replace_node = tf.NodeDef()
+        replace_node.CopyFrom(node)
+        if node.name == "fp32_storage/tower_0/value":
+            replace_node.name = "value"
+        if node.name == "fp32_storage/tower_0/policy":
+            replace_node.name = "policy"
+        if node.name == "fp32_storage/tower_0/inputs":
+            replace_node.name = "inputs"
+        for i, inp in enumerate(node.input):
+            if inp == "fp32_storage/tower_0/inputs":
+                replace_node.input[i] = "inputs"
+        for i, inp in enumerate(node.input):
+            if inp == "fp32_storage/tower_0/value":
+                replace_node.input[i] = "value"
+        output_graph.node.extend([replace_node])
 
-    frozen_graph = optimize_for_inference(graph_def, ["inputs"], ["policy", "value"],
-                                          dtypes.float32.as_datatype_enum)
+    opt_graph = optimize_for_inference(output_graph, ["inputs"], ["policy", "value"],
+                                       dtypes.float32.as_datatype_enum)
     frozen_graph = tf.graph_util.convert_variables_to_constants(
         sess,
-        frozen_graph,
+        opt_graph,
         ["policy", "value"])
 
     # # write the frozen graph

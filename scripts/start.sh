@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd "`dirname $0`/../.."
+cd "`dirname $0`/.."
 echo "current directory: '$PWD'" >&2
 
 config="$1"
@@ -52,4 +52,4 @@ echo "log to '$PWD/log'" >&2
 mkdir -p log
 
 echo "start mcts_main" >&2
-exec bazel-bin/mcts/mcts_main --config_path="$config" --gtp --log_dir=log --v=1
+exec bazel-bin/mcts/mcts_main --config_path="$config" --gtp --logtostderr --log_dir=log --v=1
