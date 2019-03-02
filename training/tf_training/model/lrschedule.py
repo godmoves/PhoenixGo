@@ -9,7 +9,7 @@ from utils.logger import DefaultLogger
 class StepwiseLR:
     '''Stepwise constant learning rate schedule'''
 
-    def __init__(self, sess, min_lr=1e-5, drop_steps=[511, 844, 1071, 1262]):
+    def __init__(self, sess, min_lr=1e-5, drop_steps=[511000, 844000, 1071000, 1262000]):
         self.sess = sess
         self.drop_steps = drop_steps
         self.min_lr = min_lr
@@ -22,7 +22,7 @@ class StepwiseLR:
     def step(self, loss):
         self.global_step += 1
         # drop the lr at target steps
-        if self.global_step / 1000 in self.drop_steps:
+        if self.global_step in self.drop_steps:
             self.sess.run(tf.assign(self.lr, self.lr * 0.1))
         learning_rate = self.sess.run(self.lr)
         if learning_rate < self.min_lr:
