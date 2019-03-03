@@ -9,11 +9,11 @@ from utils.logger import DefaultLogger
 class StepwiseLR:
     '''Stepwise constant learning rate schedule'''
 
-    def __init__(self, sess, min_lr=1e-5, drop_steps=[511000, 844000, 1071000, 1262000]):
+    def __init__(self, sess, min_lr=1e-5, drop_steps=[511, 844, 1071, 1262]):
         self.sess = sess
         self.drop_steps = drop_steps
         self.min_lr = min_lr
-        self.global_step = 0
+        self.global_step = 0  # counted in thousands
 
         self.is_end = False
 
