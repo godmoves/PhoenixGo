@@ -33,10 +33,11 @@ def conv2d(x, W):
 
 
 class ResNet:
-    def __init__(self, blocks, filters, dtype):
+    def __init__(self, blocks, filters, features, dtype):
         self.name = "resnet"
         self.blocks = blocks
         self.filters = filters
+        self.features = features
         self.dtype = dtype
 
         # For exporting, needed by SWA and net saving
@@ -125,13 +126,13 @@ class ResNet:
 
     def construct_net(self, planes):
         # NCHW format
-        # batch, 18 channels, 19 x 19
+        # batch, feature-channels, 19 x 19
         planes = tf.identity(planes, name='inputs')
-        x_planes = tf.reshape(planes, [-1, 18, 19, 19])
+        x_planes = tf.reshape(planes, [-1, self.features, 19, 19])
 
         # Input convolution
         flow = self.conv_block(x_planes, filter_size=3,
-                               input_channels=18,
+                               input_channels=self.features,
                                output_channels=self.filters,
                                name="input_conv")
         # Residual tower
