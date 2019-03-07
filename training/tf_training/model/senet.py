@@ -1,44 +1,10 @@
-import numpy as np
 import tensorflow as tf
 
 from model.mixprec import float32_variable_storage_getter
+from model.net import *
 
 
-# model.weight, model.training, model.construct_net is the API that used to
-# communicate with tfprocess.py
-
-
-def weight_variable(name, shape, dtype):
-    """Xavier initialization"""
-    stddev = np.sqrt(2.0 / (sum(shape)))
-    # do not use constant as the initializer, that will make the
-    # variable stored in wrong type.
-    weights = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(
-        stddev=stddev, dtype=dtype), dtype=dtype)
-    tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
-    return weights
-
-
-# Bias weights for layers not followed by BatchNorm
-# We do not regularize biases, so they are not
-# added to the regularizer collection
-def bias_variable(name, shape, dtype):
-    bias = tf.get_variable(name, shape, initializer=tf.zeros_initializer(), dtype=dtype)
-    return bias
-
-
-def bias_variable_reg(name, shape, dtype):
-    weights = tf.get_variable(name, shape, initializer=tf.zeros_initializer(), dtype=dtype)
-    tf.add_to_collection(tf.GraphKeys.WEIGHTS, weights)
-    return weights
-
-
-def conv2d(x, W):
-    return tf.nn.conv2d(x, W, data_format='NCHW',
-                        strides=[1, 1, 1, 1], padding='SAME')
-
-
-class SENet:
+class SENet(Net):
     def __init__(self, blocks, filters, features, dtype, se_ratio=6):
         self.name = "senet"
         self.blocks = blocks
