@@ -90,7 +90,7 @@ public:
   MCTSEngine(const MCTSConfig &config);
   ~MCTSEngine();
 
-  void Reset();
+  void Reset(const std::string &init_moves="");
   std::string Undo();
   void Move(GoCoordId x, GoCoordId y);
   void GenMove(GoCoordId &x, GoCoordId &y);
@@ -189,6 +189,4 @@ private:
 
   friend class MCTSMonitor;
   friend class MCTSDebugger;
-
-  std::vector<GoCoordId> m_move_history;
 };

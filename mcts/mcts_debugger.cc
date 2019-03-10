@@ -52,7 +52,7 @@ std::string MCTSDebugger::GetDebugStr() {
   std::string ith_str = std::to_string(ith) + "th move(" + "wb"[ith & 1] + ")";
   float root_action = (float)root->total_action / k_action_value_base / root->visit_count;
   std::string debug_str =
-      ith_str + ": " + GoFunction::IdToStr(root->move) +
+      ith_str + ": " + GoFunction::IdToMoveStr(root->move) +
       ", winrate=" + std::to_string((root_action + 1) * 50) + "%" +
       ", N=" + std::to_string(root->visit_count) +
       ", Q=" + std::to_string(root_action) +
@@ -90,7 +90,7 @@ std::string MCTSDebugger::GetMainMovePath() {
     }
     if (moves.size())
       moves += ",";
-    moves += GoFunction::IdToStr(best_ch->move);
+    moves += GoFunction::IdToMoveStr(best_ch->move);
     char buf[100];
     snprintf(buf, sizeof(buf), "(%d,%.2f,%.2f,%.2f)",
              best_ch->visit_count.load(),
@@ -115,7 +115,7 @@ std::string MCTSDebugger::GetMainMovePath(TreeNode *node) {
     }
     if (moves.size())
       moves += " ";
-    moves += GoFunction::IdToStr(best_ch->move);
+    moves += GoFunction::IdToMoveStr(best_ch->move);
     node = best_ch;
   }
   return moves;
@@ -148,7 +148,7 @@ void MCTSDebugger::PrintTree(int depth, int topk, const std::string &prefix) {
       for (TreeNode *t = &ch[i]; t != root; t = t->fa) {
         if (moves.size())
           moves = "," + moves;
-        moves = GoFunction::IdToStr(t->move) + moves;
+        moves = GoFunction::IdToMoveStr(t->move) + moves;
       }
       VLOG(1) << prefix << moves
               << ": N=" << ch[i].visit_count

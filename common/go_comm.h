@@ -112,7 +112,11 @@ extern void StrToCoord(const std::string &str, GoCoordId &x, GoCoordId &y);
 
 extern std::string CoordToStr(const GoCoordId x, const GoCoordId y);
 
+extern std::string CoordToMoveStr(const GoCoordId x, const GoCoordId y);
+
 extern std::string IdToStr(const GoCoordId id);
+
+extern std::string IdToMoveStr(const GoCoordId id);
 
 extern GoCoordId StrToId(const std::string &str);
 
