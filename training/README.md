@@ -4,17 +4,17 @@
 - [x] [phoenixgo weight test](results/phgo_weight)
 - [x] [test different engines](results/engine_test)
 - [x] [reproducibility](results/different_steps#conclusion)
-- [ ] with/without ELF data
+- [x] with/without ELF data (data from too strong networks may not be helpful for small ones)
 - [x] [quick/slow learning rate drop](results/different_steps)
 - [x] [different weight of value part (10, 1, 0.1, 0.01)](results/different_values)
 - [x] [mixed precision training support](results/mixed_precision)
-- [ ] one cycle learning rate policy
-- [ ] bayesian optimization
-- [ ] move swa, save, restore into a seperate file
+- [x] one cycle learning rate policy (this failed due to the MSE head break easily with high LR)
+- [x] bayesian optimization (tested in 1-cycle LR)
+- [x] move swa, save, restore into a seperate file (done)
 - [ ] optimize the multi gpu support
-- [ ] SEnet, this seems to work
+- [x] SEnet, this seems to work (work but seems to be slow, need to compare it with other ways)
 - [ ] cross entropy value part
-- [ ] ResNext as Policy-Value net
+- [x] ResNext as Policy-Value net (too slow, deprecated)
 - [ ] different b&f (135x64, 33x128, 15x192, 9x256)
 - [ ] dropout
 - [ ] more features (alphago lee)
