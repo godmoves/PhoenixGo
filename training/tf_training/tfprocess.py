@@ -59,6 +59,8 @@ class TFProcess:
         # Network structure
         self.RESIDUAL_FILTERS = 128
         self.RESIDUAL_BLOCKS = 10
+        # Default 16 planes for move history + 2 for color to move
+        self.FEATURE_PLANES = 18
 
         # Set number of GPUs for training
         self.gpus_num = 1
@@ -88,7 +90,7 @@ class TFProcess:
 
         # model architecture
         self.model_dtype = tf.float16
-        self.model = SENet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS,
+        self.model = SENet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS, self.FEATURE_PLANES,
                            dtype=self.model_dtype, se_ratio=4)
 
         if self.swa_enabled:
@@ -117,7 +119,7 @@ class TFProcess:
         probs = tf.decode_raw(self.probs, tf.float32)
         winner = tf.decode_raw(self.winner, tf.float32)
 
-        planes = tf.reshape(planes, (batch_size, 18, 19 * 19))
+        planes = tf.reshape(planes, (batch_size, self.FEATURE_PLANES, 19 * 19))
         probs = tf.reshape(probs, (batch_size, 19 * 19 + 1))
         winner = tf.reshape(winner, (batch_size, 1))
 
