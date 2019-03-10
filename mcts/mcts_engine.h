@@ -48,6 +48,21 @@ struct EvalTask {
   EvalCallback callback;
 };
 
+struct TreeNode {
+  std::atomic<TreeNode *> fa;
+  std::atomic<TreeNode *> ch; // child nodes must allocate contiguously
+  std::atomic<int> ch_len;
+  std::atomic<int> size;
+  std::atomic<int> expand_state;
+
+  std::atomic<int> move;
+  std::atomic<int> visit_count;
+  std::atomic<int> virtual_loss_count;
+  std::atomic<int64_t> total_action;
+  std::atomic<float> prior_prob;
+  std::atomic<float> value;
+};
+
 class OutputAnalysisData {
 public:
   OutputAnalysisData(const std::string& move, int visits, float winrate,
@@ -90,7 +105,7 @@ public:
   MCTSEngine(const MCTSConfig &config);
   ~MCTSEngine();
 
-  void Reset(const std::string &init_moves="");
+  void Reset(const std::string &init_moves = "");
   std::string Undo();
   void Move(GoCoordId x, GoCoordId y);
   void GenMove(GoCoordId &x, GoCoordId &y);

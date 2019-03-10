@@ -76,18 +76,16 @@ void MCTSDebugger::UpdateLastMoveDebugStr() {
   m_last_move_debug_str = GetDebugStr();
 }
 
-std::string MCTSDebugger::GetMainMovePath() {
+std::string MCTSDebugger::GetMainMovePath(int rank) {
   std::string moves;
   TreeNode *node = m_engine->m_root;
-  while (node->expand_state == k_expanded) {
+  while (node->expand_state == k_expanded && node->ch_len > rank) {
     TreeNode *ch = node->ch;
-    int ch_len = node->ch_len;
-    TreeNode *best_ch = ch;
-    for (int i = 0; i < ch_len; ++i) {
-      if (ch[i].visit_count > best_ch->visit_count) {
-        best_ch = &ch[i];
-      }
-    }
+    std::vector<int> idx(node->ch_len);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::nth_element(idx.begin(), idx.begin() + rank, idx.end(),
+                     [ch](int i, int j) { return ch[i].visit_count > ch[j].visit_count; });
+    TreeNode *best_ch = &ch[idx[rank]];
     if (moves.size())
       moves += ",";
     moves += GoFunction::IdToMoveStr(best_ch->move);
@@ -98,25 +96,7 @@ std::string MCTSDebugger::GetMainMovePath() {
              best_ch->prior_prob.load(), best_ch->value.load());
     moves += buf;
     node = best_ch;
-  }
-  return moves;
-}
-
-std::string MCTSDebugger::GetMainMovePath(TreeNode *node) {
-  std::string moves;
-  while (node->expand_state == k_expanded) {
-    TreeNode *ch = node->ch;
-    int ch_len = node->ch_len;
-    TreeNode *best_ch = ch;
-    for (int i = 0; i < ch_len; ++i) {
-      if (ch[i].visit_count > best_ch->visit_count) {
-        best_ch = &ch[i];
-      }
-    }
-    if (moves.size())
-      moves += " ";
-    moves += GoFunction::IdToMoveStr(best_ch->move);
-    node = best_ch;
+    rank = 0;
   }
   return moves;
 }

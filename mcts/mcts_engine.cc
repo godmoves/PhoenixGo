@@ -54,7 +54,7 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     std::string move = GoFunction::IdToMoveStr(node[i].move);
 
     // TODO: use a better way to get pv
-    std::string pv = move + " " + m_debugger.GetMainMovePath(&node[i]); 
+    std::string pv = move + " " + m_debugger.GetMainMovePath(i); 
 
     // Not sure the meaning of value
     float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
