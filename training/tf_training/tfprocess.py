@@ -317,7 +317,7 @@ class TFProcess:
                 speed = 1000 * self.batch_size / timer.elapsed()
 
                 # adjust learning rate according to lr schedule
-                learning_rate = self.lrs.step(stats.mean('total'))
+                learning_rate = self.lrs.step(steps / 1000, stats.mean('total'))
 
                 stats.add({'speed': speed, 'lr': learning_rate})
 
@@ -326,7 +326,7 @@ class TFProcess:
                     stats.mean('total'), speed))
 
                 # exit when lr is smaller than target.
-                if self.lrs.end():
+                if self.lrs.is_end:
                     self.logger.info('learning schedule ended')
                     # we return the final total loss at the end of training
                     return stats.mean('total')

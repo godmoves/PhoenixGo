@@ -13,29 +13,27 @@ class StepwiseLR:
         self.sess = sess
         self.drop_steps = drop_steps
         self.min_lr = min_lr
-        self.global_step = 0  # counted in thousands
+        self.counter = 0
 
         self.is_end = False
 
         self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
 
-    def step(self, loss):
-        self.global_step += 1
+    def step(self, global_step, loss):
         # drop the lr at target steps
-        if self.global_step in self.drop_steps:
+        while (self.counter < len(self.drop_steps) and
+               self.global_step > self.drop_steps[self.counter]):
             self.sess.run(tf.assign(self.lr, self.lr * 0.1))
+            self.counter += 1
         learning_rate = self.sess.run(self.lr)
         if learning_rate < self.min_lr:
             self.is_end = True
         return learning_rate
 
-    def end(self):
-        return self.is_end
-
 
 class AutoDropLR:
     '''If the loss decrease less than the threshold after target steps, this
-    learning rate schedule will drop the learning rate automatically.
+    learning rate schedule will drop the learning rate autmatically.
     If the learning rate is smaller than the minimal learning rate, we
     will stop the training.'''
 
@@ -59,7 +57,7 @@ class AutoDropLR:
         # initial learning rate
         self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
 
-    def step(self, loss):
+    def step(self, global_step, loss):
         self.loss_record.append(loss)
         # keep this for more debug info
         self.logger.debug(self.loss_record)
@@ -92,9 +90,6 @@ class AutoDropLR:
             self.is_end = True
         return learning_rate
 
-    def end(self):
-        return self.is_end
-
 
 class LRFinder:
     '''This class is used to find the maximum learning rate that can be used
@@ -114,7 +109,7 @@ class LRFinder:
 
         self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
 
-    def step(self, loss):
+    def step(self, gobal_step, loss):
         self.loss_record.append(loss)
         self.min_loss = min(self.min_loss, loss)
 
@@ -130,9 +125,6 @@ class LRFinder:
         learning_rate = self.sess.run(self.lr)
         self.logger.info("LRFinder: Increase LR to {}".format(learning_rate))
         return learning_rate
-
-    def end(self):
-        return self.is_end
 
 
 class OneCycleLR:
@@ -161,27 +153,24 @@ class OneCycleLR:
         self.down_rate = (low_lr - high_lr) / down_range
         self.tail_rate = (end_lr - low_lr) / tail_range
 
-        self.lr_val = low_lr
         self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
 
-    def step(self, loss):
-        self.global_step += 1
-        self.update_lr_val()
-        self.sess.run(tf.assign(self.lr, self.lr_val))
-        return self.lr_val
+    def step(self, global_step, loss):
+        lr_val = self.update_lr_val(global_step)
+        self.sess.run(tf.assign(self.lr, lr_val))
+        return lr_val
 
-    def update_lr_val(self):
+    def update_lr_val(self, global_step):
         if self.global_step <= self.up_step:
-            self.lr_val += self.up_rate
+            lr_val = self.up_rate * global_step
         elif self.global_step <= self.down_step:
-            self.lr_val += self.down_rate
+            lr_val = self.high_lr + self.down_rate * (global_step - self.up_step)
         elif self.global_step <= self.tail_step:
-            self.lr_val += self.tail_rate
+            lr_val = self.low_lr + self.tail_rate * (global_step - self.down_step)
         else:
             self.is_end = True
-
-    def end(self):
-        return self.is_end
+            lr_val = 0
+        return lr_val
 
 
 class CyclicalLR:
@@ -193,7 +182,6 @@ class CyclicalLR:
                  down_range=100, exp_factor=2):
         self.sess = sess
         self.is_end = False
-        self.global_step = 0
 
         self.low_lr = low_lr
         self.high_lr = high_lr
@@ -206,27 +194,22 @@ class CyclicalLR:
         # length of learning rate period.
         self.cycle_step = up_range + down_range
 
-        self.lr_val = low_lr
         self.lr = tf.Variable(low_lr, dtype=tf.float32, name='lr', trainable=False)
 
-    def step(self, loss):
-        self.global_step += 1
-        self.update_lr_val()
-        self.sess.run(tf.assign(self.lr, self.lr_val))
-        return self.lr_val
+    def step(self, global_step, loss):
+        lr_val = self.update_lr_val(global_step)
+        self.sess.run(tf.assign(self.lr, lr_val))
+        return lr_val
 
-    def update_lr_val(self):
-        self.global_step += 1
-        in_cycle_step = self.global_step % self.cycle_step
-        cycle_id = self.global_step // self.cycle_step
+    def update_lr_val(self, global_step):
+        in_cycle_step = global_step % self.cycle_step
+        cycle_id = global_step // self.cycle_step
 
         high_lr_lim = (self.high_lr - self.low_lr) / (self.exp_factor ** cycle_id) + self.low_lr
         if in_cycle_step < self.up_range:
-            self.lr_val = self.low_lr + (high_lr_lim - self.low_lr) * \
+            lr_val = self.low_lr + (high_lr_lim - self.low_lr) * \
                 in_cycle_step / self.up_range
         else:
-            self.lr_val = high_lr_lim + (self.low_lr - high_lr_lim) * \
+            lr_val = high_lr_lim + (self.low_lr - high_lr_lim) * \
                 (in_cycle_step - self.up_range) / self.down_range
-
-    def end(self):
-        return self.is_end
+        return lr_val
