@@ -33,7 +33,7 @@ class StepwiseLR:
 
 class AutoDropLR:
     '''If the loss decrease less than the threshold after target steps, this
-    learning rate schedule will drop the learning rate autmatically.
+    learning rate schedule will drop the learning rate automatically.
     If the learning rate is smaller than the minimal learning rate, we
     will stop the training.'''
 
