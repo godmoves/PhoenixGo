@@ -22,7 +22,7 @@ class StepwiseLR:
     def step(self, global_step, loss):
         # drop the lr at target steps
         while (self.counter < len(self.drop_steps) and
-               self.global_step > self.drop_steps[self.counter]):
+               global_step > self.drop_steps[self.counter]):
             self.sess.run(tf.assign(self.lr, self.lr * 0.1))
             self.counter += 1
         learning_rate = self.sess.run(self.lr)
