@@ -11,6 +11,8 @@
 - [x] one cycle learning rate policy (this failed due to the MSE head break easily with high LR)
 - [x] bayesian optimization (tested in 1-cycle LR)
 - [x] move swa, save, restore into a seperate file (done)
+- [x] [test inti_to_loss](results/init_to_loss)
+- [ ] test lcb node selection method
 - [ ] optimize the multi gpu support
 - [x] SEnet, this seems to work (work but seems to be slow, need to compare it with other ways)
 - [ ] cross entropy value part
