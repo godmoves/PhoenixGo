@@ -38,6 +38,10 @@ class SWA:
     def training(self):
         return self.model.training
 
+    @property
+    def weights(self):
+        return self.model.weights
+
     def init_swa(self, loss, planes, probs, winner):
         self.loss = loss
         self.planes = planes

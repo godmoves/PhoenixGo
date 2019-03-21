@@ -46,7 +46,7 @@ def model_to_net(file_path):
     tfprocess.RESIDUAL_FILTERS = 128
     tfprocess.init(batch_size=1, gpus_num=1)
     tfprocess.restore(file_path)
-    tfprocess.save_leelaz_weights("leelaz-weight")
+    tfprocess.save_leelaz_weights(file_path + "_lz.txt")
     logger.info("Leelaz weight saved in {}".format("leelaz-weight"))
 
 
