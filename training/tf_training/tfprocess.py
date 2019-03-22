@@ -360,7 +360,7 @@ class TFProcess:
                     test_stats.mean('mse')))
 
                 # Write out current model and checkpoint
-                path = os.path.join(os.getcwd(), "weigthts/leelaz-model")
+                path = os.path.join(os.getcwd(), "weights/leelaz-model")
                 tf_model_path = self.saver.save(self.session, path, global_step=steps)
                 self.logger.info("Model saved in file: {}".format(tf_model_path))
 
