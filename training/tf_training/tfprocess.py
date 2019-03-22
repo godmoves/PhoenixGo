@@ -252,7 +252,7 @@ class TFProcess:
             z_conv = tf.cast(z_conv, tf.float32)
 
         # Calculate loss on policy head
-        cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_,
+        cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=tf.stop_gradient(y_),
                                                                    logits=y_conv)
         policy_loss = tf.reduce_mean(cross_entropy)
 
