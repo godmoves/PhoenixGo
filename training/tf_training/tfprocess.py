@@ -375,10 +375,9 @@ class TFProcess:
                 # Things have likely changed enough
                 # that stats are no longer valid.
                 if self.swa_enabled:
-                    self.model.save_swa_network(steps, path, train_data)
-
-                tf_model_path = self.saver.save(self.session, path, global_step=steps)
-                self.logger.info("SWA Model saved in file: {}".format(tf_model_path))
+                    self.model.do_swa(steps, path, train_data)
+                    tf_model_path = self.saver.save(self.session, path, global_step=steps)
+                    self.logger.info("SWA Model saved in file: {}".format(tf_model_path))
 
                 # reset the timer to skip test time.
                 timer.reset()

@@ -61,7 +61,7 @@ class SWA:
             self.swa_accum_op = tf.assign_add(n, 1.)
         self.swa_load_op = tf.group(*load)
 
-    def save_swa_network(self, steps, path, data):
+    def do_swa(self, steps, path, data):
         # Sample 1 in self.swa_c of the networks. Compute in this way so
         # that it's safe to change the value of self.swa_c
         rem = self.session.run(tf.assign_add(self.swa_skip, -1))
