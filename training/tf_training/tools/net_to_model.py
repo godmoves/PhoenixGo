@@ -32,7 +32,7 @@ def net_to_model(file_path):
     tfprocess.RESIDUAL_BLOCKS = blocks
     tfprocess.RESIDUAL_FILTERS = channels
 
-    tfprocess.init(batch_size=1, gpus_num=1)
+    tfprocess.init(batch_size=1)
     tfprocess.replace_weights(weights)
     path = os.path.join(os.getcwd(), "leelaz-model")
     save_path = tfprocess.saver.save(tfprocess.session, path, global_step=0)
@@ -44,7 +44,7 @@ def model_to_net(file_path):
     # TODO: detect model filter and block size automatically
     tfprocess.RESIDUAL_BLOCKS = 10
     tfprocess.RESIDUAL_FILTERS = 128
-    tfprocess.init(batch_size=1, gpus_num=1)
+    tfprocess.init(batch_size=1)
     tfprocess.restore(file_path)
     tfprocess.save_leelaz_weights(file_path + "_lz.txt")
     logger.info("Leelaz weight saved in {}".format("leelaz-weight"))

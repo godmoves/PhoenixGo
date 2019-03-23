@@ -41,7 +41,7 @@ RAM_BATCH_SIZE = 128
 
 # Use a random sample input data read. This helps improve the spread of
 # games in the shuffle buffer.
-DOWN_SAMPLE = 16
+DOWN_SAMPLE = 32
 
 
 def get_chunks(data_prefix):
@@ -109,6 +109,12 @@ def split_chunks(chunks, test_ratio):
     return (chunks[:splitpoint], chunks[splitpoint:])
 
 
+def split_multigpu(chunks, gpus_num, gpu_rank):
+    chunks = sorted(chunks)
+    block_size = len(chunks) // gpus_num
+    return chunks[gpu_rank * block_size: (gpu_rank + 1) * block_size]
+
+
 def main():
     parser = argparse.ArgumentParser(description='Train network from game data.')
 
@@ -148,16 +154,6 @@ def main():
     logger.info("Training with {} chunks, validating on {} chunks".format(
         len(training), len(test)))
 
-    train_parser = ChunkParser(FileDataSrc(training),
-                               shuffle_size=1 << 20,  # 2.2GB of RAM.
-                               sample=args.sample,
-                               batch_size=RAM_BATCH_SIZE).parse()
-
-    test_parser = ChunkParser(FileDataSrc(test),
-                              shuffle_size=1 << 19,
-                              sample=args.sample,
-                              batch_size=RAM_BATCH_SIZE).parse()
-
     tfprocess = TFProcess()
 
     logger.info("Training target: {} blocks {} filters on {} GPU(s)".format(
@@ -169,11 +165,25 @@ def main():
                    logbase=args.logbase,
                    macrobatch=BATCH_SIZE // RAM_BATCH_SIZE)
 
+    training_block = split_multigpu(training, tfprocess.gpus_num, tfprocess.gpu_rank)
+
+    train_parser = ChunkParser(FileDataSrc(training_block),
+                               shuffle_size=1 << 20,  # 2.2GB of RAM.
+                               sample=args.sample,
+                               workers=int(mp.cpu_count() / tfprocess.gpus_num),
+                               batch_size=RAM_BATCH_SIZE).parse()
+
+    test_parser = ChunkParser(FileDataSrc(test),
+                              shuffle_size=1 << 19,
+                              sample=args.sample,
+                              workers=int(mp.cpu_count() / tfprocess.gpus_num),
+                              batch_size=RAM_BATCH_SIZE).parse()
+
     # benchmark_full(tfprocess)
 
     if restore_prefix:
         tfprocess.restore(restore_prefix)
-    final_total_loss = tfprocess.process(train_parser, test_parser)
+    tfprocess.process(train_parser, test_parser)
 
 
 if __name__ == "__main__":

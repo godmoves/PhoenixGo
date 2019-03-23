@@ -21,6 +21,7 @@ import unittest
 
 import numpy as np
 import tensorflow as tf
+import horovod.tensorflow as hvd
 
 from model.swa import SWA
 from model.resnet import ResNet
@@ -57,31 +58,38 @@ def optimistic_restore(session, save_file, graph=tf.get_default_graph()):
 class TFProcess:
     def __init__(self):
         # Network structure
-        self.RESIDUAL_FILTERS = 128
-        self.RESIDUAL_BLOCKS = 10
+        self.RESIDUAL_FILTERS = 256
+        self.RESIDUAL_BLOCKS = 40
         # Default 16 planes for move history + 2 for color to move
         self.FEATURE_PLANES = 18
-
-        # Set number of GPUs for training
-        self.gpus_num = 1
 
         # l2 regularization scale, default value from alphago paper
         self.l2_scale = 1e-4
 
         # Output weight file with averaged weights
-        self.swa_enabled = True
+        self.swa_enabled = False
 
         # log training info
         self.logger = DefaultLogger
 
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
+        # Horovod: initialize Horovod.
+        hvd.init()
+
+        # GPU number and index
+        self.gpus_num = hvd.size()
+        self.gpu_rank = hvd.rank()
+
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.85)
         config = tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
+        config.gpu_options.allow_growth = True
+        config.gpu_options.visible_device_list = str(hvd.local_rank())
         self.session = tf.Session(config=config)
 
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
         # set the learning rate schedule
-        self.lrs = StepwiseLR(self.session)
+        # Horovod: adjust learning rate based on number of GPUs.
+        self.lrs = StepwiseLR(self.session, init_lr=0.01 * hvd.size())
 
         # TODO: use better scale value, we may need to record the histogram of
         # the gradient for further analysis.
@@ -91,7 +99,7 @@ class TFProcess:
         # model architecture
         self.model_dtype = tf.float16
         self.model = SENet(self.RESIDUAL_BLOCKS, self.RESIDUAL_FILTERS, self.FEATURE_PLANES,
-                           dtype=self.model_dtype, se_ratio=4)
+                           dtype=self.model_dtype)
 
         if self.swa_enabled:
             self.model = SWA(self.session, self.model)
@@ -99,7 +107,7 @@ class TFProcess:
         self.logger.info("Model name {}, precision {}".format(
             self.model.name, self.model_dtype))
 
-    def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
+    def init(self, batch_size, macrobatch=1, logbase='tflogs'):
         self.batch_size = batch_size
         self.macrobatch = macrobatch
         self.logbase = logbase
@@ -123,56 +131,40 @@ class TFProcess:
         probs = tf.reshape(probs, (batch_size, 19 * 19 + 1))
         winner = tf.reshape(winner, (batch_size, 1))
 
-        gpus_num = self.gpus_num if gpus_num is None else gpus_num
-        self.init_net(planes, probs, winner, gpus_num)
+        self.init_net(planes, probs, winner)
 
-    def init_net(self, planes, probs, winner, gpus_num):
-        self.y_ = probs   # (tf.float32, [None, 362])
-        self.sx = tf.split(planes, gpus_num)
-        self.sy_ = tf.split(probs, gpus_num)
-        self.sz_ = tf.split(winner, gpus_num)
+    def init_net(self, planes, probs, winner):
+        self.x = planes
+        self.y_ = probs
+        self.z_ = winner
 
         # You need to change the learning rate here if you are training
         # from a self-play training set, for example start with 0.005 instead.
         opt = tf.train.MomentumOptimizer(
             learning_rate=self.lrs.lr, momentum=0.9, use_nesterov=True)
 
+        # Horovod: add Horovod Distributed Optimizer.
+        opt = hvd.DistributedOptimizer(opt)
+
         # Wrap the optimizer to scale loss to make it in a appropriate range.
         opt = LossScalingOptimizer(opt, scale=self.loss_scale)
 
         # Construct net here.
-        tower_grads = []
-        tower_loss = []
-        tower_policy_loss = []
-        tower_mse_loss = []
-        tower_reg_term = []
-        tower_y_conv = []
         with tf.variable_scope('fp32_storage',
                                # this force trainable variables to be stored as float32.
                                custom_getter=float32_variable_storage_getter):
-            for i in range(gpus_num):
-                with tf.device("/gpu:%d" % i):
-                    with tf.name_scope("tower_%d" % i):
-                        loss, policy_loss, mse_loss, reg_term, y_conv = self.tower_loss(
-                            self.sx[i], self.sy_[i], self.sz_[i])
+            loss, policy_loss, mse_loss, reg_term, y_conv = self.tower_loss(
+                self.x, self.y_, self.z_)
 
-                        tf.get_variable_scope().reuse_variables()
-                        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-                            grads = opt.compute_gradients(loss)
+            tf.get_variable_scope().reuse_variables()
+            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+                grads = opt.compute_gradients(loss)
 
-                        tower_grads.append(grads)
-                        tower_loss.append(loss)
-                        tower_policy_loss.append(policy_loss)
-                        tower_mse_loss.append(mse_loss)
-                        tower_reg_term.append(reg_term)
-                        tower_y_conv.append(y_conv)
-
-        # Average gradients from different GPUs
-        self.loss = tf.reduce_mean(tower_loss)
-        self.policy_loss = tf.reduce_mean(tower_policy_loss)
-        self.mse_loss = tf.reduce_mean(tower_mse_loss)
-        self.reg_term = tf.reduce_mean(tower_reg_term)
-        self.y_conv = tf.concat(tower_y_conv, axis=0)
+        self.loss = loss
+        self.policy_loss = policy_loss
+        self.mse_loss = mse_loss
+        self.reg_term = reg_term
+        self.y_conv = y_conv
 
         # Do swa after we construct the net
         if self.swa_enabled:
@@ -182,7 +174,7 @@ class TFProcess:
         total_grad = []
         grad_ops = []
         clear_var = []
-        self.grad_op_real = self.average_gradients(tower_grads)
+        self.grad_op_real = grads
         for (g, v) in self.grad_op_real:
             if g is None:
                 total_grad.append((g, v))
@@ -225,23 +217,6 @@ class TFProcess:
 
         # Initialize all variables
         self.session.run(tf.global_variables_initializer())
-
-    def average_gradients(self, tower_grads):
-        # Average gradients from different GPUs
-        average_grads = []
-        for grad_and_vars in zip(*tower_grads):
-            grads = []
-            for g, _ in grad_and_vars:
-                expanded_g = tf.expand_dims(g, axis=0)
-                grads.append(expanded_g)
-
-            grad = tf.concat(grads, axis=0)
-            grad = tf.reduce_mean(grad, reduction_indices=0)
-
-            v = grad_and_vars[0][1]
-            grad_and_var = (grad, v)
-            average_grads.append(grad_and_var)
-        return average_grads
 
     def tower_loss(self, x, y_, z_):
         y_conv, z_conv = self.model.construct_net(x)
@@ -296,6 +271,11 @@ class TFProcess:
                 'accuracy': r[3], 'total': r[0] + r[1] + r[2]}
 
     def process(self, train_data, test_data):
+        # Horovod: broadcast initial variable states from rank 0 to all other processes.
+        # This is necessary to ensure consistent initialization of all workers when
+        # training is started with random weights or restored from a checkpoint.
+        self.session.run(hvd.broadcast_global_variables(0))
+
         stats = Stats()
         timer = Timer()
         while True:
@@ -314,16 +294,12 @@ class TFProcess:
                 self.session.run([self.clear_op])
 
             if steps % 1000 == 0:
-                speed = 1000 * self.batch_size / timer.elapsed()
+                speed = 1000 * self.batch_size / timer.elapsed() * hvd.size()
 
                 # adjust learning rate according to lr schedule
                 learning_rate = self.lrs.step(steps / 1000, stats.mean('total'))
 
                 stats.add({'speed': speed, 'lr': learning_rate})
-
-                self.logger.info("step {}k lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
-                    steps / 1000, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
-                    stats.mean('total'), speed))
 
                 # exit when lr is smaller than target.
                 if self.lrs.is_end:
@@ -331,18 +307,24 @@ class TFProcess:
                     # we return the final total loss at the end of training
                     return stats.mean('total')
 
-                summaries = stats.summaries({'Policy Loss': 'policy',
-                                             'MSE Loss': 'mse',
-                                             'Regularization Term': 'reg',
-                                             'Accuracy': 'accuracy',
-                                             'Total Loss': 'total',
-                                             'Speed': 'speed',
-                                             'Learning Rate': 'lr'})
+                # write the TF log at the first GPU only
+                if hvd.rank() == 0:
+                    self.logger.info("step {}k lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
+                                     steps / 1000, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
+                                     stats.mean('total'), stats.mean('speed')))
 
-                self.train_writer.add_summary(tf.Summary(value=summaries), steps)
-                stats.clear()
+                    summaries = stats.summaries({'Policy Loss': 'policy',
+                                                 'MSE Loss': 'mse',
+                                                 'Regularization Term': 'reg',
+                                                 'Accuracy': 'accuracy',
+                                                 'Total Loss': 'total',
+                                                 'Speed': 'speed',
+                                                 'Learning Rate': 'lr'})
 
-            if steps % 16000 == 0:
+                    self.train_writer.add_summary(tf.Summary(value=summaries), steps)
+                    stats.clear()
+
+            if steps % 16000 == 0 and hvd.rank() == 0:
                 test_stats = Stats()
                 test_batches = 800  # reduce sample mean variance by ~28x
                 for _ in range(0, test_batches):

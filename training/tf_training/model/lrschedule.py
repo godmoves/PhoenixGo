@@ -9,7 +9,7 @@ from utils.logger import DefaultLogger
 class StepwiseLR:
     '''Stepwise constant learning rate schedule'''
 
-    def __init__(self, sess, min_lr=1e-5, drop_steps=[511, 844, 1071, 1262]):
+    def __init__(self, sess, init_lr=0.01, min_lr=1e-5, drop_steps=[1200, 1600, 2000, 2400]):
         self.sess = sess
         self.drop_steps = drop_steps
         self.min_lr = min_lr
@@ -17,7 +17,7 @@ class StepwiseLR:
 
         self.is_end = False
 
-        self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
+        self.lr = tf.Variable(init_lr, dtype=tf.float32, name='lr', trainable=False)
 
     def step(self, global_step, loss):
         # drop the lr at target steps
@@ -37,7 +37,7 @@ class AutoDropLR:
     If the learning rate is smaller than the minimal learning rate, we
     will stop the training.'''
 
-    def __init__(self, sess, max_range=800, min_lr=1e-5, threshold=0.01, max_drop_count=5):
+    def __init__(self, sess, init_lr=0.01, max_range=800, min_lr=1e-5, threshold=0.01, max_drop_count=5):
         self.min_lr = min_lr
         # we will check the percentage of loss reduction if we are more than
         # max_range steps from last learning rate drop.
@@ -55,7 +55,7 @@ class AutoDropLR:
         self.is_end = False
 
         # initial learning rate
-        self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
+        self.lr = tf.Variable(init_lr, dtype=tf.float32, name='lr', trainable=False)
 
     def step(self, global_step, loss):
         self.loss_record.append(loss)

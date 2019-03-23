@@ -25,6 +25,9 @@ class Stats:
     def mean(self, name):
         return np.mean(self.s[name] or [0])
 
+    def sum(self, name):
+        return np.sum(self.s[name] or [0])
+
     def stddev_mean(self, name):
         # standard deviation in the sample mean.
         return math.sqrt(
@@ -37,9 +40,11 @@ class Stats:
     def clear(self):
         self.s = {}
 
+    def get_summary(self, k, v):
+        return tf.Summary.Value(tag=k, simple_value=self.mean(v))
+
     def summaries(self, tags):
-        return [tf.Summary.Value(
-            tag=k, simple_value=self.mean(v)) for k, v in tags.items()]
+        return [self.get_summary(k, v) for k, v in tags.items()]
 
 
 # Simple timer
