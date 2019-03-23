@@ -235,16 +235,9 @@ class TFProcess:
         mse_loss = tf.reduce_mean(tf.squared_difference(z_, z_conv))
 
         # Regularizer
-        # TODO: For OneCycle learning rate schedule, you may need to use a
-        # smaller weight decay factor, e.g. 3e-6, default factor for AutoDrop
-        # learning rate schedule is 1e-4. But it seems this is not crucial
-        # to the final performance.
-        regularizer = tf.contrib.layers.l2_regularizer(scale=self.l2_scale)
         reg_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
-        reg_term = tf.contrib.layers.apply_regularization(regularizer,
-                                                          reg_variables)
-        if self.model_dtype != tf.float32:
-            reg_term = tf.cast(reg_term, tf.float32)
+        reg_term = self.l2_scale * tf.add_n(
+            [tf.cast(tf.nn.l2_loss(v), tf.float32) for v in reg_variables])
 
         # For training from a (smaller) dataset of strong players, you will
         # want to reduce the factor in front of mse_loss here.
