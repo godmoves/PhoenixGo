@@ -76,7 +76,7 @@ class TFProcess:
         hvd.init()
 
         # GPU number and index
-        self.gpus_num = hvd.size()
+        self.gpu_num = hvd.size()
         self.gpu_rank = hvd.rank()
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.85)
@@ -89,7 +89,7 @@ class TFProcess:
 
         # set the learning rate schedule
         # Horovod: adjust learning rate based on number of GPUs.
-        self.lrs = StepwiseLR(self.session, init_lr=0.01 * hvd.size())
+        self.lrs = StepwiseLR(self.session, init_lr=0.01 * self.gpu_num)
 
         # TODO: use better scale value, we may need to record the histogram of
         # the gradient for further analysis.
@@ -107,9 +107,8 @@ class TFProcess:
         self.logger.info("Model name {}, precision {}".format(
             self.model.name, self.model_dtype))
 
-    def init(self, batch_size, macrobatch=1, logbase='tflogs'):
+    def init(self, batch_size, logbase='tflogs'):
         self.batch_size = batch_size
-        self.macrobatch = macrobatch
         self.logbase = logbase
         # Input batch placeholders
         self.planes = tf.placeholder(tf.string, name='in_planes')
@@ -153,51 +152,15 @@ class TFProcess:
         with tf.variable_scope('fp32_storage',
                                # this force trainable variables to be stored as float32.
                                custom_getter=float32_variable_storage_getter):
-            loss, policy_loss, mse_loss, reg_term, y_conv = self.tower_loss(
+            self.loss, self.policy_loss, self.mse_loss, self.reg_term, self.y_conv = self.tower_loss(
                 self.x, self.y_, self.z_)
-
-            tf.get_variable_scope().reuse_variables()
-            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-                grads = opt.compute_gradients(loss)
-
-        self.loss = loss
-        self.policy_loss = policy_loss
-        self.mse_loss = mse_loss
-        self.reg_term = reg_term
-        self.y_conv = y_conv
 
         # Do swa after we construct the net
         if self.swa_enabled:
             self.model.init_swa(self.loss, self.planes, self.probs, self.winner)
 
-        # Accumulate gradients
-        total_grad = []
-        grad_ops = []
-        clear_var = []
-        self.grad_op_real = grads
-        for (g, v) in self.grad_op_real:
-            if g is None:
-                total_grad.append((g, v))
-            name = v.name.split(':')[0]
-            gsum = tf.get_variable(name='gsum/' + name,
-                                   shape=g.shape,
-                                   trainable=False,
-                                   initializer=tf.zeros_initializer)
-            total_grad.append((gsum, v))
-            grad_ops.append(tf.assign_add(gsum, g))
-            clear_var.append(gsum)
-        # Op to compute gradients and add to running total in 'gsum/'
-        self.grad_op = tf.group(*grad_ops)
-
-        # Op to apply accumulated gradients
-        self.train_op = opt.apply_gradients(total_grad)
-
-        zero_ops = []
-        for g in clear_var:
-            zero_ops.append(
-                tf.assign(g, tf.zeros(shape=g.shape, dtype=g.dtype)))
-        # Op to clear accumulated gradients
-        self.clear_op = tf.group(*zero_ops)
+        # Op to minimize total loss
+        self.train_op = opt.minimize(self.loss)
 
         # Op to increment global step counter
         self.step_op = tf.assign_add(self.global_step, 1)
@@ -254,7 +217,7 @@ class TFProcess:
         # accumulate the gradient and increment the global step.
         ops = [self.policy_loss, self.mse_loss, self.reg_term, self.accuracy]
         if training:
-            ops += [self.grad_op, self.step_op],
+            ops += [self.train_op, self.step_op],
         r = self.session.run(ops, feed_dict={self.model.training: training,
                                              self.planes: batch[0],
                                              self.probs: batch[1],
@@ -280,14 +243,9 @@ class TFProcess:
 
             # fetch the current global step.
             steps = tf.train.global_step(self.session, self.global_step)
-            if steps % self.macrobatch == (self.macrobatch - 1):
-                # Apply the accumulated gradients to the weights.
-                self.session.run([self.train_op])
-                # Clear the accumulated gradient.
-                self.session.run([self.clear_op])
 
             if steps % 1000 == 0:
-                speed = 1000 * self.batch_size / timer.elapsed() * hvd.size()
+                speed = 1000 * self.batch_size / timer.elapsed() * self.gpu_num
 
                 # adjust learning rate according to lr schedule
                 learning_rate = self.lrs.step(steps / 1000, stats.mean('total'))
@@ -301,7 +259,7 @@ class TFProcess:
                     return stats.mean('total')
 
                 # write the TF log at the first GPU only
-                if hvd.rank() == 0:
+                if self.gpu_rank == 0:
                     self.logger.info("step {}k lr={:g} policy={:g} mse={:g} reg={:g} total={:g} ({:g} pos/s)".format(
                                      steps / 1000, learning_rate, stats.mean('policy'), stats.mean('mse'), stats.mean('reg'),
                                      stats.mean('total'), stats.mean('speed')))
@@ -317,7 +275,7 @@ class TFProcess:
                     self.train_writer.add_summary(tf.Summary(value=summaries), steps)
                     stats.clear()
 
-            if steps % 16000 == 0 and hvd.rank() == 0:
+            if steps % 16000 == 0 and self.gpu_rank == 0:
                 test_stats = Stats()
                 test_batches = 800  # reduce sample mean variance by ~28x
                 for _ in range(0, test_batches):
