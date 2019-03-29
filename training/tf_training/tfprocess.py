@@ -99,10 +99,10 @@ class TFProcess:
         self.logger.info("Model name {}, precision {}".format(
             self.model.name, self.model_dtype))
 
-    def init(self, batch_size, macrobatch=1, gpus_num=None, logbase='tflogs'):
+    def init(self, batch_size, gpus_num=None, logbase='tflogs'):
         self.batch_size = batch_size
-        self.macrobatch = macrobatch
         self.logbase = logbase
+
         # Input batch placeholders
         self.planes = tf.placeholder(tf.string, name='in_planes')
         self.probs = tf.placeholder(tf.string, name='in_probs')
@@ -178,34 +178,9 @@ class TFProcess:
         if self.swa_enabled:
             self.model.init_swa(self.loss, self.planes, self.probs, self.winner)
 
-        # Accumulate gradients
-        total_grad = []
-        grad_ops = []
-        clear_var = []
-        self.grad_op_real = self.average_gradients(tower_grads)
-        for (g, v) in self.grad_op_real:
-            if g is None:
-                total_grad.append((g, v))
-            name = v.name.split(':')[0]
-            gsum = tf.get_variable(name='gsum/' + name,
-                                   shape=g.shape,
-                                   trainable=False,
-                                   initializer=tf.zeros_initializer)
-            total_grad.append((gsum, v))
-            grad_ops.append(tf.assign_add(gsum, g))
-            clear_var.append(gsum)
-        # Op to compute gradients and add to running total in 'gsum/'
-        self.grad_op = tf.group(*grad_ops)
-
         # Op to apply accumulated gradients
+        total_grad = self.average_gradients(tower_grads)
         self.train_op = opt.apply_gradients(total_grad)
-
-        zero_ops = []
-        for g in clear_var:
-            zero_ops.append(
-                tf.assign(g, tf.zeros(shape=g.shape, dtype=g.dtype)))
-        # Op to clear accumulated gradients
-        self.clear_op = tf.group(*zero_ops)
 
         # Op to increment global step counter
         self.step_op = tf.assign_add(self.global_step, 1)
@@ -286,7 +261,7 @@ class TFProcess:
         # accumulate the gradient and increment the global step.
         ops = [self.policy_loss, self.mse_loss, self.reg_term, self.accuracy]
         if training:
-            ops += [self.grad_op, self.step_op],
+            ops += [self.train_op, self.step_op],
         r = self.session.run(ops, feed_dict={self.model.training: training,
                                              self.planes: batch[0],
                                              self.probs: batch[1],
@@ -307,11 +282,6 @@ class TFProcess:
 
             # fetch the current global step.
             steps = tf.train.global_step(self.session, self.global_step)
-            if steps % self.macrobatch == (self.macrobatch - 1):
-                # Apply the accumulated gradients to the weights.
-                self.session.run([self.train_op])
-                # Clear the accumulated gradient.
-                self.session.run([self.clear_op])
 
             if steps % 1000 == 0:
                 speed = 1000 * self.batch_size / timer.elapsed()

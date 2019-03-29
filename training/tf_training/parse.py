@@ -30,14 +30,10 @@ from utils.chunkparser import ChunkParser
 from utils.logger import DefaultLogger
 
 # Sane values are from 4096 to 64 or so.
-# You need to adjust the learning rate if you change this. Should be
-# a multiple of RAM_BATCH_SIZE. NB: It's rare that large batch sizes are
-# actually required.
-BATCH_SIZE = 128
+# You need to adjust the learning rate if you change this.
 # Number of examples in a GPU batch. Higher values are more efficient.
 # The maximum depends on the amount of RAM in your GPU and the network size.
-# Must be smaller than BATCH_SIZE.
-RAM_BATCH_SIZE = 128
+BATCH_SIZE = 128
 
 # Use a random sample input data read. This helps improve the spread of
 # games in the shuffle buffer.
@@ -85,7 +81,7 @@ def benchmark(parser):
             next(gen)
         end = time.time()
         print("{} pos/sec {} secs".format(
-            RAM_BATCH_SIZE * batch / (end - start), (end - start)))
+            BATCH_SIZE * batch / (end - start), (end - start)))
 
 
 def benchmark_full(t):
@@ -101,7 +97,7 @@ def benchmark_full(t):
 
         end = time.time()
         print("{} pos/sec {} secs".format(
-            RAM_BATCH_SIZE * batch / (end - start), (end - start)))
+            BATCH_SIZE * batch / (end - start), (end - start)))
 
 
 def split_chunks(chunks, test_ratio):
@@ -151,23 +147,21 @@ def main():
     train_parser = ChunkParser(FileDataSrc(training),
                                shuffle_size=1 << 20,  # 2.2GB of RAM.
                                sample=args.sample,
-                               batch_size=RAM_BATCH_SIZE).parse()
+                               batch_size=BATCH_SIZE).parse()
 
     test_parser = ChunkParser(FileDataSrc(test),
                               shuffle_size=1 << 19,
                               sample=args.sample,
-                              batch_size=RAM_BATCH_SIZE).parse()
+                              batch_size=BATCH_SIZE).parse()
 
     tfprocess = TFProcess()
 
     logger.info("Training target: {} blocks {} filters on {} GPU(s)".format(
         tfprocess.RESIDUAL_BLOCKS, tfprocess.RESIDUAL_FILTERS, tfprocess.gpus_num))
-    logger.info("Training settings: batchsize {} RAM batchsize {}".format(
-        BATCH_SIZE, RAM_BATCH_SIZE))
+    logger.info("Training settings: batchsize {}".format(BATCH_SIZE))
 
-    tfprocess.init(RAM_BATCH_SIZE,
-                   logbase=args.logbase,
-                   macrobatch=BATCH_SIZE // RAM_BATCH_SIZE)
+    tfprocess.init(BATCH_SIZE,
+                   logbase=args.logbase)
 
     # benchmark_full(tfprocess)
 
