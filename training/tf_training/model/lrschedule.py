@@ -17,14 +17,15 @@ class StepwiseLR:
 
         self.is_end = False
 
-        self.lr = tf.Variable(0.01, dtype=tf.float32, name='lr', trainable=False)
+        self.init_lr = 0.01
+        self.lr = tf.Variable(self.init_lr, dtype=tf.float32, name='lr', trainable=False)
 
     def step(self, global_step, loss):
         # drop the lr at target steps
         while (self.counter < len(self.drop_steps) and
                global_step > self.drop_steps[self.counter]):
-            self.sess.run(tf.assign(self.lr, self.lr * 0.1))
             self.counter += 1
+            self.sess.run(tf.assign(self.lr, self.init_lr * 0.1 ** self.counter))
         learning_rate = self.sess.run(self.lr)
         if learning_rate < self.min_lr:
             self.is_end = True
