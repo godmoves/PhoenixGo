@@ -143,6 +143,10 @@ MCTSEngine::~MCTSEngine() {
   for (auto &th : m_search_threads) {
     th.join();
   }
+  if (FLAGS_lizzie) {
+    LOG(INFO) << "~MCTSEngine: Waiting search apply threads terminate";
+    m_search_apply.join();
+  }
   LOG(INFO) << "~MCTSEngine: Waiting eval threads terminate";
   m_eval_task_queue.Close();
   for (auto &th : m_eval_threads) {
