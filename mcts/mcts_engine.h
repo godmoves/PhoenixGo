@@ -116,7 +116,8 @@ public:
   MCTSDebugger &GetDebugger();
   int GetModelGlobalStep();
   ByoYomiTimer &GetByoYomiTimer();
-
+  void LizzieSearchStart();
+  void LizzieSearchStop();
 private:
   TreeNode *InitNode(TreeNode *node, TreeNode *fa, int move, float prior_prob);
   TreeNode *FindChild(TreeNode *node, int move);
@@ -142,7 +143,7 @@ private:
   void SearchResume();
   void SearchPause();
   void SearchRoutine();
-
+  void SearchApply();
   void ChangeRoot(TreeNode *node);
   void InitRoot();
 
@@ -186,6 +187,7 @@ private:
   ThreadConductor m_search_threads_conductor;
   bool m_is_searching;
 
+  std::thread m_search_apply;
   std::thread m_delete_thread;
   TaskQueue<TreeNode *> m_delete_queue;
 

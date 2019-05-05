@@ -47,11 +47,10 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     return;
   }
 
-  time_t start = clock();
   for (int i = 0; i < parent->ch_len; ++i) {
     TreeNode *node = parent->ch;
     // ignore nodes have less than 50 visits
-    if (node[i].visit_count < 50) continue;
+    // if (node[i].visit_count < 50) continue;
     std::string move = GoFunction::IdToMoveStr(node[i].move);
 
     // TODO: use a better way to get pv
@@ -76,8 +75,6 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
     i++;
   }
   std::cerr << "\n";
-  end = clock();
-  // std::cout << "std::err output time: " << (end - start) << "\n";
 }
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
@@ -122,7 +119,9 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
   for (int i = 0; i < m_config.num_search_threads(); ++i) {
     m_search_threads.emplace_back(&MCTSEngine::SearchRoutine, this);
   }
-
+  if (FLAGS_lizzie) {
+    m_search_apply = std::thread(&MCTSEngine::SearchApply, this);
+  }
   // setup delete thread & tree root
   m_delete_thread = std::thread(&MCTSEngine::DeleteRoutine, this);
   ChangeRoot(nullptr);
@@ -332,6 +331,7 @@ TreeNode *MCTSEngine::FindChild(TreeNode *node, int move) {
       return &ch[i];
     }
   }
+  return nullptr;
 }
 
 void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
@@ -761,6 +761,14 @@ void MCTSEngine::Search() {
   SearchPause();
 }
 
+void MCTSEngine::LizzieSearchStart() {
+  SearchResume();
+}
+
+void MCTSEngine::LizzieSearchStop() {
+  SearchPause();
+}
+
 void MCTSEngine::SearchWait(int64_t timeout_us, bool is_overtime) {
   if (timeout_us == 0) {
     return;
@@ -828,17 +836,26 @@ void MCTSEngine::SearchPause() {
   }
 }
 
-void MCTSEngine::SearchRoutine() {
+void MCTSEngine::SearchApply() {
+  time_t elapsed, start = clock();
+  float elapsed_time = 0.0f;
+  for (;;) {
+    elapsed = clock();
+    elapsed_time = float(elapsed - start);
+    if (m_is_searching && elapsed_time > 200000 && FLAGS_lizzie) { // 5 outputs per second
+      start = elapsed;
+      OutputAnalysis(MCTSEngine::m_debugger.m_engine->m_root);
+    }
+  }
+}
+
+void MCTSEngine::SearchRoutine()
+{
   m_search_threads_conductor.Wait();
   if (m_search_threads_conductor.IsTerminate()) {
     LOG(WARNING) << "SearchRoutine: terminate";
     return;
   }
-
-  // set up timer for mylizzie output
-  time_t elapsed, start = clock();
-  float elapsed_time;
-  time_t outputs_start, outputs_end;
 
   for (;;) {
     if (!m_search_threads_conductor.IsRunning()) {
@@ -855,19 +872,6 @@ void MCTSEngine::SearchRoutine() {
     auto board = std::make_shared<GoState>(m_board);
     TreeNode *node = Select(*board);
     m_monitor.MonSelectCostMs(timer.fms());
-
-    elapsed = clock();
-    elapsed_time = float(elapsed - start);
-
-    if (elapsed_time > 200000 && FLAGS_lizzie) { // 5 outputs per second
-      start = elapsed;
-
-      outputs_start = clock();
-      OutputAnalysis(m_root);
-      outputs_end = clock();
-      std::cout << "total output time: " << (outputs_end - outputs_start) << "\n";
-    }
-
     int expect_unexpanded = k_unexpanded;
     if (node->expand_state.compare_exchange_strong(expect_unexpanded, k_expanding)) {
       Eval(*board, [this, node, board, timer](int ret, std::vector<float> policy, float value) {

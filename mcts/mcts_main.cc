@@ -140,7 +140,8 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
     return {true, "name\nversion\nprotocol_version\nlist_commands\nlz-analyze\n"
                   "quit\nclear_board\nboardsize\nkomi\ntime_settings\ntime_left\n"
                   "place_free_handicap\nset_free_handicap\nplay\ngenmove\nundo\n"
-                  "final_score\nget_debug_info\nget_last_move_debug_info"};
+                  "final_score\nget_debug_info\nget_last_move_debug_info\n"
+		  "StopAnalyzing\nStartAnalyzing"};
   }
   // TODO: fix command name
   if (op == "lz-analyze") {
@@ -262,6 +263,14 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   if (op == "get_last_move_debug_info") {
     return {true, engine.GetDebugger().GetLastMoveDebugStr()};
   }
+  if (op == "StopAnalyzing") {
+    engine.Stop_Search_for_MyLizzie();
+    return {true, ""};
+  }
+   if (op == "StartAnalyzing") {
+    engine.Search_for_MyLizzie();
+    return {true, ""};
+  } 
   LOG(ERROR) << "invalid op: " << op;
   return {false, "unknown command"};
 }
