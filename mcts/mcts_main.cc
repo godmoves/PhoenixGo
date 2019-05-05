@@ -264,11 +264,11 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
     return {true, engine.GetDebugger().GetLastMoveDebugStr()};
   }
   if (op == "StopAnalyzing") {
-    engine.Stop_Search_for_MyLizzie();
+    engine.LizzieSearchStop();
     return {true, ""};
   }
    if (op == "StartAnalyzing") {
-    engine.Search_for_MyLizzie();
+    engine.LizzieSearchStart();
     return {true, ""};
   } 
   LOG(ERROR) << "invalid op: " << op;

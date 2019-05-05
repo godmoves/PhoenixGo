@@ -844,7 +844,7 @@ void MCTSEngine::SearchApply() {
     elapsed_time = float(elapsed - start);
     if (m_is_searching && elapsed_time > 200000 && FLAGS_lizzie) { // 5 outputs per second
       start = elapsed;
-      OutputAnalysis(MCTSEngine::m_debugger.m_engine->m_root);
+      OutputAnalysis(MCTSEngine::m_debugger.GetEngine()->m_root);
     }
   }
 }
