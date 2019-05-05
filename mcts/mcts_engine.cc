@@ -39,43 +39,6 @@ DECLARE_bool(lizzie); // run in lizzie mode.
 static thread_local std::random_device g_random_device;
 static thread_local std::minstd_rand g_random_engine(g_random_device());
 
-class OutputAnalysisData {
-public:
-  OutputAnalysisData(const std::string& move, int visits, float winrate,
-                     float policy, std::string pv)
-      : m_move(move),
-        m_visits(visits),
-        m_winrate(winrate),
-        m_policy(policy), 
-        m_pv(pv) {};
-
-  std::string get_info_string(int order) const {
-    auto tmp = "info move " + m_move +
-               " visits " + std::to_string(m_visits) +
-               " winrate " + std::to_string(m_winrate) +
-               " network " + std::to_string(m_policy);
-    if (order >= 0) {
-      tmp += " order " + std::to_string(order);
-    }
-    tmp += " pv " + m_pv;
-    return tmp;
-  }
-
-  friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
-    if (a.m_visits == b.m_visits) {
-      return a.m_winrate < b.m_winrate;
-    }
-    return a.m_visits < b.m_visits;
-  }
-
-private:
-  std::string m_move;
-  int m_visits;
-  float m_winrate;
-  float m_policy;
-  std::string m_pv;
-};
-
 void MCTSEngine::OutputAnalysis(TreeNode *parent) {
   // We need to make a copy of the data before sorting
   auto sortable_data = std::vector<OutputAnalysisData>();
@@ -87,36 +50,24 @@ void MCTSEngine::OutputAnalysis(TreeNode *parent) {
   time_t start = clock();
   for (int i = 0; i < parent->ch_len; ++i) {
     TreeNode *node = parent->ch;
-    // Only send variations with visits
-    if (node[i].visit_count < 50) continue; // ignore nodes have less than 50 visits
+    // ignore nodes have less than 50 visits
+    if (node[i].visit_count < 50) continue;
+    std::string move = GoFunction::IdToMoveStr(node[i].move);
 
-    std::string move = GoFunction::IdToStr(node[i].move);
-
-    // This may slow down the speed a little.
-    // time_t start = clock();
-    std::string pv = move + " " + m_debugger.GetMainMovePath(&node[i]); 
-    // time_t end = clock();
-    // std::cout << "get pv time: " << (end - start) << "\n";
+    // TODO: use a better way to get pv
+    std::string pv = move + " " + m_debugger.GetMainMovePath(i); 
 
     // Not sure the meaning of value
     float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
     float move_eval = (root_action + 1) * 50 * 100;
-
-    // Prior probability of the net
     float policy = node[i].prior_prob * 100;
-
-    // Store data in array
     sortable_data.emplace_back(move, node[i].visit_count, move_eval, policy, pv);
   }
-  time_t end = clock();
-  // std::cout << "prepare string time: " << (end - start) << "\n";
 
-  // Sort array to decide order
   std::stable_sort(std::begin(sortable_data), std::end(sortable_data));
 
-  auto i = 0;
-  start = clock();
   // Output analysis data in gtp stream
+  auto i = 0;
   for (const auto& node : sortable_data) {
     if (i > 0) {
       std::cerr << " ";
@@ -172,9 +123,7 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
     m_search_threads.emplace_back(&MCTSEngine::SearchRoutine, this);
   }
 
-  // setup delete thread & tree root, init move history
-  m_move_history.clear();
-  LOG(INFO) << "MCTSEngine: init move history";
+  // setup delete thread & tree root
   m_delete_thread = std::thread(&MCTSEngine::DeleteRoutine, this);
   ChangeRoot(nullptr);
 
@@ -207,15 +156,22 @@ MCTSEngine::~MCTSEngine() {
   LOG(INFO) << "~MCTSEngine: Deconstruct MCTSEngin succ";
 }
 
-void MCTSEngine::Reset() {
+void MCTSEngine::Reset(const std::string &init_moves) {
   SearchPause();
   ChangeRoot(nullptr);
   m_board.CopyFrom(GoState(!m_config.disable_positional_superko()));
   m_simulation_counter = 0;
-  m_num_moves = 0;
-  m_moves_str.clear();
+  m_num_moves = (init_moves.size() + 1) / 3;
+  m_moves_str = init_moves;
   m_gen_passes = 0;
   m_byo_yomi_timer.Reset();
+
+  for (size_t i = 0; i < init_moves.size(); i += 3) {
+    GoCoordId x, y;
+    GoFunction::StrToCoord(init_moves.substr(i, 2), x, y);
+    m_board.Move(x, y);
+    m_root->move = GoFunction::CoordToId(x, y);
+  }
 
   if (m_config.enable_background_search()) {
     SearchResume();
@@ -223,41 +179,15 @@ void MCTSEngine::Reset() {
 }
 
 std::string MCTSEngine::Undo() {
-  if (m_move_history.size() != m_num_moves) {
-    LOG(ERROR) << "Move number and history not match";
-    return "undo: failed to undo the last move";
-  } else {
-    if (m_num_moves == 0) {
-      return "undo: no move to undo";
-    }
-
-    int prev_num_move = m_num_moves - 1;
-    std::vector<GoCoordId> prev_move_history = m_move_history;
-
-    SearchPause();
-    ChangeRoot(nullptr);
-    m_board.CopyFrom(GoState(!m_config.disable_positional_superko()));
-    m_simulation_counter = 0;
-    m_num_moves = 0;
-    m_moves_str.clear();
-    m_gen_passes = 0;
-    m_byo_yomi_timer.Reset();
-    m_move_history.clear();
-
-    GoCoordId x, y;
-    for (int i = 0; i < prev_num_move; ++i) {
-      GoFunction::IdToCoord(prev_move_history[i], x, y);
-      Move(x, y);
-    }
-    std::string info = "undo: " + GoFunction::IdToStr(prev_move_history[prev_num_move]);
-    LOG(INFO) <<info;
-
-    if (m_config.enable_background_search()) {
-      SearchResume();
-    }
-
-    return info;
+  if (m_num_moves == 0) {
+    return "undo: no move to undo";
   }
+
+  std::string last_move = m_moves_str.substr(m_moves_str.size() - 2);
+  std::string info = "undo: " + GoFunction::IdToMoveStr(GoFunction::StrToId(last_move));
+  Reset(m_moves_str.substr(0, std::max(0, int(m_moves_str.size() - 3))));
+  LOG(INFO) << "Current Moves: " << m_moves_str;
+  return info;
 }
 
 void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
@@ -276,10 +206,9 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   }
 
   int ret = m_board.Move(x, y);
-  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToId(x, y) << ", ret" << ret;
+  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToMoveStr(x, y) << ", ret" << ret;
 
   ++m_num_moves;
-  m_move_history.push_back(GoFunction::CoordToId(x, y));
 
   if (m_moves_str.size())
     m_moves_str += ",";
@@ -287,10 +216,11 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   LOG(INFO) << "Move: " << m_moves_str;
 
   ChangeRoot(FindChild(m_root, GoFunction::CoordToId(x, y)));
+  m_root->move = GoFunction::CoordToId(x, y);
 
   m_debugger.UpdateLastMoveDebugStr();
   LOG(INFO) << m_debugger.GetLastMoveDebugStr();
-  m_debugger.PrintTree(1, 10, GoFunction::CoordToStr(x, y) + ",");
+  m_debugger.PrintTree(1, 10, GoFunction::CoordToMoveStr(x, y) + ",");
 
   m_byo_yomi_timer.HandOff();
 
@@ -402,7 +332,6 @@ TreeNode *MCTSEngine::FindChild(TreeNode *node, int move) {
       return &ch[i];
     }
   }
-  return nullptr;
 }
 
 void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
@@ -420,14 +349,13 @@ void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
   int transform_mode = g_random_engine() & 7;
   TransformFeatures(features, transform_mode);
 
-  bool dumb_pass = board.GetLastMove() == GoComm::COORD_PASS &&
-                   board.GetWinner() != board.CurrentPlayer();
+  bool dumb_pass = board.GetWinner() != board.CurrentPlayer();
 
   callback = [this, callback, timer, transform_mode,
               dumb_pass](int ret, std::vector<float> policy, float value) {
     if (ret == 0) {
       if (dumb_pass && value < 0.5 && !m_config.disable_double_pass_scoring()) {
-        policy.back() = std::min(policy.back(), 1e-5f); // disallow second PASS
+        policy.back() = std::min(policy.back(), 1e-5f); // disallow dumb PASS
       }
 
       CHECK_EQ(policy.size(), GoComm::GOBOARD_SIZE + 1)
@@ -736,9 +664,9 @@ bool MCTSEngine::CheckUnstable() {
   int q_best = std::max_element(mean_action, mean_action + ch_len) - mean_action;
   if (n_best != q_best) {
     LOG(INFO) << "CheckUnstable: return true"
-              << ", N best ch=" << GoFunction::IdToStr(ch[n_best].move)
+              << ", N best ch=" << GoFunction::IdToMoveStr(ch[n_best].move)
               << ", N=" << visit_count[n_best] << ", Q=" << mean_action[n_best]
-              << ", Q best ch=" << GoFunction::IdToStr(ch[q_best].move)
+              << ", Q best ch=" << GoFunction::IdToMoveStr(ch[q_best].move)
               << ", N=" << visit_count[q_best] << ", Q=" << mean_action[q_best];
     return true;
   }
@@ -763,7 +691,7 @@ bool MCTSEngine::CheckBehind() {
           ? 0.0f
           : (float)best_ch->total_action / k_action_value_base / visit_count;
   if (mean_action < c.act_threshold()) {
-    LOG(INFO) << "CheckBehind: return true, best_move=" << GoFunction::IdToStr(best_move)
+    LOG(INFO) << "CheckBehind: return true, best_move=" << GoFunction::IdToMoveStr(best_move)
               << ", N=" << visit_count
               << ", Q=" << mean_action;
     return true;
@@ -1030,6 +958,14 @@ void MCTSEngine::InitRoot() {
           (1 - m_config.dirichlet_noise_ratio()) * ch[i].prior_prob +
           m_config.dirichlet_noise_ratio() * noise[i] / noise_sum;
     }
+    bool dumb_pass = m_board.GetWinner() != m_board.CurrentPlayer();
+    if (dumb_pass && m_root->value < 0.5 && !m_config.disable_double_pass_scoring()) {
+      for (int i = 0; i < ch_len; ++i) {
+        if (ch[i].move == GoComm::COORD_PASS) {
+          ch[i].prior_prob = 1e-5f;
+        }
+      }
+    }
   }
 }
 
@@ -1078,12 +1014,12 @@ int MCTSEngine::GetBestMove(float &v_resign) {
     } else {
       visit_count[i] = ch[i].visit_count;
       total_action[i] = (float)ch[i].total_action / k_action_value_base;
-      mean_action[i] = visit_count[i] == 0 ? 0.0f : total_action[i] / visit_count[i];
+      mean_action[i] = visit_count[i] == 0 ? -1.0f : total_action[i] / visit_count[i];
       prior_prob[i] = ch[i].prior_prob;
       value[i] = ch[i].value;
     }
 
-    VLOG(2) << "GetBestMove: " << GoFunction::IdToStr(ch[i].move)
+    VLOG(2) << "GetBestMove: " << GoFunction::IdToMoveStr(ch[i].move)
             << ", N " << visit_count[i]
             << ", W " << total_action[i]
             << ", Q " << mean_action[i]

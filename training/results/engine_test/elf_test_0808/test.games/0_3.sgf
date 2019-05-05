@@ -1,0 +1,37 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_3
+Date 2018-08-07 16:22
+Result elf beat leelaz W+R
+leelaz cpu time: 1490.75s
+elf cpu time: 832.95s
+Black leelaz Leela Zero:0.15
+White elf DF2:1.0]
+CA[UTF-8]DT[2018-08-07]EV[test]GM[1]GN[test 0_3]KM[7.5]PB[Leela Zero:0.15]
+PW[DF2:1.0]RE[W+R]SZ[19];B[pp];W[dp];B[pd];W[dc];B[ce];W[cd];B[de];W[fc];B[cm];
+W[ci];B[bd];W[bc];B[fd];W[gc];B[gd];W[hd];B[he];W[ie];B[hf];W[ck];B[el];W[ej];
+B[bp];W[gq];B[id];W[hc];B[je];W[nq];B[cl];W[qq];B[pq];W[qp];B[po];W[pr];B[or];
+W[qr];B[ic];W[qc];B[pc];W[qd];B[pe];W[qe];B[qf];W[rf];B[ec];W[eb];B[ed];W[gb];
+B[hp];W[gp];B[hq];W[ho];B[oq];W[qn];B[go];W[io];B[gr];W[fr];B[hr];W[eq];B[kq];
+W[bo];B[fo];W[co];B[gl];W[nr];B[lo];W[gj];B[fi];W[if];B[dr];W[cq];B[hh];W[jf];
+B[ep];W[eo];B[fp];W[fq];B[fm];W[dq];B[kf];W[ke];B[jg];W[ig];B[ih];W[jd];B[hg];
+W[je];B[bf];W[kg];B[jh];W[lf];B[rg];W[qg];B[pf];W[rh];B[qb];W[sg];B[rc];W[ad];
+B[kk];W[hm];B[hl];W[en];B[im];W[dk];B[em];W[bh];B[bj];W[bk];B[al];W[bg];B[ag];
+W[ak];B[an];W[dh];B[ao];W[bq];B[aq];W[ar];B[br];W[ap];B[pn];W[qm];B[aq];W[bl];
+B[bm];W[ap];B[ei];W[cg];B[aq];W[jq];B[jr];W[ap];B[di];W[eg];B[aq];W[am];B[bn];
+W[ap];B[df];W[be];B[aq];W[kp];B[lq];W[ap];B[cf];W[dg];B[aq];W[fn];B[gn];W[ap];
+B[cj];W[dj];B[aq];W[lp];B[mp];W[ap];B[bi];W[aq];B[ch];W[np];B[no];W[ci];B[qo];
+W[ro];B[ch];W[mq];B[mo];W[ci];B[db];W[ff];B[gf];W[ib];B[ch];W[dd];B[ee];W[ci];
+B[rn];W[rm];B[ch];W[gi];B[fh];W[ci];B[ea];W[fb];B[ch];W[gh];B[fg];W[ci];B[re];
+W[fj];B[ch];W[gg];B[ef];W[ci];B[fe];W[ai];B[ch];W[kr];B[lr];W[ci];B[rp];W[sn];
+B[ch];W[ir];B[ci];W[js];B[jp];W[ko];B[jo];W[kn];B[iq];W[jn];B[jr];W[dl];B[dm];
+W[jq];B[ks];W[ip];B[jr];W[os];B[jp];W[mm];B[ol];W[nn];B[ps];W[ns];B[rq];W[rr];
+B[pm];W[jk];B[jl];W[kj];B[lk];W[mk];B[op];W[ik];B[il];W[lj];B[hj];W[af];B[ae];
+W[kl];B[km];W[ll];B[hk];W[ln];B[ms];W[af];B[bb];W[cb];B[ae];W[qs];B[mr];W[af];
+B[ca];W[ah];B[cc];W[sq];B[bd];W[ps];B[ph];W[pg];B[og];W[oh];B[qh];W[rg];B[ri];
+W[rj];B[qj];W[si];B[qi];W[rk];B[nh];
+C[elf beat leelaz W+R
+
+error reading response to 'quit' from player elf:
+engine has closed the response channel]
+W[oi])

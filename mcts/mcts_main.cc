@@ -91,14 +91,6 @@ void ReloadConfig(MCTSEngine &engine, const std::string &config_path) {
   }
 }
 
-void InitMoves(MCTSEngine &engine, const std::string &moves) {
-  for (size_t i = 0; i < moves.size(); i += 3) {
-    GoCoordId x, y;
-    GoFunction::StrToCoord(moves.substr(i, 2), x, y);
-    engine.Move(x, y);
-  }
-}
-
 std::string EncodeMove(GoCoordId x, GoCoordId y) {
   if (GoFunction::IsPass(x, y)) {
     return "pass";
@@ -136,7 +128,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   std::istringstream ss(cmd);
   ss >> op;
   if (op == "name") {
-    return {true, "Leela Zero Phoenix"};
+    return {true, "HappyGo"};
   }
   if (op == "version") {
     return {true, "1.15"};
@@ -150,6 +142,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
                   "place_free_handicap\nset_free_handicap\nplay\ngenmove\nundo\n"
                   "final_score\nget_debug_info\nget_last_move_debug_info"};
   }
+  // TODO: fix command name
   if (op == "lz-analyze") {
     return {true, ""};
   }
@@ -275,7 +268,9 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
 
 void GTPServing(std::istream &in, std::ostream &out) {
   auto engine = InitEngine(FLAGS_config_path);
-  InitMoves(*engine, FLAGS_init_moves);
+  if (FLAGS_init_moves.size()) {
+    engine->Reset(FLAGS_init_moves);
+  }
   std::cerr << std::flush;
 
   int id;
@@ -315,7 +310,9 @@ void GTPServing(std::istream &in, std::ostream &out) {
 
 void GenMoveOnce() {
   auto engine = InitEngine(FLAGS_config_path);
-  InitMoves(*engine, FLAGS_init_moves);
+  if (FLAGS_init_moves.size()) {
+    engine->Reset(FLAGS_init_moves);
+  }
 
   GoCoordId x, y;
   engine->GenMove(x, y);

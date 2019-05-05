@@ -1,0 +1,36 @@
+(;FF[4]AP[gomill:0.8.2]
+C[Event: test
+Game id 0_44
+Date 2018-08-08 06:30
+Result leelaz beat elf W+R
+elf cpu time: 831.49s
+leelaz cpu time: 1408.50s
+Black elf DF2:1.0
+White leelaz Leela Zero:0.15]
+CA[UTF-8]DT[2018-08-08]EV[test]GM[1]GN[test 0_44]KM[7.5]PB[DF2:1.0]
+PW[Leela Zero:0.15]RE[W+R]SZ[19];B[pd];W[pp];B[dd];W[cp];B[eq];W[dq];B[ep];
+W[cn];B[mq];W[iq];B[dr];W[cr];B[dn];W[cm];B[dm];W[dl];B[el];W[ek];B[fl];W[kq];
+B[lo];W[jo];B[pr];W[pm];B[qp];W[qo];B[qq];W[dk];B[ro];W[mp];B[lp];W[lq];B[nq];
+W[qc];B[qd];W[pc];B[nc];W[oc];B[od];W[nb];B[pk];W[mm];B[kn];W[im];B[kl];W[mk];
+B[do];W[gq];B[fk];W[er];B[hp];W[hq];B[kj];W[pi];B[rc];W[mi];B[nd];W[rb];B[mb];
+W[rd];B[re];W[sc];B[fc];W[qn];B[ei];W[cj];B[co];W[bo];B[bp];W[bn];B[fr];W[ds];
+B[fq];W[gp];B[bq];W[cq];B[hn];W[in];B[hk];W[np];B[lh];W[fj];B[gj];W[fi];B[fg];
+W[ng];B[mf];W[gc];B[fd];W[ic];B[jb];W[gd];B[hf];W[fb];B[eb];W[hb];B[fa];W[ga];
+B[gb];W[oq];B[or];W[fb];B[ea];W[qf];B[oo];W[op];B[nn];W[mn];B[mo];W[po];B[mh];
+W[nh];B[li];W[fe];B[df];W[ec];B[ed];W[dc];B[gb];W[lb];B[ha];W[mc];B[lc];W[ma];
+B[ld];W[kb];B[jc];W[kc];B[jd];W[kd];B[mj];W[nk];B[ke];W[ia];B[ho];W[no];B[md];
+W[ga];B[br];W[fb];B[fs];W[bs];B[ln];W[gr];B[gs];W[hs];B[is];W[ir];B[hr];W[lr];
+B[nr];W[hs];B[js];W[fn];B[hm];W[jr];B[ks];W[ls];B[hr];W[jl];B[ll];W[hs];B[gb];
+W[lk];B[kk];W[fb];B[hr];W[hl];B[gl];W[hs];B[gb];W[kr];B[ha];W[ja];B[es];W[je];
+B[ie];W[id];B[jf];W[ar];B[ml];W[nl];B[qg];W[qh];B[mb];W[ib];B[je];W[mc];B[pg];
+W[rg];B[rf];W[rh];B[mb];W[ga];B[ob];W[mc];B[oj];W[ni];B[mb];W[fb];B[nj];W[lj];
+B[gb];W[mc];B[nm];W[ol];B[mb];W[fb];B[pf];W[pj];B[cc];W[mc];B[dr];W[ap];B[mb];
+W[db];B[gb];W[mc];B[ha];W[mb];B[ch];W[go];B[fm];W[bi];B[sn];W[rm];B[sm];W[sl];
+B[rl];W[sk];B[rq];W[rn];B[so];W[rk];B[ej];W[bg];B[bh];W[ah];B[ci];W[bk];B[cg];
+W[bf];B[be];W[ga];B[fb];W[bd];B[ce];W[gf];B[he];W[ge];B[hd];W[hc];B[gg];W[ae];
+B[il];W[bb];B[ka];W[ee];B[bc];W[ac];B[cd];W[ad];B[ab];W[aa];B[cb];W[jm];B[jk];
+C[leelaz beat elf W+R
+
+error reading response to 'quit' from player elf:
+engine has closed the response channel]
+W[jp])

@@ -102,11 +102,10 @@ int main(int argc, char *argv[]) {
   }
 
   std::unique_ptr<ZeroModelBase> model(new ZeroModel(FLAGS_gpu));
-#if HAVE_TENSORRT
   if (config->model_config().enable_tensorrt()) {
     model.reset(new TrtZeroModel(FLAGS_gpu));
   }
-#endif
+
   CHECK_EQ(model->Init(config->model_config()), 0)
       << "Model Init Fail, config path " << FLAGS_config_path
       << ", gpu " << FLAGS_gpu;

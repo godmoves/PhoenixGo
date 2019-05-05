@@ -48,12 +48,64 @@ struct EvalTask {
   EvalCallback callback;
 };
 
+struct TreeNode {
+  std::atomic<TreeNode *> fa;
+  std::atomic<TreeNode *> ch; // child nodes must allocate contiguously
+  std::atomic<int> ch_len;
+  std::atomic<int> size;
+  std::atomic<int> expand_state;
+
+  std::atomic<int> move;
+  std::atomic<int> visit_count;
+  std::atomic<int> virtual_loss_count;
+  std::atomic<int64_t> total_action;
+  std::atomic<float> prior_prob;
+  std::atomic<float> value;
+};
+
+class OutputAnalysisData {
+public:
+  OutputAnalysisData(const std::string& move, int visits, float winrate,
+                     float policy, std::string pv)
+      : m_move(move),
+        m_visits(visits),
+        m_winrate(winrate),
+        m_policy(policy), 
+        m_pv(pv) {};
+
+  std::string get_info_string(int order) const {
+    auto tmp = "info move " + m_move +
+               " visits " + std::to_string(m_visits) +
+               " winrate " + std::to_string(m_winrate) +
+               " network " + std::to_string(m_policy);
+    if (order >= 0) {
+      tmp += " order " + std::to_string(order);
+    }
+    tmp += " pv " + m_pv;
+    return tmp;
+  }
+
+  friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
+    if (a.m_visits == b.m_visits) {
+      return a.m_winrate < b.m_winrate;
+    }
+    return a.m_visits < b.m_visits;
+  }
+
+private:
+  std::string m_move;
+  int m_visits;
+  float m_winrate;
+  float m_policy;
+  std::string m_pv;
+};
+
 class MCTSEngine {
 public:
   MCTSEngine(const MCTSConfig &config);
   ~MCTSEngine();
 
-  void Reset();
+  void Reset(const std::string &init_moves = "");
   std::string Undo();
   void Move(GoCoordId x, GoCoordId y);
   void GenMove(GoCoordId &x, GoCoordId &y);
@@ -152,6 +204,4 @@ private:
 
   friend class MCTSMonitor;
   friend class MCTSDebugger;
-
-  std::vector<GoCoordId> m_move_history;
 };

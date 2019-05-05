@@ -33,8 +33,7 @@ public:
   std::string GetLastMoveDebugStr(); // call after move
   void UpdateLastMoveDebugStr();
 
-  std::string GetMainMovePath();
-  std::string GetMainMovePath(TreeNode *node);
+  std::string GetMainMovePath(int rank = 0);
   void PrintTree(int depth, int topk, const std::string &prefix = "");
 
 private:
