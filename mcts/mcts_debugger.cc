@@ -54,10 +54,17 @@ std::string MCTSDebugger::GetDebugStr() {
   std::string debug_str =
       ith_str + ": " + GoFunction::IdToMoveStr(root->move) +
       ", winrate=" + std::to_string((root_action + 1) * 50) + "%" +
-      ", visit=" + std::to_string(root->visit_count);
+      ", N=" + std::to_string(root->visit_count) +
+      ", Q=" + std::to_string(root_action) +
+      ", p=" + std::to_string(root->prior_prob) +
+      ", v=" + std::to_string(root->value);
   if (m_engine->m_simulation_counter > 0) {
-    debug_str += ", playouts=" + std::to_string(m_engine->m_simulation_counter);
+    debug_str += ", cost " + std::to_string(m_engine->m_search_timer.fms()) + "ms" +
+                 ", sims=" + std::to_string(m_engine->m_simulation_counter) +
+                 ", height=" + std::to_string(m_engine->m_monitor.MaxSearchTreeHeight()) +
+                 ", avg_height=" + std::to_string(m_engine->m_monitor.AvgSearchTreeHeight());
   }
+  debug_str += ", global_step=" + std::to_string(m_engine->m_model_global_step);
   return debug_str;
 }
 

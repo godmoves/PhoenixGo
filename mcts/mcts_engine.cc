@@ -853,8 +853,7 @@ void MCTSEngine::SearchApply() {
   }
 }
 
-void MCTSEngine::SearchRoutine()
-{
+void MCTSEngine::SearchRoutine() {
   m_search_threads_conductor.Wait();
   if (m_search_threads_conductor.IsTerminate()) {
     LOG(WARNING) << "SearchRoutine: terminate";
