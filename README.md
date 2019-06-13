@@ -1,175 +1,148 @@
-[![CircleCI](https://circleci.com/bb/mankitpong/happygo/tree/trt5.svg?style=svg&circle-token=66b3dbb293ddd4cf7a13af92eb7e9b1952215f06)](https://circleci.com/bb/mankitpong/happygo/tree/trt5)
+# HappyGo
 
-**Status:** Active, breaking changes may occur.
-
-**TODO:**  
-  - [x] update to TensorRT 5  
-  - [x] update to TensorFlow 1.12  
-  - [ ] clean up code  
-  - [ ] move structure TreeNode to a better file, it should belong to mcts
-  - [ ] consider add sgf- and board- prefix to differ XToStr and StrToX
-  - [ ] add tests and benchmarks  
-
-# Leela Zero X PhoenixGo
-
-## About PhoenixGo
-
-![PhoenixGo](images/logo.jpg?raw=true)
-
-**PhoenixGo** is an Go AI program which implement the AlphaGo Zero paper
-"[Mastering the game of Go without human knowledge](https://deepmind.com/documents/119/agz_unformatted_nature.pdf)".
-It is also known as "BensonDarr" in FoxGo, "cronus" in CGOS,
-and the champion of "World AI Go Tournament 2018" held in Fuzhou China.
-
-If you use PhoenixGo in your project, please consider mentioning in your README.
-
-If you use PhoenixGo in your research, please consider citing the library as follows:
-
-```
-@misc{PhoenixGo2018,
-  author = {Qinsong Zeng and Jianchang Zhang and Zhanpeng Zeng and Yongsheng Li and Ming Chen and Sifan Liu}
-  title = {PhoenixGo},
-  year = {2018},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/Tencent/PhoenixGo}}
-}
-```
-
-## About Leela Zero
-
-**Leela Zero** is a free and open-source computer Go software released on 25 October 2017.
-It is developed by Belgian programmer [Gian-Carlo Pascutto](https://github.com/gcp), the author of chess engine Sjeng and Go engine Leela.
-
-Leela Zero's algorithm is based on DeepMind's 2017 paper about AlphaGo Zero.
-Unlike the original Leela, which has a lot of human knowledge and heuristics programmed into it, Leela Zero only knows the basic rules and nothing more.
-
-Leela Zero is trained by a distributed effort, which is coordinated at the [Leela Zero website](http://zero.sjeng.org/). Members of the community provide computing resources by running the client, which generates self-play games and submits them to the server. The self-play games are used to train newer networks. Generally, over 500 clients have connected to the server to contribute resources. The community has provided high quality code contributions as well.
-
-Leela Zero finished third at the BerryGenomics Cup World AI Go Tournament in Fuzhou, Fujian, China on 28 April 2018.
-
-Additionally, in early 2018 the same team branched Leela Chess Zero from the same code base, also to verify the methods in the AlphaZero paper as applied to the game of chess. AlphaZero's use of Google TPUs was replaced by a crowd-sourcing infrastructure and the ability to use graphics card GPUs via the OpenCL library. Even so, it is expected to take a year of crowd-sourced training to make up for the dozen hours that AlphaZero was allowed to train for its chess match in the paper.
-
-## Convert Leela Zero weight
+## Compile TensorFlow and TensorRT model
 
 ### Dependencies
 
-- Python 3.5 on Ubuntu 16.04 / Python 3.x on Ubuntu 18.04  
-- Numpy  
-- PyCUDA  
+- Python 3.x  
+- Numpy   
 - TensorFlow 1.12+  
 - [TensorRT 5](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview)  
 - [UFF](https://docs.nvidia.com/deeplearning/sdk/tensorrt-api/python_api/index.html#installing-the-uff-toolkit)  
 - CMake 3.1+  
 - GCC 6/7  
 
-Use `pip` to install what you need. For `tensorrt`, `pycuda` and `uff`, you can
+Use `pip` to install what you need. For `TensorRT` and `UFF`, you can
 find more info [here](https://docs.nvidia.com/deeplearning/sdk/tensorrt-developer-guide/index.html#overview).   
-You need to install `tensorrt` by **tar package** to get python support. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
+You need to install `TensorRT` by **tar package** to get python support. Find more info about how to [download and install](https://developer.nvidia.com/tensorrt). 
 
-### Build uff_to_plan and convert weight
+### (Optional for TensorRT) Build uff_to_plan
 
 First `git clone` this repository, then execute the commands below:
+
 ```
-$ cd scripts/uff2plan
+$ mkdir ckpt
+$ cd tools/model_conversion/uff2plan
 $ mkdir build && cd build
 $ cmake ..
 $ make
 $ cd ../..
-$ python net_to_model.py </path/to/lz-weight>
-```
-You will get the `.uff`, `.PLAN` and the Tensorflow format of Leela Zero weight. Copy them to `ckpt` folder.
-
-### Modify the configure file
-
-You will need to modify the configure files in `etc` to use the converted LZ weight. 
-
-For example, if you want to use the TensorRT version, you need to change `tensorrt_model_path` in
-`mcts_*gpu.conf` like `tensorrt_model_path: "leelaz-model-0.PLAN"`. Or if you want to use the no TensorRT
-version, then add `meta_graph_path: "leelaz-model-0.meta"` into `model_config` and change the content of 
-`ckpt/checkpoint` into `model_checkpoint_path: "leelaz-model-0"`.
-
-### Run in ELF mode
-
-By enable `value_form_black` option in configure file:
-```
-model_config {
-    train_dir: "ckpt.elf"
-    enable_tensorrt: 1
-    tensorrt_model_path: "leelaz-elf-0.PLAN"
-    value_from_black: 1
-}
 ```
 
-### MyLizzie support (experimental)
+### Convert the weight file
 
-You can run the program in [myLizzie](https://github.com/aerisnju/mylizzie) mode by add flag `--lizzie` in command line.  
-For example:
 ```
-$ bazel-bin/mcts/mcts_main --config_path=etc/mcts_1gpu.conf --gtp --logtostderr --v=1 --lizzie
+$ python net_to_model.py </path/to/weight/file>
 ```
 
-**Known issue:** speed loss when there are too many points, turn off the pv may help with this. 
+If you don't need the TensorRT weight, you can skip that by add `--skip_trt` option.
+
+```
+$ python net_to_model.py </path/to/weight/file> --skip_trt
+```
+
+You will get the `.uff`, `.PLAN`, `checkpoint` and TensorFlow models. Copy them to `ckpt` folder.
+You also need to update the `checkpoint` file to match the new weight path.
+
+## Compile TPU model
+
+HappyGo now support Cloud TPU. If you want to run the engine on TPU, you need to freeze a
+TensorFlow model into a GraphDef proto that can be run on Cloud TPU.
+
+This can be done by using the `model_to_tpu.py`:
+
+```
+python model_to_tpu.py <path/to/tf/model> --tpu_name=$TPU_NAME --num_tpu_cores=8
+```
+
+The TensorFlow model can be either a local file or one on Google Cloud Storage, and $TPU_NAME is
+the gRPC name of your TPU, e.g. `grpc://10.240.2.10:8470`. This can be found from the output of
+gcloud beta compute tpus list.
+
+This command **must** be run from a Cloud TPU-ready GCE VM.
+
+This invocation to `model_to_tpu.py` will replicate the model 8 times so that it can run on all
+eight cores of a Cloud TPU. To take advantage of this parallelism when running inference,
+virtual_losses * parallel_games must be at least 8, ideally 128 or higher.
 
 ## Build the engine on Linux
 
 ### Requirements
 
 * GCC with C++11 support
-* Bazel (0.19.2 is known-good, 0.20.2 has some [issues](https://github.com/tensorflow/tensorflow/issues/24124))
+* Bazel 0.19.2
 * CUDA 10 and cuDNN 7 (for GPU support)
-* TensorRT (for accelerating computation on GPU, 5.0.2 is known-good)
+* NCCL 2.4 (for GPU support)
+* TensorRT (for accelerating computation on GPU, 5.0.2 is known-good) (optional)
 
-### Building
+### Build TensorFlow library
 
-Clone the repository and configure the building:
+Download Bazel 0.19.2 form [here](https://github.com/bazelbuild/bazel/releases?after=0.20.0) and install.
 
-```
-$ git clone https://github.com/godmoves/HappyGo.git
-$ cd HappyGo
-$ ./configure
-```
-
-`./configure` will ask where CUDA and TensorRT have been installed, specify them if need.
-
-Then build with bazel, a known issue of bazel 0.19.2 is mentioned [here](https://github.com/tensorflow/tensorflow/issues/23401#issuecomment-434681778):
+Clone the repository and build the TensorFlow library by using:
 
 ```
-$ bazel build //mcts:mcts_main
+$ git clone https://github.com/godmoves/GoEngine.git
+$ cd GoEngine
+$ ./configure_tensorflow.sh
 ```
 
-Dependices such as Tensorflow will be downloaded automatically. The building prosess may take a long time.
+`./configure_tensorflow.sh` will ask where CUDA and TensorRT have been installed, specify them if need.
 
-### Running
+If you want to compile for CPU and not GPU, then execute the following instead:
 
-Download and extract the trained network, then run:
+```
+TF_NEED_CUDA=0 ./configure_tensorflow.sh
+```
+
+This will automatically perform [Installing TensorFlow from Sources](https://www.tensorflow.org/install/source)
+but instead of installing the TensorFlow package, it extracts the generated C++ headers into the `model/tensorflow`
+subdirectory of the repo. The script then builds the required TensorFlow shared libraries and copies
+them to the same directory. The TensorFlow cc library build target in cc/BUILD pulls these header
+and library files together into a format the Bazel understands how to link against.
+
+The building process may take a long time.
+
+### Build the MCTS engine
+
+Then build the main MCTS engine with bazel command:
+
+```
+$ bazel build --define=grpc_no_ares=true --define=trt=1 //mcts:mcts_main
+```
+
+Dependencies will be downloaded and built automatically.
+
+If you don't need TensorRT for inference, you can omit the `--define=trt=1` option.
+
+
+### Run the engine
 
 Convert the Leela Zero weight as mentioned before, and run
 ```
-$ scripts/start.sh
+$ scripts/start.sh ./etc/{config}
 ```
 or
 ```
-$ bazel-bin/mcts/mcts_main --config_path=etc/{config} --gtp --logtostderr --v=1
+$ bazel-bin/mcts/mcts_main --config_path=./etc/{config} --gtp --logtostderr --v=1
 ```
 
-`start.sh` will detect the number of GPUs, run `mcts_main` with proper config file, and write log files in directory `log`.
-You could also use a customized config by running `scripts/start.sh {config_path}`.
+If no configure file is provided, `start.sh` will detect the number of GPUs automatically.
 See also [configure-guide](#configure-guide).
+
+`--logtostderr` let `mcts_main` log messages to stderr, if you want to log to files,
+change `--logtostderr` to `--log_dir={log_dir}` You could modify your config file following
+[configure-guide](#configure-guide).
 
 Furthermore, if you want to fully control all the options of `mcts_main` (such as, changing log destination),
 you could also run `bazel-bin/mcts/mcts_main` directly. See also [command-line-options](#command-line-options).
 
 The engine supports the GTP protocol, means it could be used with a GUI with GTP capability,
-such as [Sabaki](http://sabaki.yichuanshen.de).
-
-`--logtostderr` let `mcts_main` log messages to stderr, if you want to log to files,
-change `--logtostderr` to `--log_dir={log_dir}`	
-
-You could modify your config file following [configure-guide](#configure-guide).
+such as [Sabaki](http://sabaki.yichuanshen.de) or [GuGui](https://github.com/godmoves/GoGui).
 
 ### Distribute mode
 
-PhoenixGo support running with distributed workers, if there are GPUs on different machine.
+HappyGo support running with distributed workers, if there are GPUs on different machine.
 
 Build the distribute worker:
 
@@ -203,10 +176,15 @@ Here are some important options in the config file:
 * `timeout_ms_per_step`: how many time will used for each move
 * `max_simulations_per_step`: how many simulations will do for each move
 * `gpu_list`: use which GPUs, separated by comma
-* `model_config -> train_dir`: directory where trained network stored
-* `model_config -> checkpoint_path`: use which checkpoint, get from `train_dir/checkpoint` if not set
+* `model_config -> model_dir`: directory where trained network stored
+* `model_config -> checkpoint_path`: use which checkpoint, get from `model_dir/checkpoint` if not set
 * `model_config -> enable_tensorrt`: use TensorRT or not
-* `model_config -> tensorrt_model_path`: use which TensorRT model, if `enable_tensorrt`
+* `model_config -> trt_plan_model_path`: use which TensorRT PLAN model, if `enable_tensorrt`
+* `model_config -> trt_uff_model_path`: use which TensorRT uff model, if both `PLAN` and `uff` model path are set, the `uff` model will be used by default
+* `model_config -> enable_fp16`: use FP16 precision for TensorRT to speed up the inference process
+* `mode_config -> enable_tpu`: use Cloud TPU as inference engine
+* `model_config -> tpu_name`: the gRPC name of your TPU, e.g. `grpc://10.240.2.10:8470`
+* `model_config -> tpu_model_path`: the path to TPU model file, whether locally or on the Google Cloud
 * `max_search_tree_size`: the maximum number of tree nodes, change it depends on memory size
 * `max_children_per_node`: the maximum children of each node, change it depends on memory size
 * `enable_background_search`: pondering in opponent's time
@@ -275,7 +253,7 @@ Moreover, `--minloglevel=1` and `--minloglevel=2` could disable INFO log and WAR
 Or, if you just don't want to log to stderr, replace `--logtostderr` to `--log_dir={log_dir}`,
 then you could read your log from `{log_dir}/mcts_main.INFO`.
 
-**3. How make PhoenixGo think with constant time per move?**
+**3. How make HappyGo think with constant time per move?**
 
 Modify your config file. `early_stop`, `unstable_overtime`, `behind_overtime` and
 `time_control` are options that affect the search time, remove them if exist then

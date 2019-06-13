@@ -1,21 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #pragma once
 
 #include <cstdlib>
@@ -28,11 +10,6 @@
 // #include <glog/logging.h>
 #include "go_comm.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <intrin.h>
-#define __builtin_popcount __popcnt
-#define __builtin_popcountll __popcnt64
-#endif
 
 template <class IntType> inline IntType Lowbit(const IntType &x) {
   return x & (-x);
@@ -52,7 +29,7 @@ template <class IntType> inline IntType Lowbit(const IntType &x) {
   for (GoCoordId id = (blk).LibBegin(); (blk).LibEnd() != id;                  \
        id = (blk).LibNext(id))
 
-int popcount64(unsigned long long x);
+// unsigned int popcount64(unsigned long long x);
 
 struct GoStone {
   GoCoordId self_id;   // Id of this stone
@@ -93,7 +70,7 @@ struct GoBlock {
     return LibEnd();
   }
 
-  GoCoordId LibEnd() const { return GoComm::GOBOARD_SIZE; }
+  GoCoordId LibEnd() const { return GoComm::BOARD_INTERSECTIONS; }
 
   GoCoordId LibNext(const int id) const {
     // & 63 to find pos, + 1 to pass corresponding pos
@@ -172,6 +149,10 @@ struct GoBlock {
                      __builtin_popcountll(liberty_state[5]);
   }
 
+  GoSize GetLibertyCount() const {
+      return liberty;
+  }
+
   GoStone *GetHead() const { return this->stones + this->head; }
 
   GoStone *GetTail() const { return this->stones + this->tail; }
@@ -233,7 +214,7 @@ public:
 
   void GetLastMove(GoCoordId &x, GoCoordId &y);
 
-  GoSize GetLibertyByCoor(const GoCoordId x, const GoCoordId y) const {
+  GoSize GetLibertyByCoord(const GoCoordId x, const GoCoordId y) const {
     return GetLibertyById(GoFunction::CoordToId(x, y));
   }
 
@@ -264,8 +245,7 @@ public:
 
   int Move(const GoCoordId x, const GoCoordId y);
 
-  inline GoStoneColor
-  Opponent(const GoStoneColor color = GoComm::COLOR_UNKNOWN) const {
+  inline GoStoneColor Opponent(const GoStoneColor color = GoComm::COLOR_UNKNOWN) const {
     return GoComm::BLACK + GoComm::WHITE -
            (GoComm::COLOR_UNKNOWN != color ? color : current_player_);
   }
@@ -274,9 +254,8 @@ public:
     return current_player_;
   }
 
-  GoSize
-  TryMove(GoBlock &blk, const GoCoordId id, GoBlockId *nbId, GoBlockId *dieId,
-          GoSize libCnt = GoComm::GOBOARD_SIZE); // nbId, dieId: size should be at least 5
+  GoSize TryMove(GoBlock &blk, const GoCoordId id, GoBlockId *nbId, GoBlockId *dieId,
+                 GoSize libCnt = GoComm::BOARD_INTERSECTIONS); // nbId, dieId: size should be at least 5
 
   // features for rollout
   const GoStoneColor *GetBoard() const {
@@ -316,7 +295,7 @@ public:
 
   void ShowLibCount() const;
 
-  void ShowState();
+  void ShowState() const;
 
   void ShowLegalMap() const;
 
@@ -356,8 +335,8 @@ protected:
   GoBlock block_pool_[GoComm::MAX_BLOCK_SIZE];
   std::stack<GoBlockId> recycled_blocks_;
   GoSize block_in_use_;
-  GoStone stones_[GoComm::GOBOARD_SIZE];
-  GoStoneColor board_state_[GoComm::GOBOARD_SIZE];
+  GoStone stones_[GoComm::BOARD_INTERSECTIONS];
+  GoStoneColor board_state_[GoComm::BOARD_INTERSECTIONS];
   GoStoneColor current_player_;
   GoCoordId last_position_;
   GoCoordId ko_position_;
@@ -373,9 +352,9 @@ protected:
   GoSize visited_positions_[GoComm::MAX_BLOCK_SIZE];
 
   // features
-  bool legal_move_map_[GoComm::GOBOARD_SIZE];
-  GoSize liberty_count_[GoComm::GOBOARD_SIZE];
-  GoSize move_count_[GoComm::GOBOARD_SIZE];
+  bool legal_move_map_[GoComm::BOARD_INTERSECTIONS];
+  GoSize liberty_count_[GoComm::BOARD_INTERSECTIONS];
+  GoSize move_count_[GoComm::BOARD_INTERSECTIONS];
 
   std::vector<std::string> feature_history_list_;
 };

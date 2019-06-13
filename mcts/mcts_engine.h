@@ -1,21 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #pragma once
 
 #include <atomic>
@@ -61,43 +43,6 @@ struct TreeNode {
   std::atomic<int64_t> total_action;
   std::atomic<float> prior_prob;
   std::atomic<float> value;
-};
-
-class OutputAnalysisData {
-public:
-  OutputAnalysisData(const std::string& move, int visits, float winrate,
-                     float policy, std::string pv)
-      : m_move(move),
-        m_visits(visits),
-        m_winrate(winrate),
-        m_policy(policy), 
-        m_pv(pv) {};
-
-  std::string get_info_string(int order) const {
-    auto tmp = "info move " + m_move +
-               " visits " + std::to_string(m_visits) +
-               " winrate " + std::to_string(m_winrate) +
-               " network " + std::to_string(m_policy);
-    if (order >= 0) {
-      tmp += " order " + std::to_string(order);
-    }
-    tmp += " pv " + m_pv;
-    return tmp;
-  }
-
-  friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
-    if (a.m_visits == b.m_visits) {
-      return a.m_winrate < b.m_winrate;
-    }
-    return a.m_visits < b.m_visits;
-  }
-
-private:
-  std::string m_move;
-  int m_visits;
-  float m_winrate;
-  float m_policy;
-  std::string m_pv;
 };
 
 class MCTSEngine {
@@ -193,7 +138,7 @@ private:
   Timer m_search_timer;
 
   int m_num_moves;
-  std::string m_moves_str;
+  std::string m_sgf_moves_str;
 
   int m_gen_passes;
 

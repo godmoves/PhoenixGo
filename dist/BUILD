@@ -1,6 +1,6 @@
 load("//:rules.bzl", "cc_proto_library", "tf_cc_binary")
 
-tf_cc_binary(
+cc_binary(
     name = "dist_zero_model_server",
     srcs = [
         "dist_zero_model_server.cc",
@@ -8,8 +8,9 @@ tf_cc_binary(
     deps = [
         ":dist_zero_model_cc_proto",
         "//common:timer",
-        "//model:zero_model",
+        "//model:tf_zero_model",
         "//model:trt_zero_model",
+        "//model:tpu_zero_model",
         "@com_github_google_glog//:glog",
     ],
 )

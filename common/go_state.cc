@@ -1,21 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include "go_state.h"
 
 #include <algorithm>
@@ -28,7 +10,7 @@ using namespace GoComm;
 using namespace GoFunction;
 using namespace GoFeature;
 
-// int popcount64(unsigned long long x) {
+// unsigned int popcount64(unsigned long long x) {
 //   x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 //   x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 //   x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
@@ -106,13 +88,13 @@ GoSize GoState::CalcRegionScore(const GoCoordId &xy,
 GoSize GoState::CalcScore(GoSize &black, GoSize &white, GoSize &empty) const {
   CalcScoreWithColor(black, BLACK);
   CalcScoreWithColor(white, WHITE);
-  empty = GOBOARD_SIZE - black - white;
+  empty = BOARD_INTERSECTIONS - black - white;
 
   return black - white;
 }
 
 void GoState::CalcScoreWithColor(GoSize &cnt, const GoStoneColor color) const {
-  bool vis[GOBOARD_SIZE];
+  bool vis[BOARD_INTERSECTIONS];
 
   cnt = SIZE_NONE;
   memset(vis, 0, sizeof(vis));
@@ -131,7 +113,7 @@ void GoState::CalcScoreWithColor(GoSize &cnt, const GoStoneColor color) const {
 GoStoneColor GoState::GetWinner(GoSize &score) const {
   GoSize black, white, empty;
   score = CalcScore(black, white, empty);
-  return score > 7.5 ? BLACK : WHITE;
+  return score > KOMI ? BLACK : WHITE;
 }
 
 GoStoneColor GoState::GetWinner() const {
@@ -206,23 +188,22 @@ void GoState::GetNewBlock(GoCoordId &id) {
 }
 
 vector<bool> GoState::GetFeature() const {
-  vector<bool> feature(GOBOARD_SIZE * (SIZE_HISTORYEACHSIDE + 1), 0);
+  vector<bool> feature(BOARD_INTERSECTIONS * FEATURE_COUNT, 0);
   // because push black into history first,
   // if next player is black,
   // we should get planes swap of each two planes
   int reverse_plane = int(Self() == BLACK);
 
-  for (GoSize i = 0; i < SIZE_HISTORYEACHSIDE && i < feature_history_list_.size(); ++i) {
+  for (GoSize i = 0; i < 2 * SIZE_HISTORYEACHSIDE && i < feature_history_list_.size(); ++i) {
     const string &feature_str = *(feature_history_list_.rbegin() + (i ^ reverse_plane));
-    for (int j = 0, k = i; j < GOBOARD_SIZE; ++j, k += 17) {
+    int k = (i / 2 + (i & 1) * SIZE_HISTORYEACHSIDE) * BOARD_INTERSECTIONS;
+    for (int j = 0; j < BOARD_INTERSECTIONS; ++j, ++k) {
       feature[k] = feature_str[j] - '0';
     }
   }
-  if (Self() == BLACK) {
-    for (int j = 0, k = SIZE_HISTORYEACHSIDE; j < GOBOARD_SIZE; ++j, k += 17) {
-      feature[k] = 1;
-    }
-  }
+
+  int k = (2 * SIZE_HISTORYEACHSIDE + int(Self() != BLACK)) * BOARD_INTERSECTIONS;
+  std::fill(feature.begin() + k, feature.begin() + k + BOARD_INTERSECTIONS, 1);
 
   return feature;
 }
@@ -232,20 +213,20 @@ const string GoState::GetFeatureString() const {
   // because push black into history first,
   // if next player is black,
   // we should get planes swap of each two planes
-  int reverse_plane = 0;
+  int reverse_plane = int(Self() == BLACK);
 
-  reverse_plane = int(Self() == BLACK);
   // CHECK(feature_history_list_.size() % 2 == 0)
   //     << "feature_history_list_ size " << feature_history_list_.size() << "not legal";
 
-  for (GoSize i = 0; i < SIZE_HISTORYEACHSIDE; ++i) {
+  for (GoSize i = 0; i < 2 * SIZE_HISTORYEACHSIDE; ++i) {
     if (i < feature_history_list_.size()) {
       result_string += *(feature_history_list_.rbegin() + (i ^ reverse_plane));
     } else {
-      result_string += string(GOBOARD_SIZE, '0');
+      result_string += string(BOARD_INTERSECTIONS, '0');
     }
   }
-  result_string += string(GOBOARD_SIZE, '0' + (Self() == BLACK));
+  result_string += string(BOARD_INTERSECTIONS, '0' + (Self() == BLACK));
+  result_string += string(BOARD_INTERSECTIONS, '0' + (Self() == WHITE));
 
   return result_string;
 }
@@ -446,58 +427,76 @@ void GoState::RecycleBlock(const GoBlockId id) {
 }
 
 void GoState::ShowBoard(bool bNoColor) const {
-  GoCoordId y;
-
-  fprintf(stderr, "current player: %d\n", current_player_);
-  FOR_EACHCOORD(i) {
-    y = i % BORDER_SIZE;
-    if (!bNoColor) {
-      if (BLACK == board_state_[i]) {
-        fprintf(stderr, "\033[31m");
-      } else if (WHITE == board_state_[i]) {
-        fprintf(stderr, "\033[33m");
+  fprintf(stderr, "move number: %d\n", timestamp_);
+  fprintf(stderr, "color to move: %s\n", int(current_player_) == 1 ? "black" : "white");
+  fprintf(stderr, "<------------- board --------------->\n");
+  for (GoCoordId y = 0; y < BOARD_SIZE; ++y) {
+    for (GoCoordId x = 0; x < BOARD_SIZE; ++x) {
+      GoCoordId i = CoordToId(x, y);
+      if (!bNoColor) {
+        if (BLACK == board_state_[i]) {
+          fprintf(stderr, "\033[31m");
+        } else if (WHITE == board_state_[i]) {
+          fprintf(stderr, "\033[33m");
+        }
+      }
+      if (i == last_position_) {
+        fprintf(stderr, "@%c", BOARD_SIZE - 1 != x ? ' ' : '\n');
+      } else {
+        char stone;
+        if (board_state_[i] == BLACK) {
+          stone = 'X';
+        } else if (board_state_[i] == WHITE) {
+          stone = 'O';
+        } else {
+          stone = '.';
+        }
+        fprintf(stderr, "%c%c", stone, BOARD_SIZE - 1 != x ? ' ' : '\n');
+      }
+      if (!bNoColor) {
+        fprintf(stderr, "\033[0m");
       }
     }
-    if (i == last_position_) {
-      fprintf(stderr, "X%c", BORDER_SIZE - 1 != y ? ' ' : '\n');
-    } else {
-      fprintf(stderr, "%d%c", int(board_state_[i]),
-              BORDER_SIZE - 1 != y ? ' ' : '\n');
-    }
-    if (!bNoColor) {
-      fprintf(stderr, "\033[0m");
-    }
   }
-  fprintf(stderr, "\n");
+  fprintf(stderr, "-------------------------------------\n");
 }
 
 void GoState::ShowLibCount() const {
   fprintf(stderr, "<-------------  lib  --------------->\n");
-  for (GoCoordId x = 0; x < BORDER_SIZE; ++x) {
-    for (GoCoordId y = 0; y < BORDER_SIZE; ++y) {
-      fprintf(stderr, "%d ", int(liberty_count_[CoordToId(x, y)]));
+  for (GoCoordId y = 0; y < BOARD_SIZE; ++y) {
+    for (GoCoordId x = 0; x < BOARD_SIZE; ++x) {
+      int lib = int(liberty_count_[CoordToId(x, y)]);
+      if (lib == 0) {
+        fprintf(stderr, ". ");
+      } else {
+        fprintf(stderr, "%d ", lib);
+      }
     }
     fprintf(stderr, "\n");
   }
   fprintf(stderr, "-------------------------------------\n");
 }
 
-void GoState::ShowState() {
-  fprintf(stderr, "block in used: %d", int(block_in_use_));
+void GoState::ShowState() const {
+  fprintf(stderr, "block in used: %d\n", int(block_in_use_));
   FOR_USEDBLOCK(i) {
     fprintf(stderr, "id %d: color %d, x %d y %d, stone %d lib %d\n", int(i),
-            int(block_pool_[i].color), int(block_pool_[i].head / BORDER_SIZE),
-            int(block_pool_[i].head % BORDER_SIZE),
+            int(block_pool_[i].color), int(block_pool_[i].head / BOARD_SIZE),
+            int(block_pool_[i].head % BOARD_SIZE),
             int(block_pool_[i].stone_count),
-            int(block_pool_[i].CountLiberty()));
+            int(block_pool_[i].GetLibertyCount()));
   }
 }
 
 void GoState::ShowLegalMap() const {
   fprintf(stderr, "<------------- legal --------------->\n");
-  for (GoCoordId x = 0; x < BORDER_SIZE; ++x) {
-    for (GoCoordId y = 0; y < BORDER_SIZE; ++y) {
-      fprintf(stderr, "%d ", int(legal_move_map_[CoordToId(x, y)]));
+  for (GoCoordId y = 0; y < BOARD_SIZE; ++y) {
+    for (GoCoordId x = 0; x < BOARD_SIZE; ++x) {
+      if (int(legal_move_map_[CoordToId(x, y)])) {
+        fprintf(stderr, "O ");
+      } else {
+        fprintf(stderr, ". ");
+      }
     }
     fprintf(stderr, "\n");
   }

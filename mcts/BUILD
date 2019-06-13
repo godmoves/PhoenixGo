@@ -1,6 +1,6 @@
 load("//:rules.bzl", "cc_proto_library", "tf_cc_binary")
 
-tf_cc_binary(
+cc_binary(
     name = "mcts_main",
     srcs = ["mcts_main.cc"],
     deps = [
@@ -9,7 +9,7 @@ tf_cc_binary(
     ],
 )
 
-tf_cc_binary(
+cc_binary(
     name = "debug_tool",
     srcs = [
         "debug_tool.cc",
@@ -21,8 +21,9 @@ tf_cc_binary(
         "//common:go_comm",
         "//common:go_state",
         "//common:timer",
-        "//model:zero_model",
+        "//model:tf_zero_model",
         "//model:trt_zero_model",
+        "//model:tpu_zero_model",
     ],
 )
 
@@ -49,8 +50,9 @@ cc_library(
         "//common:thread_conductor",
         "//common:str_utils",
         "//common:timer",
-        "//model:zero_model",
+        "//model:tf_zero_model",
         "//model:trt_zero_model",
+        "//model:tpu_zero_model",
         "//dist:dist_zero_model_client",
         "//dist:async_dist_zero_model_client",
         "@com_github_google_glog//:glog",

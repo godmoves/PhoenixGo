@@ -1,57 +1,36 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include "trt_zero_model.h"
 
-#if GOOGLE_TENSORRT
+#if USE_TENSORRT
 
 #include <fstream>
 #include <string>
 
-#include <boost/filesystem.hpp>
 #include <glog/logging.h>
 
 #include "cuda/include/cuda_runtime_api.h"
 #include "tensorrt/include/NvInfer.h"
+#include "tensorrt/include/NvUffParser.h"
 
-namespace fs = boost::filesystem;
+const std::string input_tensor_name = "inputs";
+const std::string policy_tensor_name = "policy";
+const std::string value_tensor_name = "value";
 
 class Logger : public nvinfer1::ILogger {
   void log(Severity severity, const char *msg) override {
     switch (severity) {
-    case Severity::kINTERNAL_ERROR:
-      LOG(ERROR) << msg;
-      break;
-    case Severity::kERROR:
-      LOG(ERROR) << msg;
-      break;
-    case Severity::kWARNING:
-      LOG(WARNING) << msg;
-      break;
-    case Severity::kINFO:
-      LOG(INFO) << msg;
-      break;
+      case Severity::kINTERNAL_ERROR: LOG(ERROR) << msg; break;
+      case Severity::kERROR: LOG(ERROR) << msg; break;
+      case Severity::kWARNING: LOG(WARNING) << msg; break;
+      case Severity::kINFO: LOG(INFO) << msg; break;
     }
   }
 } g_logger;
 
 TrtZeroModel::TrtZeroModel(int gpu)
-    : m_engine(nullptr),
+    : m_builder(nullptr),
+      m_network(nullptr),
+      m_parser(nullptr),
+      m_engine(nullptr),
       m_runtime(nullptr),
       m_context(nullptr),
       m_gpu(gpu),
@@ -67,6 +46,15 @@ TrtZeroModel::~TrtZeroModel() {
   if (m_runtime) {
     m_runtime->destroy();
   }
+  if (m_parser) {
+    m_parser->destroy();
+  }
+  if (m_network) {
+    m_network->destroy();
+  }
+  if (m_builder) {
+    m_builder->destroy();
+  }
   for (auto buf : m_cuda_buf) {
     int ret = cudaFree(buf);
     if (ret != 0) {
@@ -75,19 +63,17 @@ TrtZeroModel::~TrtZeroModel() {
   }
 }
 
-int TrtZeroModel::Init(const ModelConfig &model_config) {
-  cudaSetDevice(m_gpu);
+int TrtZeroModel::InitPlanModel(const ModelConfig &model_config, fs::path &model_path) {
+  fs::path model_dir = model_config.model_dir();
 
-  fs::path train_dir = model_config.train_dir();
-
-  fs::path tensorrt_model_path = model_config.tensorrt_model_path();
-  if (tensorrt_model_path.is_relative()) {
-    tensorrt_model_path = train_dir / tensorrt_model_path;
+  model_path = model_config.trt_plan_model_path();
+  if (model_path.is_relative()) {
+    model_path = model_dir / model_path;
   }
 
   std::ostringstream model_ss(std::ios::binary);
-  if (!(model_ss << std::ifstream(tensorrt_model_path.string(), std::ios::binary).rdbuf())) {
-    PLOG(ERROR) << "read tensorrt model '" << tensorrt_model_path << "' error";
+  if (!(model_ss << std::ifstream(model_path.string(), std::ios::binary).rdbuf())) {
+    PLOG(ERROR) << "read tensorrt plan model '" << model_path << "' error";
     return ERR_READ_TRT_MODEL;
   }
   std::string model_str = model_ss.str();
@@ -97,7 +83,76 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
   if (m_engine == nullptr) {
     PLOG(ERROR) << "load cuda engine error";
     return ERR_LOAD_TRT_ENGINE;
+  } 
+
+  return 0;
+}
+
+int TrtZeroModel::InitUffModel(const ModelConfig &model_config, fs::path &model_path) {
+  fs::path model_dir = model_config.model_dir();
+
+  model_path = model_config.trt_uff_model_path();
+  if (model_path.is_relative()) {
+    model_path = model_dir / model_path;
   }
+
+  m_builder = nvinfer1::createInferBuilder(g_logger);
+  m_network = m_builder->createNetwork();
+  m_parser = nvuffparser::createUffParser();
+
+  m_parser->registerInput(input_tensor_name.c_str(),
+                          nvinfer1::DimsCHW(FEATURE_COUNT, BOARD_SIZE, BOARD_SIZE),
+                          nvuffparser::UffInputOrder::kNCHW);
+  m_parser->registerOutput(policy_tensor_name.c_str());
+  m_parser->registerOutput(value_tensor_name.c_str());
+
+  if (!m_parser->parse(model_path.c_str(), *m_network, nvinfer1::DataType::kFLOAT)) {
+    PLOG(ERROR) << "parse tensorrt uff model '" << model_path << "' error";
+    m_builder->destroy();
+    m_network->destroy();
+    m_parser->destroy();
+    return ERR_READ_TRT_MODEL;
+  }
+
+  if (model_config.enable_fp16()) {
+    if (!m_builder->platformHasFastFp16()) {
+      LOG(WARNING) << "fast fp16 is not supported by the platform";
+    }
+    m_builder->setFp16Mode(true);
+    // Force the engine use FP16 precision
+    // m_builder->setStrictTypeConstraints(true);
+  }
+
+  // Batch size larger than 16 is not recommended.
+  m_builder->setMaxBatchSize(16);
+  m_builder->setMaxWorkspaceSize(1 << 30);
+  m_engine = m_builder->buildCudaEngine(*m_network);
+  if (m_engine == nullptr) {
+    PLOG(ERROR) << "load cuda engine error";
+    return ERR_LOAD_TRT_ENGINE;
+  }
+
+  return 0;
+}
+
+int TrtZeroModel::Init(const ModelConfig &model_config) {
+  cudaSetDevice(m_gpu);
+
+  if (model_config.trt_uff_model_path() != "" && model_config.trt_plan_model_path() != "") {
+    LOG(WARNING) << "both tensorrt uff and plan model path are set, use uff model by default";
+  }
+
+  if (model_config.trt_uff_model_path() == "" && model_config.enable_fp16()) {
+      LOG(WARNING) << "enable_fp16 option is not supported by plan model";
+  }
+
+  fs::path model_path;
+  if (model_config.trt_uff_model_path() != "") {
+    InitUffModel(model_config, model_path);
+  } else {
+    InitPlanModel(model_config, model_path);
+  }
+
   m_context = m_engine->createExecutionContext();
 
   int batch_size = m_engine->getMaxBatchSize();
@@ -116,7 +171,8 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
     LOG(INFO) << "tensorrt binding: " << m_engine->getBindingName(i) << " " << dim_str;
 
     void *buf;
-    int ret = cudaMalloc(&buf, batch_size * size * sizeof(float));
+    int ret;
+    ret = cudaMalloc(&buf, batch_size * size * sizeof(float));
     if (ret != 0) {
       LOG(ERROR) << "cuda malloc err " << ret;
       return ERR_CUDA_MALLOC;
@@ -124,13 +180,8 @@ int TrtZeroModel::Init(const ModelConfig &model_config) {
     m_cuda_buf.push_back(buf);
   }
 
-  if (!(std::ifstream(tensorrt_model_path.string() + ".step") >> m_global_step)) {
-    LOG(WARNING) << "read global step from " << tensorrt_model_path << ".step failed";
-  }
-
-  m_value_from_black = model_config.value_from_black();
-  if (m_value_from_black) {
-    LOG(INFO) << "Value from black perspective";
+  if (!(std::ifstream(model_path.string() + ".step") >> m_global_step)) {
+    LOG(WARNING) << "read global step from " << model_path.string() << ".step failed";
   }
 
   return 0;
@@ -145,19 +196,15 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     return ERR_INVALID_INPUT;
   }
 
-  std::vector<std::vector<float>> inputsT;
-  for (int i = 0; i < batch_size; ++i) {
-    inputsT.push_back(Transpose(inputs[i]));
-  }
-
   std::vector<float> inputs_flat(batch_size * INPUT_DIM);
   for (int i = 0; i < batch_size; ++i) {
-    if (inputsT[i].size() != INPUT_DIM) {
-      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM << ", got " << inputsT[i].size();
+    if (inputs[i].size() != INPUT_DIM) {
+      LOG(ERROR) << "Error input dim not match, need " << INPUT_DIM
+                 << ", got " << inputs[i].size();
       return ERR_INVALID_INPUT;
     }
     for (int j = 0; j < INPUT_DIM; ++j) {
-      inputs_flat[i * INPUT_DIM + j] = inputsT[i][j];
+      inputs_flat[i * INPUT_DIM + j] = inputs[i][j];
     }
   }
 
@@ -171,16 +218,17 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
 
   m_context->execute(batch_size, m_cuda_buf.data());
 
-  value.resize(batch_size);
-  ret = cudaMemcpy(value.data(), m_cuda_buf[1],
-                   value.size() * sizeof(float),
+  std::vector<float> internal_value(batch_size);
+  ret = cudaMemcpy(internal_value.data(), m_cuda_buf[1],
+                   internal_value.size() * sizeof(float),
                    cudaMemcpyDeviceToHost);
   if (ret != 0) {
     LOG(ERROR) << "cuda memcpy err " << ret;
     return ERR_CUDA_MEMCPY;
   }
+  value.resize(batch_size);
   for (int i = 0; i < batch_size; ++i) {
-    value[i] = -value[i];
+    value[i] = -internal_value[i];
   }
 
   std::vector<float> policy_flat(batch_size * OUTPUT_DIM);
@@ -199,16 +247,6 @@ int TrtZeroModel::Forward(const std::vector<std::vector<bool>> &inputs,
     }
   }
 
-  // elf always outputs value for black,
-  // we need to reverse it when white to move.
-  if (m_value_from_black) {
-    for (int i = 0; i < batch_size; ++i) {
-      if (inputs[i][16] < 0.5) {
-        value[i] = - value[i];
-      }
-    }
-  }
-
   return 0;
 }
 
@@ -217,7 +255,7 @@ int TrtZeroModel::GetGlobalStep(int &global_step) {
   return 0;
 }
 
-#else // GOOGLE_TENSORRT
+#else // USE_TENSORRT
 
 #include <glog/logging.h>
 
@@ -246,4 +284,4 @@ int TrtZeroModel::GetGlobalStep(int &global_step) {
   return 0;
 }
 
-#endif // GOOGLE_TENSORRT
+#endif // USE_TENSORRT

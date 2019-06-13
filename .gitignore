@@ -1,7 +1,6 @@
 # logs and configures are not uploaded
 log
-conf
-leelalogs
+test*.conf
 traininglogs
 
 # checkpoint folders are uploaded as release
@@ -24,15 +23,17 @@ tools/python_bin_path.sh
 *.pb
 *.pb.h
 *.pb.cc
+*.step
+checkpoint
 
 # ignore folders for building
-build
+build/
 
 # ignore python cache files
 *.pyc
 __pycache__
 
-# ignore lz weight file (txt, tf, ckpt)
+# ignore weight file (txt, tf, ckpt)
 scripts/*.txt
 scripts/checkpoint
 
@@ -41,3 +42,6 @@ tools/etc/
 
 # following files are for testing only
 etc/mcts_dist_test.conf
+
+# TensorFlow libs
+model/tensorflow/

@@ -1,28 +1,11 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <grpc++/grpc++.h>
 
 #include "common/timer.h"
 #include "model/trt_zero_model.h"
-#include "model/zero_model.h"
+#include "model/tf_zero_model.h"
+#include "model/tpu_zero_model.h"
 
 #include "dist/dist_zero_model.grpc.pb.h"
 
@@ -39,12 +22,15 @@ public:
     LOG(INFO) << "Init with config: " << req->model_config().DebugString();
 
     if (req->model_config().enable_mkl()) {
-      ZeroModel::SetMKLEnv(req->model_config());
+      TfZeroModel::SetMKLEnv(req->model_config());
     }
 
-    m_model.reset(new ZeroModel(FLAGS_gpu));
+    m_model.reset(new TfZeroModel(FLAGS_gpu));
     if (req->model_config().enable_tensorrt()) {
       m_model.reset(new TrtZeroModel(FLAGS_gpu));
+    }
+    if (req->model_config().enable_tpu()) {
+      m_model.reset(new TpuZeroModel(FLAGS_gpu));
     }
 
     int ret = m_model->Init(req->model_config());

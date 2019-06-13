@@ -1,21 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include "mcts_engine.h"
 
 #include <algorithm>
@@ -32,49 +14,12 @@
 #include "dist/async_dist_zero_model_client.h"
 #include "dist/dist_zero_model_client.h"
 #include "model/trt_zero_model.h"
-#include "model/zero_model.h"
-
-DECLARE_bool(lizzie); // run in lizzie mode.
+#include "model/tf_zero_model.h"
+#include "model/tpu_zero_model.h"
 
 static thread_local std::random_device g_random_device;
 static thread_local std::minstd_rand g_random_engine(g_random_device());
 
-void MCTSEngine::OutputAnalysis(TreeNode *parent) {
-  // We need to make a copy of the data before sorting
-  auto sortable_data = std::vector<OutputAnalysisData>();
-
-  if (parent->ch_len == 0) { // nothing to print
-    return;
-  }
-
-  for (int i = 0; i < parent->ch_len; ++i) {
-    TreeNode *node = parent->ch;
-    // ignore nodes have less than 50 visits
-    if (node[i].visit_count < 50) continue;
-    std::string move = GoFunction::IdToMoveStr(node[i].move);
-
-    // TODO: use a better way to get pv
-    std::string pv = move + " " + m_debugger.GetMainMovePath(i); 
-
-    // Not sure the meaning of value
-    float root_action = (float)node[i].total_action / k_action_value_base / node[i].visit_count;
-    float move_eval = (root_action + 1) * 50 * 100;
-    float policy = node[i].prior_prob * 100;
-    sortable_data.emplace_back(move, node[i].visit_count, move_eval, policy, pv);
-  }
-  std::stable_sort(std::begin(sortable_data), std::end(sortable_data));
-
-  // Output analysis data in gtp stream
-  auto i = 0;
-  for (const auto& node : sortable_data) {
-    if (i > 0) {
-      std::cerr << " ";
-    }
-    std::cerr << node.get_info_string(i);
-    i++;
-  }
-  std::cerr << "\n";
-}
 
 MCTSEngine::MCTSEngine(const MCTSConfig &config)
     : m_config(config),
@@ -90,7 +35,7 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
       m_debugger(this) {
   // setup eval threads
   if (m_config.model_config().enable_mkl()) {
-    ZeroModel::SetMKLEnv(m_config.model_config());
+    TfZeroModel::SetMKLEnv(m_config.model_config());
   }
   std::vector<int> gpu_list;
   for (const std::string &gpu : SplitStr(m_config.gpu_list(), ',')) {
@@ -105,10 +50,12 @@ MCTSEngine::MCTSEngine(const MCTSConfig &config)
       } else {
         model.reset(new DistZeroModelClient(addr, m_config.dist_config()));
       }
+    } else if (m_config.model_config().enable_tpu()) {
+      model.reset(new TpuZeroModel(gpu_list[i % gpu_list.size()]));
     } else if (m_config.model_config().enable_tensorrt()) {
       model.reset(new TrtZeroModel(gpu_list[i % gpu_list.size()]));
     } else {
-      model.reset(new ZeroModel(gpu_list[i % gpu_list.size()]));
+      model.reset(new TfZeroModel(gpu_list[i % gpu_list.size()]));
     }
     m_eval_threads_init_wg.Add();
     m_eval_threads.emplace_back(&MCTSEngine::EvalRoutine, this, std::move(model));
@@ -158,13 +105,13 @@ void MCTSEngine::Reset(const std::string &init_moves) {
   m_board.CopyFrom(GoState(!m_config.disable_positional_superko()));
   m_simulation_counter = 0;
   m_num_moves = (init_moves.size() + 1) / 3;
-  m_moves_str = init_moves;
+  m_sgf_moves_str = init_moves;
   m_gen_passes = 0;
   m_byo_yomi_timer.Reset();
 
   for (size_t i = 0; i < init_moves.size(); i += 3) {
     GoCoordId x, y;
-    GoFunction::StrToCoord(init_moves.substr(i, 2), x, y);
+    GoFunction::SgfMoveToCoord(init_moves.substr(i, 2), x, y);
     m_board.Move(x, y);
     m_root->move = GoFunction::CoordToId(x, y);
   }
@@ -179,10 +126,10 @@ std::string MCTSEngine::Undo() {
     return "undo: no move to undo";
   }
 
-  std::string last_move = m_moves_str.substr(m_moves_str.size() - 2);
-  std::string info = "undo: " + GoFunction::IdToMoveStr(GoFunction::StrToId(last_move));
-  Reset(m_moves_str.substr(0, std::max(0, int(m_moves_str.size() - 3))));
-  LOG(INFO) << "Current Moves: " << m_moves_str;
+  std::string last_move = m_sgf_moves_str.substr(m_sgf_moves_str.size() - 2);
+  std::string info = "undo: " + GoFunction::IdToBoardMove(GoFunction::SgfMoveToId(last_move));
+  Reset(m_sgf_moves_str.substr(0, std::max(0, int(m_sgf_moves_str.size() - 3))));
+  LOG(INFO) << "Current Moves: " << m_sgf_moves_str;
   return info;
 }
 
@@ -202,21 +149,21 @@ void MCTSEngine::Move(GoCoordId x, GoCoordId y) {
   }
 
   int ret = m_board.Move(x, y);
-  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToMoveStr(x, y) << ", ret" << ret;
+  CHECK_EQ(ret, 0) << "Move: failed, " << GoFunction::CoordToBoardMove(x, y) << ", ret" << ret;
 
   ++m_num_moves;
 
-  if (m_moves_str.size())
-    m_moves_str += ",";
-  m_moves_str += GoFunction::CoordToStr(x, y);
-  LOG(INFO) << "Move: " << m_moves_str;
+  if (m_sgf_moves_str.size())
+    m_sgf_moves_str += ",";
+  m_sgf_moves_str += GoFunction::CoordToSgfMove(x, y);
+  LOG(INFO) << "Sgf Moves: " << m_sgf_moves_str;
 
   ChangeRoot(FindChild(m_root, GoFunction::CoordToId(x, y)));
   m_root->move = GoFunction::CoordToId(x, y);
 
   m_debugger.UpdateLastMoveDebugStr();
   LOG(INFO) << m_debugger.GetLastMoveDebugStr();
-  m_debugger.PrintTree(1, 10, GoFunction::CoordToMoveStr(x, y) + ",");
+  m_debugger.PrintTree(1, 10, GoFunction::CoordToBoardMove(x, y) + ",");
 
   m_byo_yomi_timer.HandOff();
 
@@ -328,12 +275,13 @@ TreeNode *MCTSEngine::FindChild(TreeNode *node, int move) {
       return &ch[i];
     }
   }
+  return nullptr;
 }
 
 void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
   if (!m_config.disable_double_pass_scoring() && board.IsDoublePass()) {
     std::vector<float> policy;
-    policy.assign(GoComm::GOBOARD_SIZE + 1, 0.0f);
+    policy.assign(GoComm::BOARD_INTERSECTIONS + 1, 0.0f);
     policy.back() = 1.0f; // pass
     float value = (board.GetWinner() == board.CurrentPlayer()) ? -1.0f : 1.0f;
     callback(0, std::move(policy), value);
@@ -354,8 +302,8 @@ void MCTSEngine::Eval(const GoState &board, EvalCallback callback) {
         policy.back() = std::min(policy.back(), 1e-5f); // disallow dumb PASS
       }
 
-      CHECK_EQ(policy.size(), GoComm::GOBOARD_SIZE + 1)
-          << "Eval: invalid policy.size(), expect " << GoComm::GOBOARD_SIZE + 1
+      CHECK_EQ(policy.size(), GoComm::BOARD_INTERSECTIONS + 1)
+          << "Eval: invalid policy.size(), expect " << GoComm::BOARD_INTERSECTIONS + 1
           << ", got " << policy.size();
       if (m_config.enable_policy_temperature()) {
         ApplyTemperature(policy, m_config.policy_temperature());
@@ -483,9 +431,9 @@ TreeNode *MCTSEngine::SelectChild(TreeNode *node) {
   TreeNode *ch = node->ch;
   int ch_len = node->ch_len;
   CHECK_GT(ch_len, 0);
-  int visit_count[GoComm::GOBOARD_SIZE + 1];
-  float virtual_loss[GoComm::GOBOARD_SIZE + 1];
-  float total_action[GoComm::GOBOARD_SIZE + 1];
+  int visit_count[GoComm::BOARD_INTERSECTIONS + 1];
+  float virtual_loss[GoComm::BOARD_INTERSECTIONS + 1];
+  float total_action[GoComm::BOARD_INTERSECTIONS + 1];
   for (int i = 0; i < ch_len; ++i) {
     visit_count[i] = ch[i].visit_count;
     virtual_loss[i] = ch[i].virtual_loss_count * m_config.virtual_loss();
@@ -545,14 +493,14 @@ int MCTSEngine::Expand(TreeNode *node, GoState &board,
   Timer timer;
   int ch_len = 0;
   float policy_sum = 0;
-  int moves[GoComm::GOBOARD_SIZE + 1];
-  for (int i = 0; i < GoComm::GOBOARD_SIZE; ++i) {
+  int moves[GoComm::BOARD_INTERSECTIONS + 1];
+  for (int i = 0; i < GoComm::BOARD_INTERSECTIONS; ++i) {
     if (board.IsLegal(i)) {
       moves[ch_len++] = i;
       policy_sum += policy[i];
     }
   }
-  moves[ch_len++] = GoComm::GOBOARD_SIZE; // PASS
+  moves[ch_len++] = GoComm::BOARD_INTERSECTIONS; // PASS
   policy_sum += policy.back();            // PASS
 
   int max_ch_len = m_config.max_children_per_node();
@@ -564,7 +512,7 @@ int MCTSEngine::Expand(TreeNode *node, GoState &board,
 
   TreeNode *ch = new TreeNode[ch_len];
   for (int i = 0; i < ch_len; ++i) {
-    if (moves[i] == GoComm::GOBOARD_SIZE) {
+    if (moves[i] == GoComm::BOARD_INTERSECTIONS) {
       InitNode(&ch[i], node, GoComm::COORD_PASS, policy[moves[i]] / policy_sum);
     } else {
       InitNode(&ch[i], node, moves[i], policy[moves[i]] / policy_sum);
@@ -592,7 +540,6 @@ void MCTSEngine::Backup(TreeNode *node, float value_f, int ch_len) {
     node->total_action += value;
     node = node->fa;
     value = -value;
-    value_f = -value_f;
   }
   m_monitor.MonBackupCostMs(timer.fms());
 }
@@ -647,8 +594,8 @@ bool MCTSEngine::CheckUnstable() {
   }
   TreeNode *ch = m_root->ch;
   int ch_len = m_root->ch_len;
-  int visit_count[GoComm::GOBOARD_SIZE + 1];
-  float mean_action[GoComm::GOBOARD_SIZE + 1];
+  int visit_count[GoComm::BOARD_INTERSECTIONS + 1];
+  float mean_action[GoComm::BOARD_INTERSECTIONS + 1];
   for (int i = 0; i < ch_len; ++i) {
     visit_count[i] = ch[i].visit_count;
     mean_action[i] =
@@ -660,9 +607,9 @@ bool MCTSEngine::CheckUnstable() {
   int q_best = std::max_element(mean_action, mean_action + ch_len) - mean_action;
   if (n_best != q_best) {
     LOG(INFO) << "CheckUnstable: return true"
-              << ", N best ch=" << GoFunction::IdToMoveStr(ch[n_best].move)
+              << ", N best ch=" << GoFunction::IdToBoardMove(ch[n_best].move)
               << ", N=" << visit_count[n_best] << ", Q=" << mean_action[n_best]
-              << ", Q best ch=" << GoFunction::IdToMoveStr(ch[q_best].move)
+              << ", Q best ch=" << GoFunction::IdToBoardMove(ch[q_best].move)
               << ", N=" << visit_count[q_best] << ", Q=" << mean_action[q_best];
     return true;
   }
@@ -687,7 +634,7 @@ bool MCTSEngine::CheckBehind() {
           ? 0.0f
           : (float)best_ch->total_action / k_action_value_base / visit_count;
   if (mean_action < c.act_threshold()) {
-    LOG(INFO) << "CheckBehind: return true, best_move=" << GoFunction::IdToMoveStr(best_move)
+    LOG(INFO) << "CheckBehind: return true, best_move=" << GoFunction::IdToBoardMove(best_move)
               << ", N=" << visit_count
               << ", Q=" << mean_action;
     return true;
@@ -831,10 +778,6 @@ void MCTSEngine::SearchRoutine() {
     return;
   }
 
-  // set up timer for mylizzie output
-  time_t elapsed, start = clock();
-  float elapsed_time;
-
   for (;;) {
     if (!m_search_threads_conductor.IsRunning()) {
       VLOG(2) << "SearchRoutine pause";
@@ -850,14 +793,6 @@ void MCTSEngine::SearchRoutine() {
     auto board = std::make_shared<GoState>(m_board);
     TreeNode *node = Select(*board);
     m_monitor.MonSelectCostMs(timer.fms());
-
-    elapsed = clock();
-    elapsed_time = float(elapsed - start);
-
-    if (elapsed_time > 200000 && FLAGS_lizzie) { // 5 outputs per second
-      start = elapsed;
-      OutputAnalysis(m_root);
-    }
 
     int expect_unexpanded = k_unexpanded;
     if (node->expand_state.compare_exchange_strong(expect_unexpanded, k_expanding)) {
@@ -938,7 +873,7 @@ void MCTSEngine::InitRoot() {
   if (m_config.enable_dirichlet_noise()) {
     TreeNode *ch = m_root->ch;
     int ch_len = m_root->ch_len;
-    float noise[GoComm::GOBOARD_SIZE + 1];
+    float noise[GoComm::BOARD_INTERSECTIONS + 1];
     std::gamma_distribution<float> gamma(m_config.dirichlet_noise_alpha());
     for (int i = 0; i < ch_len; ++i) {
       noise[i] = gamma(g_random_engine);
@@ -989,11 +924,11 @@ int MCTSEngine::DeleteTree(TreeNode *node) {
 int MCTSEngine::GetBestMove(float &v_resign) {
   TreeNode *ch = m_root->ch;
   int ch_len = m_root->ch_len;
-  int visit_count[GoComm::GOBOARD_SIZE + 1];
-  float total_action[GoComm::GOBOARD_SIZE + 1];
-  float mean_action[GoComm::GOBOARD_SIZE + 1];
-  float prior_prob[GoComm::GOBOARD_SIZE + 1];
-  float value[GoComm::GOBOARD_SIZE + 1];
+  int visit_count[GoComm::BOARD_INTERSECTIONS + 1];
+  float total_action[GoComm::BOARD_INTERSECTIONS + 1];
+  float mean_action[GoComm::BOARD_INTERSECTIONS + 1];
+  float prior_prob[GoComm::BOARD_INTERSECTIONS + 1];
+  float value[GoComm::BOARD_INTERSECTIONS + 1];
   bool disable_pass = IsPassDisable();
   for (int i = 0; i < ch_len; ++i) {
     if (disable_pass && ch[i].move == GoComm::COORD_PASS) {
@@ -1010,7 +945,7 @@ int MCTSEngine::GetBestMove(float &v_resign) {
       value[i] = ch[i].value;
     }
 
-    VLOG(2) << "GetBestMove: " << GoFunction::IdToMoveStr(ch[i].move)
+    VLOG(2) << "GetBestMove: " << GoFunction::IdToBoardMove(ch[i].move)
             << ", N " << visit_count[i]
             << ", W " << total_action[i]
             << ", Q " << mean_action[i]
@@ -1069,7 +1004,7 @@ int MCTSEngine::GetSamplingMove(float temperature) {
   TreeNode *ch = m_root->ch;
   int ch_len = m_root->ch_len;
   float rtemp = 1.0f / temperature;
-  float probs[GoComm::GOBOARD_SIZE + 1];
+  float probs[GoComm::BOARD_INTERSECTIONS + 1];
   bool disable_pass = IsPassDisable();
   for (int i = 0; i < ch_len; ++i) {
     if (disable_pass && ch[i].move == GoComm::COORD_PASS) {
@@ -1085,7 +1020,7 @@ int MCTSEngine::GetSamplingMove(float temperature) {
 std::vector<int> MCTSEngine::GetVisitCount(TreeNode *node) {
   TreeNode *ch = node->ch;
   int ch_len = node->ch_len;
-  std::vector<int> visit_count(GoComm::GOBOARD_SIZE + 1, 0);
+  std::vector<int> visit_count(GoComm::BOARD_INTERSECTIONS + 1, 0);
   for (int i = 0; i < ch_len; ++i) {
     int move = ch[i].move;
     if (move == GoComm::COORD_PASS) {
@@ -1104,14 +1039,14 @@ void MCTSEngine::TransformFeatures(T &features, int mode, bool reverse) {
   }
 
   T ret(features.size());
-  int depth = features.size() / GoComm::GOBOARD_SIZE;
-  for (int i = 0; i < GoComm::GOBOARD_SIZE; ++i) {
+  int depth = features.size() / GoComm::BOARD_INTERSECTIONS;
+  for (int i = 0; i < GoComm::BOARD_INTERSECTIONS; ++i) {
     GoCoordId x, y;
     GoFunction::IdToCoord(i, x, y);
     TransformCoord(x, y, mode, reverse);
     int j = GoFunction::CoordToId(x, y);
     for (int k = 0; k < depth; ++k) {
-      ret[i * depth + k] = features[j * depth + k];
+      ret[i + k * GoComm::BOARD_INTERSECTIONS] = features[j + k * GoComm::BOARD_INTERSECTIONS];
     }
   }
   features = std::move(ret);
@@ -1123,14 +1058,14 @@ void MCTSEngine::TransformCoord(GoCoordId &x, GoCoordId &y, int mode,
     if (mode & 4)
       std::swap(x, y);
     if (mode & 2)
-      y = GoComm::BORDER_SIZE - y - 1;
+      y = GoComm::BOARD_SIZE - y - 1;
     if (mode & 1)
-      x = GoComm::BORDER_SIZE - x - 1;
+      x = GoComm::BOARD_SIZE - x - 1;
   } else {
     if (mode & 1)
-      x = GoComm::BORDER_SIZE - x - 1;
+      x = GoComm::BOARD_SIZE - x - 1;
     if (mode & 2)
-      y = GoComm::BORDER_SIZE - y - 1;
+      y = GoComm::BOARD_SIZE - y - 1;
     if (mode & 4)
       std::swap(x, y);
   }

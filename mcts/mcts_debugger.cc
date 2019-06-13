@@ -1,21 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include "mcts_debugger.h"
 
 #include <algorithm>
@@ -35,7 +17,7 @@ void MCTSDebugger::Debug() // call before move
 {
   if (VLOG_IS_ON(1)) {
     int ith = m_engine->m_num_moves + 1;
-    std::string ith_str = std::to_string(ith) + "th move(" + "wb"[ith & 1] + ")";
+    std::string ith_str = GetMoveIndexStr(ith);
     VLOG(1) << "========== debug info for " << ith_str << " begin ==========";
     VLOG(1) << "main move path: " << GetMainMovePath();
     int depth = m_engine->GetConfig().debugger().print_tree_depth();
@@ -49,10 +31,10 @@ void MCTSDebugger::Debug() // call before move
 std::string MCTSDebugger::GetDebugStr() {
   TreeNode *root = m_engine->m_root;
   int ith = m_engine->m_num_moves;
-  std::string ith_str = std::to_string(ith) + "th move(" + "wb"[ith & 1] + ")";
+  std::string ith_str = GetMoveIndexStr(ith);
   float root_action = (float)root->total_action / k_action_value_base / root->visit_count;
   std::string debug_str =
-      ith_str + ": " + GoFunction::IdToMoveStr(root->move) +
+      ith_str + ": " + GoFunction::IdToBoardMove(root->move) +
       ", winrate=" + std::to_string((root_action + 1) * 50) + "%" +
       ", N=" + std::to_string(root->visit_count) +
       ", Q=" + std::to_string(root_action) +
@@ -66,6 +48,21 @@ std::string MCTSDebugger::GetDebugStr() {
   }
   debug_str += ", global_step=" + std::to_string(m_engine->m_model_global_step);
   return debug_str;
+}
+
+std::string MCTSDebugger::GetMoveIndexStr(int ith) {
+  std::string suffix;
+  if (ith % 10 == 1) {
+    suffix = "st";
+  } else if (ith % 10 == 2) {
+    suffix = "nd";
+  } else if (ith % 10 == 3) {
+    suffix = "rd";
+  } else {
+    suffix = "th";
+  }
+  std::string ith_str = std::to_string(ith) + suffix + " move(" + "wb"[ith & 1] + ")";
+  return ith_str;
 }
 
 std::string MCTSDebugger::GetLastMoveDebugStr() {
@@ -88,7 +85,7 @@ std::string MCTSDebugger::GetMainMovePath(int rank) {
     TreeNode *best_ch = &ch[idx[rank]];
     if (moves.size())
       moves += ",";
-    moves += GoFunction::IdToMoveStr(best_ch->move);
+    moves += GoFunction::IdToBoardMove(best_ch->move);
     char buf[100];
     snprintf(buf, sizeof(buf), "(%d,%.2f,%.2f,%.2f)",
              best_ch->visit_count.load(),
@@ -128,7 +125,7 @@ void MCTSDebugger::PrintTree(int depth, int topk, const std::string &prefix) {
       for (TreeNode *t = &ch[i]; t != root; t = t->fa) {
         if (moves.size())
           moves = "," + moves;
-        moves = GoFunction::IdToMoveStr(t->move) + moves;
+        moves = GoFunction::IdToBoardMove(t->move) + moves;
       }
       VLOG(1) << prefix << moves
               << ": N=" << ch[i].visit_count

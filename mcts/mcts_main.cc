@@ -1,25 +1,5 @@
-/*
- * Tencent is pleased to support the open source community by making PhoenixGo
- * available.
- *
- * Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-#if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/wait.h>
 #include <unistd.h>
-#endif
 
 #include <boost/asio.hpp>
 #include <gflags/gflags.h>
@@ -40,10 +20,7 @@ DEFINE_string(init_moves, "", "Initialize Go board with init_moves.");
 DEFINE_bool(gtp, false, "Run as gtp server.");
 DEFINE_int32(listen_port, 0, "Listen which port.");
 DEFINE_string(allow_ip, "", "List of client ip allowed to connect, seperated by comma.");
-DEFINE_bool(lizzie, false, "Run in lizzie mode.");
-#if !defined(_WIN32) && !defined(_WIN64)
 DEFINE_bool(fork_per_request, true, "Fork for each request or not.");
-#endif
 
 const int k_handicaps_x[5] = {3, 15, 15, 3, 9};
 const int k_handicaps_y[5] = {3, 15, 3, 15, 9};
@@ -98,7 +75,7 @@ std::string EncodeMove(GoCoordId x, GoCoordId y) {
   if (GoFunction::IsResign(x, y)) {
     return "resign";
   }
-  return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(y + 1);
+  return std::string({x > 7 ? char('B' + x) : char('A' + x)}) + std::to_string(GoComm::BOARD_SIZE - y);
 }
 
 void DecodeMove(const std::string &s, GoCoordId &x, GoCoordId &y) {
@@ -108,7 +85,7 @@ void DecodeMove(const std::string &s, GoCoordId &x, GoCoordId &y) {
     x = y = GoComm::COORD_RESIGN;
   } else {
     x = s[0] > 'i' ? s[0] - 'b' : s[0] - 'a';
-    y = std::stoi(s.substr(1)) - 1;
+    y = GoComm::BOARD_SIZE - std::stoi(s.substr(1));
   }
 }
 
@@ -131,20 +108,17 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
     return {true, "HappyGo"};
   }
   if (op == "version") {
-    return {true, "1.15"};
+    return {true, "2.0"};
   }
   if (op == "protocol_version") {
     return {true, "2"};
   }
   if (op == "list_commands") {
-    return {true, "name\nversion\nprotocol_version\nlist_commands\nlz-analyze\n"
-                  "quit\nclear_board\nboardsize\nkomi\ntime_settings\ntime_left\n"
+    return {true, "name\nversion\nprotocol_version\nlist_commands\nquit\n"
+                  "clear_board\nboardsize\nkomi\ntime_settings\ntime_left\n"
                   "place_free_handicap\nset_free_handicap\nplay\ngenmove\nundo\n"
-                  "final_score\nget_debug_info\nget_last_move_debug_info"};
-  }
-  // TODO: fix command name
-  if (op == "lz-analyze") {
-    return {true, ""};
+                  "final_score\nget_debug_info\nget_last_move_debug_info\n"
+                  "show_board\nshow_lib_count\nshow_legal_map\nshow_state"};
   }
   if (op == "undo") {
     std::string info = engine.Undo();
@@ -169,7 +143,7 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
   if (op == "komi") {
     float komi;
     ss >> komi;
-    if (komi != 7.5) {
+    if (komi != GoComm::KOMI) {
       return {false, "unacceptable komi"};
     }
     return {true, ""};
@@ -253,14 +227,34 @@ std::pair<bool, std::string> GTPExecute(MCTSEngine &engine,
     return {true, EncodeMove(x, y)};
   }
   if (op == "final_score") {
-    GoStoneColor curr = engine.GetBoard().CurrentPlayer();
-    return {true, curr == GoComm::BLACK ? "W+0.5" : "B+0.5"};
+    GoSize score;
+    GoStoneColor winner = engine.GetBoard().GetWinner(score);
+    std::string info = (winner == GoComm::BLACK) ? "B+" : "W+";
+    // For future score network.
+    info += std::to_string(std::abs(score - GoComm::KOMI));
+    return {true, info};
   }
   if (op == "get_debug_info") {
     return {true, engine.GetDebugger().GetDebugStr()};
   }
   if (op == "get_last_move_debug_info") {
     return {true, engine.GetDebugger().GetLastMoveDebugStr()};
+  }
+  if (op == "show_board") {
+    engine.GetBoard().ShowBoard();
+    return {true, ""};
+  }
+  if (op == "show_lib_count") {
+    engine.GetBoard().ShowLibCount();
+    return {true, ""};
+  }
+  if (op == "show_legal_map") {
+    engine.GetBoard().ShowLegalMap();
+    return {true, ""};
+  }
+  if (op == "show_state") {
+    engine.GetBoard().ShowState();
+    return {true, ""};
   }
   LOG(ERROR) << "invalid op: " << op;
   return {false, "unknown command"};
@@ -341,10 +335,6 @@ void GTPServingOnPort(int port) {
       continue;
     }
 
-#if defined(_WIN32) || defined(_WIN64)
-    stream.rdbuf()->set_option(asio::ip::tcp::socket::keep_alive(true));
-    GTPServing(stream, stream);
-#else
     if (FLAGS_fork_per_request) {
       int pid, fork_cnt;
       for (fork_cnt = 0; fork_cnt < 2; ++fork_cnt) {
@@ -370,16 +360,13 @@ void GTPServingOnPort(int port) {
       stream.rdbuf()->set_option(asio::ip::tcp::socket::keep_alive(true));
       GTPServing(stream, stream);
     }
-#endif
   }
 }
 
 int main(int argc, char *argv[]) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
-#if !defined(_WIN32) && !defined(_WIN64)
   google::InstallFailureSignalHandler();
-#endif
 
   if (FLAGS_gtp) {
     if (FLAGS_listen_port == 0) {
